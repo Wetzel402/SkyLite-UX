@@ -35,7 +35,7 @@ export default withNuxt(antfu({
     }],
     "unicorn/filename-case": ["error", {
       case: "camelCase",
-      ignore: ["README.md"],
+      ignore: ["README.md", "./github"],
     }],
   },
 }));

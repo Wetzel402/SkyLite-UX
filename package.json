@@ -12,6 +12,12 @@
     "lint:fix": "eslint --fix ."
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.17",
+    "@fullcalendar/daygrid": "^6.1.17",
+    "@fullcalendar/interaction": "^6.1.17",
+    "@fullcalendar/list": "^6.1.17",
+    "@fullcalendar/timegrid": "^6.1.17",
+    "@fullcalendar/vue3": "^6.1.17",
     "@iconify-json/lucide": "^1.2.39",
     "@iconify-json/simple-icons": "^1.2.33",
     "@nuxt/ui": "^3.1.0",
