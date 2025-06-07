@@ -1,45 +1,44 @@
-import prisma from "~/lib/prisma";
+import prisma from '~/lib/prisma'
 
 export default defineEventHandler(async (event) => {
   try {
-    const id = getRouterParam(event, "id");
-    const body = await readBody(event);
-
+    const id = getRouterParam(event, 'id')
+    const body = await readBody(event)
+    
     if (!id) {
       throw createError({
         statusCode: 400,
-        statusMessage: "Todo column ID is required",
-      });
+        statusMessage: 'Todo column ID is required'
+      })
     }
-
+    
     const todoColumn = await prisma.todoColumn.update({
       where: { id },
       data: {
-        name: body.name,
+        name: body.name
       },
       include: {
         user: {
           select: {
             id: true,
             name: true,
-            avatar: true,
-          },
+            avatar: true
+          }
         },
         todos: true,
         _count: {
           select: {
-            todos: true,
-          },
-        },
-      },
-    });
-
-    return todoColumn;
-  }
-  catch (error) {
+            todos: true
+          }
+        }
+      }
+    })
+    
+    return todoColumn
+  } catch (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: `Failed to update todo column: ${error}`,
-    });
+      statusMessage: 'Failed to update todo column'
+    })
   }
-});
+}) 

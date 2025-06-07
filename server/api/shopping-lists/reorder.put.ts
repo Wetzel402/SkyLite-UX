@@ -1,26 +1,25 @@
-import prisma from "~/lib/prisma";
+import prisma from '~/lib/prisma'
 
 export default defineEventHandler(async (event) => {
   try {
-    const body = await readBody(event);
-    const { listIds } = body;
-
+    const body = await readBody(event)
+    const { listIds } = body
+    
     // Update the order for each list
-    const updatePromises = listIds.map((id: string, index: number) =>
+    const updatePromises = listIds.map((id: string, index: number) => 
       prisma.shoppingList.update({
         where: { id },
-        data: { order: index },
-      }),
-    );
-
-    await Promise.all(updatePromises);
-
-    return { success: true };
-  }
-  catch (error) {
+        data: { order: index }
+      })
+    )
+    
+    await Promise.all(updatePromises)
+    
+    return { success: true }
+  } catch (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: `Failed to reorder shopping list: ${error}`,
-    });
+      statusMessage: 'Failed to reorder shopping lists'
+    })
   }
-});
+}) 

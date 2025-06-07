@@ -1,10 +1,10 @@
-import prisma from "~/lib/prisma";
+import prisma from '~/lib/prisma'
 
 export default defineEventHandler(async (event) => {
   try {
-    const query = getQuery(event);
-    const todoColumnId = query.todoColumnId as string | undefined;
-
+    const query = getQuery(event)
+    const todoColumnId = query.todoColumnId as string | undefined
+    
     const todos = await prisma.todo.findMany({
       where: todoColumnId ? { todoColumnId } : undefined,
       include: {
@@ -18,25 +18,24 @@ export default defineEventHandler(async (event) => {
               select: {
                 id: true,
                 name: true,
-                avatar: true,
-              },
-            },
-          },
-        },
+                avatar: true
+              }
+            }
+          }
+        }
       },
       orderBy: [
-        { todoColumnId: "asc" },
-        { completed: "asc" },
-        { order: "asc" },
-      ],
-    });
-
-    return todos;
-  }
-  catch (error) {
+        { todoColumnId: 'asc' },
+        { completed: 'asc' },
+        { order: 'asc' }
+      ]
+    })
+    
+    return todos
+  } catch (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: `Failed to fetch todo: ${error}`,
-    });
+      statusMessage: 'Failed to fetch todos'
+    })
   }
-});
+}) 

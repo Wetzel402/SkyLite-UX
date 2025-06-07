@@ -1,6 +1,6 @@
-import prisma from "~/lib/prisma";
+import prisma from '~/lib/prisma'
 
-export default defineEventHandler(async (_event) => {
+export default defineEventHandler(async (event) => {
   try {
     const todoColumns = await prisma.todoColumn.findMany({
       include: {
@@ -8,29 +8,28 @@ export default defineEventHandler(async (_event) => {
           select: {
             id: true,
             name: true,
-            avatar: true,
-          },
+            avatar: true
+          }
         },
         todos: {
           orderBy: {
-            order: "asc",
-          },
+            order: 'asc'
+          }
         },
         _count: {
-          select: { todos: true },
-        },
+          select: { todos: true }
+        }
       },
       orderBy: {
-        order: "asc",
-      },
-    });
-
-    return todoColumns;
-  }
-  catch (error) {
+        order: 'asc'
+      }
+    })
+    
+    return todoColumns
+  } catch (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: `Failed to fetch todo column: ${error}`,
-    });
+      statusMessage: 'Failed to fetch todo columns'
+    })
   }
-});
+}) 
