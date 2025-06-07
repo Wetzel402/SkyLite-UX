@@ -1,17 +1,17 @@
-import prisma from '~/lib/prisma'
+import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
   try {
-    const id = getRouterParam(event, 'id')
-    const body = await readBody(event)
-    
+    const id = getRouterParam(event, "id");
+    const body = await readBody(event);
+
     if (!id) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Todo ID is required'
-      })
+        statusMessage: "Todo ID is required",
+      });
     }
-    
+
     const todo = await prisma.todo.update({
       where: { id },
       data: {
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
         priority: body.priority,
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
         todoColumnId: body.todoColumnId,
-        order: body.order
+        order: body.order,
       },
       include: {
         todoColumn: {
@@ -34,19 +34,20 @@ export default defineEventHandler(async (event) => {
               select: {
                 id: true,
                 name: true,
-                avatar: true
-              }
-            }
-          }
-        }
-      }
-    })
-    
-    return todo
-  } catch (error) {
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return todo;
+  }
+  catch (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Failed to update todo'
-    })
+      statusMessage: `Failed to update todo: ${error}`,
+    });
   }
-}) 
+});

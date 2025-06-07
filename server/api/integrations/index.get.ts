@@ -1,18 +1,19 @@
-import prisma from '~/lib/prisma'
+import prisma from "~/lib/prisma";
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (_event) => {
   try {
     const integrations = await prisma.integration.findMany({
       orderBy: {
-        createdAt: 'desc'
-      }
-    })
-    
-    return integrations
-  } catch (error) {
+        createdAt: "desc",
+      },
+    });
+
+    return integrations;
+  }
+  catch (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Failed to fetch integrations'
-    })
+      statusMessage: `Failed to fetch integration: ${error}`,
+    });
   }
-}) 
+});

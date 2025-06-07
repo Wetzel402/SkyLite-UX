@@ -1,17 +1,17 @@
-import prisma from '~/lib/prisma'
+import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
   try {
-    const integrationId = getRouterParam(event, 'id')
-    const body = await readBody(event)
-    
+    const integrationId = getRouterParam(event, "id");
+    const body = await readBody(event);
+
     if (!integrationId) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Integration ID is required'
-      })
+        statusMessage: "Integration ID is required",
+      });
     }
-    
+
     const integration = await prisma.integration.update({
       where: { id: integrationId },
       data: {
@@ -20,15 +20,16 @@ export default defineEventHandler(async (event) => {
         apiKey: body.apiKey,
         baseUrl: body.baseUrl,
         enabled: body.enabled,
-        settings: body.settings
-      }
-    })
-    
-    return integration
-  } catch (error) {
+        settings: body.settings,
+      },
+    });
+
+    return integration;
+  }
+  catch (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Failed to update integration'
-    })
+      statusMessage: `Failed to update integration: ${error}`,
+    });
   }
-}) 
+});
