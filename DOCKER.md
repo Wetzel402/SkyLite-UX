@@ -93,6 +93,15 @@ docker-compose pull
 docker-compose up -d
 ```
 
+### Run smoke tests
+```bash
+# Test events API endpoint
+docker-compose exec skylite-app npm run smoke:events
+
+# Test sync functionality
+docker-compose exec skylite-app npm run smoke
+```
+
 ## Database Management
 
 ### Access PostgreSQL directly
@@ -109,6 +118,19 @@ docker-compose exec skylite-app npx prisma migrate deploy
 ```bash
 docker-compose exec skylite-app npx prisma generate
 ```
+
+## Unraid Deployment
+
+For Unraid users, see [UNRAID.md](./UNRAID.md) for specific deployment instructions.
+
+**Important**: Unraid doesn't handle CLI-based container modifications well. Always use the Unraid web interface or Docker Compose for management.
+
+### Unraid-Specific Notes
+
+- **Storage**: Use `/mnt/user/appdata/skylite-ux/` for application data
+- **Network**: Bridge mode recommended for most setups
+- **Updates**: Use `docker-compose pull && docker-compose up -d` for updates
+- **Backups**: Include both application data and database volumes
 
 ## Troubleshooting
 
