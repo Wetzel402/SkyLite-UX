@@ -1,0 +1,37 @@
+{
+  "name": "SkyLite-UX Family Calendar",
+  "short_name": "SkyLite",
+  "description": "Family calendar and task management for self-hosted homes",
+  "start_url": "/display",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "theme_color": "#3B82F6",
+  "background_color": "#F9FAFB",
+  "icons": [
+    {
+      "src": "/skylite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Family Calendar",
+      "short_name": "Calendar",
+      "description": "View family calendar",
+      "url": "/display",
+      "icons": [
+        {
+          "src": "/skylite.svg",
+          "sizes": "any"
+        }
+      ]
+    }
+  ]
+}

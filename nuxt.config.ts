@@ -14,6 +14,7 @@ export default defineNuxtConfig({
       // consola log level. See https://github.com/unjs/consola/blob/main/src/constants.ts
       logLevel: "info", // Default log level, can be overridden by NUXT_PUBLIC_LOG_LEVEL env var
       tz: "America/Chicago", // Default timezone, can be overridden by NUXT_PUBLIC_TZ env var
+      enableKioskMode: process.env.ENABLE_KIOSK_MODE === 'true', // Kiosk mode toggle
     },
   },
 
@@ -25,6 +26,17 @@ export default defineNuxtConfig({
         lang: "en",
       },
       title: "SkyLite UX",
+      link: [
+        { rel: 'manifest', href: '/manifest.json' },
+        { rel: 'icon', href: '/skylite.svg', type: 'image/svg+xml' }
+      ],
+      meta: [
+        { name: 'theme-color', content: '#3B82F6' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'SkyLite-UX' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' }
+      ]
     },
   },
 
@@ -85,6 +97,7 @@ export default defineNuxtConfig({
     "~/plugins/01.logging.ts",
     "~/plugins/02.appInit.ts",
     "~/plugins/03.syncManager.client.ts",
+    "~/plugins/04.pwa.client.ts",
   ],
 
   future: {

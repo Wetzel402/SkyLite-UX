@@ -27,6 +27,9 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 - Task Lists
 - Meal Planning
 - User Management
+- **Kiosk Mode** - Wall display for family calendars
+- **PWA Support** - Offline-capable progressive web app
+- **ICS Calendar Sync** - Import events from external ICS feeds (Phase 1)
 
 ## Installation
 

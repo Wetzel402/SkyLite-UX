@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: skylite_test
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Migrate database
+        run: |
+          if [ -f "prisma/schema.prisma" ]; then 
+            npx prisma migrate deploy
+          fi
+        env:
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/skylite_test"
+
+      - name: Setup test environment
+        run: |
+          if [ -f ".env.test" ]; then
+            cp .env.test .env
+            echo "Using .env.test for test environment"
+          else
+            cp .env.example .env
+            echo "NODE_ENV=test" >> .env
+            echo "DATABASE_URL=postgres://postgres:postgres@localhost:5432/skylite_test" >> .env
+            echo "ENABLE_KIOSK_MODE=true" >> .env
+            echo "DISPLAY_TOKEN=test-token-123" >> .env
+            echo "NUXT_PUBLIC_LOG_LEVEL=error" >> .env
+            echo "Using .env.example with test overrides"
+          fi
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build application
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Seed test data
+        run: |
+          if [ -f "scripts/seed-test.ts" ]; then 
+            npx tsx scripts/seed-test.ts || node scripts/seed-test.js || true
+          fi
+        env:
+          NODE_ENV: test
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/skylite_test"
+          ENABLE_KIOSK_MODE: "true"
+          DISPLAY_TOKEN: "test-token-123"
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          ENABLE_KIOSK_MODE: "true"
+          DISPLAY_TOKEN: "test-token-123"
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/skylite_test"
+          NODE_ENV: test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload test videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-videos
+          path: test-results/
+          retention-days: 30

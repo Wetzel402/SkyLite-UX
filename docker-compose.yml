@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: skylite-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: skylite
+      POSTGRES_USER: skylite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skylite_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - skylite-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skylite -d skylite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # SkyLite-UX Application
+  skylite-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skylite-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://skylite:${POSTGRES_PASSWORD:-skylite_password}@postgres:5432/skylite
+      NUXT_PUBLIC_LOG_LEVEL: info
+      NUXT_PUBLIC_TZ: ${TIMEZONE:-America/Chicago}
+      # Kiosk Mode Configuration
+      ENABLE_KIOSK_MODE: ${ENABLE_KIOSK_MODE:-false}
+      DISPLAY_TOKEN: ${DISPLAY_TOKEN:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - app_data:/app/data
+    networks:
+      - skylite-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  app_data:
+    driver: local
+
+networks:
+  skylite-network:
+    driver: bridge
