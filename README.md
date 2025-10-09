@@ -58,6 +58,46 @@ curl -X POST -H "X-Admin-Token: your-admin-token" http://localhost:3000/api/admi
 - `ICS_FEEDS`: JSON array of ICS feed configurations
 - `CALDAV_ACCOUNTS`: JSON array of CalDAV account configurations
 
+#### CalDAV Write Operations (Feature-Flagged)
+
+**⚠️ Experimental Feature**: CalDAV write operations are behind feature flags and disabled by default.
+
+**Environment Variables for Write Operations**:
+- `CALDAV_WRITE_ENABLED=false`: Enable CalDAV write operations (default: false)
+- `CALDAV_DRY_RUN=true`: Dry-run mode for testing (default: true)
+- `ADMIN_API_TOKEN`: Required for admin API access
+
+**Write Policy Configuration**:
+- Sources must have `writePolicy: 'write'` to allow write operations
+- Global flag `CALDAV_WRITE_ENABLED=true` must be set
+- Use dry-run mode first to test operations safely
+
+**Admin API Endpoints**:
+```bash
+# Create event
+curl -X POST http://localhost:3000/api/admin/events \
+  -H "X-Admin-Token: your-admin-token" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "New Event", "start": "2024-01-01T10:00:00Z", "end": "2024-01-01T11:00:00Z", "sourceId": "source-id"}'
+
+# Update event
+curl -X PATCH http://localhost:3000/api/admin/events/event-id \
+  -H "X-Admin-Token: your-admin-token" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Updated Event"}'
+
+# Delete event
+curl -X DELETE http://localhost:3000/api/admin/events/event-id \
+  -H "X-Admin-Token: your-admin-token"
+```
+
+**Safety Features**:
+- **Audit Logging**: All operations are logged in `calendar_audit` table
+- **Conflict Detection**: Uses ETag-based optimistic concurrency
+- **Quota Management**: Rate limiting to prevent abuse
+- **Dry-Run Mode**: Test operations without making changes
+- **Error Recovery**: Graceful handling of network failures
+
 ### Bootstrapping Sources
 
 Calendar sources are automatically bootstrapped from environment variables on server startup:
