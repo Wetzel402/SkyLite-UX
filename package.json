@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:unit:watch": "vitest",
+    "smoke:events": "node scripts/smoke-events.js",
     "prepare": "playwright install --with-deps",
     "dev:test:e2e": "npm run build && npm run preview & sleep 5 && npm run test:e2e && pkill -f 'nuxt preview'",
     "db:migrate": "npx prisma migrate deploy",

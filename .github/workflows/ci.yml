@@ -95,6 +95,31 @@ jobs:
           DATABASE_URL: "postgres://postgres:postgres@localhost:5432/skylite_test"
           NODE_ENV: test
 
+      - name: Start application for smoke tests
+        run: |
+          npm run start &
+          sleep 10
+        env:
+          ENABLE_KIOSK_MODE: "true"
+          DISPLAY_TOKEN: "test-token-123"
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/skylite_test"
+          NODE_ENV: test
+          CALDAV_WRITE_ENABLED: "true"
+          ADMIN_API_TOKEN: "test-admin"
+
+      - name: Run smoke tests
+        run: npm run smoke:events
+        env:
+          ENABLE_KIOSK_MODE: "true"
+          DISPLAY_TOKEN: "test-token-123"
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/skylite_test"
+          NODE_ENV: test
+          CALDAV_WRITE_ENABLED: "true"
+          ADMIN_API_TOKEN: "test-admin"
+
+      - name: Stop application
+        run: pkill -f "node .output/server/index.mjs" || true
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: failure()

@@ -420,6 +420,15 @@ export class CalDAVAdapter implements CalendarAdapter {
       };
     }
 
+    // Check for mock conflict mode
+    if (process.env.CALDAV_MOCK === '1') {
+      // Check if the request has the mock conflict header
+      const mockConflict = (globalThis as any).__mockConflict || false;
+      if (mockConflict) {
+        throw new ConflictError('Mock conflict: Event was modified by another client');
+      }
+    }
+
     const credentials = source.credentials as CalDAVCredentials;
     const maskedUsername = this.maskCredentials(credentials.username);
     
@@ -577,7 +586,7 @@ export class CalDAVAdapter implements CalendarAdapter {
     }
 
     // Check source write policy
-    if (source.writePolicy !== 'write') {
+    if (source.writePolicy !== 'WRITE') {
       return false;
     }
 
@@ -665,5 +674,29 @@ export class CalDAVAdapter implements CalendarAdapter {
       .replace(/,/g, '\\,')
       .replace(/\n/g, '\\n')
       .replace(/\r/g, '');
+  }
+
+  async performHealthCheck(): Promise<{ vendor?: string; supportsEtag?: boolean }> {
+    try {
+      // Perform a lightweight PROPFIND to check server connectivity
+      const response = await this.client.propfind(this.source.serverUrl!, {
+        depth: 0,
+        props: [
+          { name: 'DAV:', localName: 'displayname' },
+          { name: 'DAV:', localName: 'resourcetype' }
+        ]
+      });
+
+      const vendor = response.headers['server'] || 'Unknown';
+      const supportsEtag = response.headers['etag'] !== undefined;
+
+      return {
+        vendor: typeof vendor === 'string' ? vendor : 'Unknown',
+        supportsEtag
+      };
+    } catch (error) {
+      consola.error(`CalDAV: Health check failed for ${this.source.name}:`, error);
+      throw error;
+    }
   }
 }

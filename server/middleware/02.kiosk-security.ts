@@ -50,8 +50,8 @@ export default defineEventHandler(async (event) => {
   setHeader(event, 'X-XSS-Protection', '1; mode=block');
   setHeader(event, 'Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   
-  // Prevent caching of sensitive data
-  if (url.startsWith('/api/')) {
+  // Prevent caching of sensitive data (but allow events endpoint to set its own cache headers)
+  if (url.startsWith('/api/') && !url.startsWith('/api/events/week')) {
     setHeader(event, 'Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     setHeader(event, 'Pragma', 'no-cache');
     setHeader(event, 'Expires', '0');

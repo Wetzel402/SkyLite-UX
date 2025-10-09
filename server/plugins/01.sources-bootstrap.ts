@@ -152,7 +152,7 @@ async function bootstrapSources(prisma: PrismaClient): Promise<BootstrapResult> 
             serverUrl: account.serverUrl,
             username: account.username,
             password: account.password,
-            writePolicy: 'read-write',
+            writePolicy: 'WRITE',
             createdAt: new Date(),
             updatedAt: new Date()
           }

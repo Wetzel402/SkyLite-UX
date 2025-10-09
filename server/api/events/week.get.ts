@@ -1,86 +1,137 @@
-import { consola } from "consola";
-import { createError, defineEventHandler, getQuery, setHeader } from "h3";
-
-import type { CalendarEvent } from "../../../app/types/calendar";
+import { PrismaClient } from '@prisma/client';
+import { defineEventHandler, getQuery, setHeader } from 'h3';
+import { consola } from 'consola';
 
 export default defineEventHandler(async (event) => {
+  consola.info('Events API: /api/events/week handler called');
+  
+  const prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      }
+    },
+    // Add timeout for this specific route
+    log: ['error']
+  });
+  
   try {
     const query = getQuery(event);
-    const startDate = query.startDate as string;
-    const endDate = query.endDate as string;
+    const from = query.from as string;
+    const to = query.to as string;
+    
+    // Add timeout for database operations (500ms max)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database timeout')), 500);
+    });
 
-    // If no dates provided, get current week
-    let weekStart: Date;
-    let weekEnd: Date;
+    // Parse date range
+    let startDate: Date;
+    let endDate: Date;
 
-    if (startDate && endDate) {
-      weekStart = new Date(startDate);
-      weekEnd = new Date(endDate);
+    if (from && to) {
+      startDate = new Date(from);
+      endDate = new Date(to);
+      
+      // Validate dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        consola.warn('Events API: Invalid date format, using current week');
+        const today = new Date();
+        const currentDay = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - currentDay);
+        startDate.setHours(0, 0, 0, 0);
+        
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+      }
     } else {
+      // Default to current week
       const today = new Date();
       const currentDay = today.getDay();
-      weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - currentDay);
-      weekStart.setHours(0, 0, 0, 0);
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - currentDay);
+      startDate.setHours(0, 0, 0, 0);
       
-      weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
     }
 
-    consola.debug(`Events API: Fetching events for week ${weekStart.toISOString()} to ${weekEnd.toISOString()}`);
+    consola.debug(`Events API: Fetching events from ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
-    // Get event merger service from context
-    const eventMergerService = event.context.eventMergerService;
-    if (!eventMergerService) {
-      throw createError({
-        statusCode: 503,
-        statusMessage: 'Event merger service not available'
-      });
-    }
+    // Query database for events with proper overlap predicate and timeout
+    // Events overlap if: start <= to && end >= from
+    const events = await Promise.race([
+      prisma.calendarEvent.findMany({
+      where: {
+        AND: [
+          {
+            start: {
+              lte: endDate  // start <= to
+            }
+          },
+          {
+            end: {
+              gte: startDate  // end >= from
+            }
+          }
+        ],
+        status: {
+          not: 'cancelled'
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        start: true,
+        end: true,
+        allDay: true,
+        source: {
+          select: {
+            type: true,
+            name: true,
+            color: true
+          }
+        }
+      },
+      orderBy: [
+        { start: 'asc' },
+        { title: 'asc' }
+      ]
+    }),
+      timeoutPromise
+    ]);
 
-    // Get merged events from all sources (local + ICS + CalDAV)
-    const mergedEvents = await eventMergerService.getMergedEvents(weekStart, weekEnd);
+    // Add cache headers
+    setHeader(event, 'Cache-Control', 'public, max-age=15');
+    setHeader(event, 'Content-Type', 'application/json');
 
-    // Transform events for kiosk display
-    const transformedEvents: CalendarEvent[] = mergedEvents.map(event => ({
+    consola.debug(`Events API: Returning ${events.length} events`);
+
+    return events.map(event => ({
       id: event.id,
       title: event.title,
-      description: event.description,
-      start: new Date(event.start),
-      end: new Date(event.end),
+      start: event.start.toISOString(),
+      end: event.end.toISOString(),
       allDay: event.allDay,
-      color: event.color,
-      location: event.location,
-      users: event.users,
+      source: {
+        type: event.source.type,
+        name: event.source.name,
+        color: event.source.color
+      }
     }));
 
-    // Add cache headers for kiosk mode
-    setHeader(event, 'Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
-    setHeader(event, 'X-Kiosk-Mode', 'enabled');
-    setHeader(event, 'X-Content-Type-Options', 'nosniff');
-
-    consola.debug(`Events API: Returning ${transformedEvents.length} events for kiosk display`);
-
-    return {
-      events: transformedEvents,
-      weekStart: weekStart.toISOString(),
-      weekEnd: weekEnd.toISOString(),
-      totalEvents: transformedEvents.length,
-      lastUpdated: new Date().toISOString(),
-    };
-
   } catch (error) {
-    consola.error("Events API: Error fetching weekly events:", error);
+    consola.error('Events API: Error fetching events:', error);
     
-    // Return empty result instead of throwing error for kiosk mode
-    return {
-      events: [],
-      weekStart: new Date().toISOString(),
-      weekEnd: new Date().toISOString(),
-      totalEvents: 0,
-      lastUpdated: new Date().toISOString(),
-      error: "Unable to fetch events",
-    };
+    // Always return 200 with empty result for robustness
+    setHeader(event, 'Cache-Control', 'public, max-age=15');
+    setHeader(event, 'Content-Type', 'application/json');
+    
+    return [];
+  } finally {
+    await prisma.$disconnect();
   }
 });

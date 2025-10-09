@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { getHeader, createError, readBody, getRouterParam } from 'h3';
 import { consola } from 'consola';
-import { CalDAVAdapter } from '~/services/calendar/adapters/caldav';
-import { ConflictError, WriteNotAllowedError, QuotaExceededError } from '~/services/calendar/errors';
-import { quotaManager, retryManager } from '~/services/calendar/quota-manager';
+import { CalDAVAdapter } from '../../../services/calendar/adapters/caldav';
+import { ConflictError, WriteNotAllowedError, QuotaExceededError } from '../../../services/calendar/errors';
+import { quotaManager, retryManager } from '../../../services/calendar/quota-manager';
 
 export default defineEventHandler(async (event) => {
   // Check admin token
@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Check if writes are allowed for this source
-    if (process.env.CALDAV_WRITE_ENABLED !== 'true' || existingEvent.source.writePolicy !== 'write') {
+    if (process.env.CALDAV_WRITE_ENABLED !== 'true' || existingEvent.source.writePolicy !== 'WRITE') {
       throw createError({
         statusCode: 403,
         statusMessage: 'Write operations not allowed for this source'
@@ -123,6 +123,12 @@ export default defineEventHandler(async (event) => {
         // Consume quota token
         if (!quotaManager.consumeToken(existingEvent.sourceId)) {
           throw new QuotaExceededError('Quota exceeded - too many write operations for this source');
+        }
+
+        // Check for mock conflict header
+        const mockConflict = getHeader(event, 'x-mock-conflict') === 'true';
+        if (mockConflict && process.env.CALDAV_MOCK === '1') {
+          (globalThis as any).__mockConflict = true;
         }
 
         const adapter = new CalDAVAdapter();

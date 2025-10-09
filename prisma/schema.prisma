@@ -13,6 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum WritePolicy {
+  NONE
+  WRITE
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -109,7 +114,7 @@ model CalendarSource {
   type               String   // 'local' | 'ics' | 'caldav'
   name               String
   color              String?
-  writePolicy        String   @default("none") // 'none' | 'write' (future)
+  writePolicy        WritePolicy @default(NONE)
   serverUrl          String?  // caldav only
   username           String?  // caldav only (server-side only)
   password           String?  // caldav only (server-side only)
@@ -142,8 +147,8 @@ model CalendarEvent {
   title          String
   description    String?
   location       String?
-  start          DateTime
-  end            DateTime
+  start          DateTime @db.Timestamptz(6)
+  end            DateTime @db.Timestamptz(6)
   allDay         Boolean        @default(false)
   status         String?        // 'confirmed' | 'cancelled' ...
 
@@ -155,6 +160,9 @@ model CalendarEvent {
   users CalendarEventUser[]
 
   @@index([sourceId, uid, start, end])
+  @@index([start, end])
+  @@index([status])
+  @@index([sourceId, start])
   @@unique([sourceId, uid, recurrenceId, start, end])
   @@map("calendar_events")
 }
