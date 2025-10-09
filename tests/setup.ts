@@ -1,11 +1,16 @@
 import { vi } from 'vitest';
+import { PrismaClient } from '@prisma/client';
 
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.ENABLE_KIOSK_MODE = 'true';
-process.env.DISPLAY_TOKEN = 'test-token-123';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+process.env.DISPLAY_TOKEN = 'test-token';
+process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/skylite_test';
 process.env.PORT = '3000';
+process.env.CALENDAR_SYNC_ENABLED = 'true';
+process.env.ICS_FEEDS = '[{"name":"Fixture","color":"#4C6FFF","url":"http://localhost:3000/_fixtures/family.ics"}]';
+process.env.ADMIN_API_TOKEN = 'test-admin';
+process.env.PERSISTENT_SYNC_TESTS = 'true';
 
 // Mock consola to reduce noise in tests
 vi.mock('consola', () => ({

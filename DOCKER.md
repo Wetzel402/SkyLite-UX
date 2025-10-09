@@ -513,13 +513,642 @@ ICS_SYNC_INTERVAL_SECONDS=900
 - **Performance Issues**: Increase `ICS_SYNC_INTERVAL_SECONDS` for less frequent sync
 - **Color Issues**: Ensure color values are valid hex codes
 
-### Future: Phase 2 (CalDAV)
+## Phase 2: CalDAV (Read-Only)
 
-Phase 2 will add CalDAV support with:
+SkyLite-UX now supports CalDAV integration for reading events from CalDAV servers like Nextcloud, Radicale, iCloud, Fastmail, and Google Calendar via CalDAV.
+
+### Configuration
+
+Add the following environment variables to your `.env` file:
+
+```bash
+# Enable CalDAV sync
+CALDAV_SYNC_ENABLED=true
+
+# CalDAV accounts configuration (JSON array)
+CALDAV_ACCOUNTS='[
+  {
+    "name": "Family Nextcloud",
+    "serverUrl": "https://nc.example.com/remote.php/dav",
+    "username": "alice",
+    "password": "your-password",
+    "color": "#2E7D32",
+    "calendarName": "Personal"
+  },
+  {
+    "name": "Work Calendar",
+    "serverUrl": "https://caldav.fastmail.com/dav/calendars/user/username/",
+    "username": "user@fastmail.com",
+    "password": "app-password",
+    "color": "#E85D04"
+  }
+]'
+
+# Sync interval in seconds (default: 300 = 5 minutes)
+CALDAV_SYNC_INTERVAL_SECONDS=300
+```
+
+### Supported CalDAV Servers
+
+#### Nextcloud
+```bash
+# Server URL format
+"serverUrl": "https://your-nextcloud.com/remote.php/dav"
+
+# Example configuration
+{
+  "name": "Family Nextcloud",
+  "serverUrl": "https://nc.example.com/remote.php/dav",
+  "username": "alice",
+  "password": "your-password",
+  "color": "#2E7D32",
+  "calendarName": "Personal"  # Optional: filter specific calendar
+}
+```
+
+#### iCloud
+```bash
+# Use app-specific password (not your Apple ID password)
+{
+  "name": "iCloud Calendar",
+  "serverUrl": "https://caldav.icloud.com",
+  "username": "your-email@icloud.com",
+  "password": "app-specific-password",
+  "color": "#007AFF"
+}
+```
+
+#### Fastmail
+```bash
+# Use app password (not your regular password)
+{
+  "name": "Fastmail Calendar",
+  "serverUrl": "https://caldav.fastmail.com/dav/calendars/user/username/",
+  "username": "user@fastmail.com",
+  "password": "app-password",
+  "color": "#FF6B35"
+}
+```
+
+#### Google Calendar (via CalDAV)
+```bash
+# Use app password (not your Google account password)
+{
+  "name": "Google Calendar",
+  "serverUrl": "https://caldav.google.com/dav/",
+  "username": "your-email@gmail.com",
+  "password": "app-password",
+  "color": "#4285F4"
+}
+```
+
+#### Radicale
+```bash
+# Self-hosted Radicale server
+{
+  "name": "Radicale Calendar",
+  "serverUrl": "https://radicale.example.com",
+  "username": "user",
+  "password": "password",
+  "color": "#8B5CF6"
+}
+```
+
+### Security Best Practices
+
+#### App Passwords
+- **Never use your main account password**
+- **Use app-specific passwords** for all services
+- **Rotate passwords regularly**
+- **Use strong, unique passwords**
+
+#### Environment Security
+```bash
+# Never commit credentials to version control
+echo "CALDAV_ACCOUNTS=..." >> .env
+echo ".env" >> .gitignore
+
+# Use Docker secrets in production
+docker secret create caldav_creds caldav_credentials.json
+```
+
+#### Credential Masking
+- **Logs never show full passwords** - only masked versions
+- **Username masking** - shows first 2 and last 2 characters
+- **Error messages** - don't expose sensitive information
+
+### Features
+
+- **Multi-Server Support** - Connect to multiple CalDAV servers
+- **Calendar Discovery** - Automatically finds available calendars
+- **Calendar Filtering** - Optional filtering by calendar name
+- **Time Window Sync** - Fetches events for current week ± 2 days
+- **Error Isolation** - One server failure doesn't affect others
+- **Credential Security** - Passwords never logged or exposed
+- **Source Attribution** - Events show their source server and calendar
+
+### Limitations (Phase 2)
+
+- **Read-Only** - No write access to CalDAV servers
+- **Basic RRULE** - Limited recurrence rule expansion
+- **No Real-time** - Sync happens on schedule (5 minutes default)
+- **No OAuth** - Username/password authentication only
+- **No Conflict Resolution** - Local events take priority
+
+## Phase 3: Two-way CalDAV (Experimental)
+
+⚠️ **WARNING: This is an experimental feature. Use with caution in production environments.**
+
+SkyLite-UX now supports two-way CalDAV synchronization, allowing you to create, update, and delete events on CalDAV servers. This feature is behind strict feature flags and requires careful configuration.
+
+### ⚠️ Important Safety Notes
+
+- **Backup your database** before enabling write operations
+- **Test in a development environment** first
+- **Monitor audit logs** for any issues
+- **Use dry-run mode** to test operations safely
+- **Writes are disabled by default** - must be explicitly enabled
+
+### Configuration
+
+Add the following environment variables to enable CalDAV write operations:
+
+```bash
+# Enable CalDAV write operations (REQUIRED)
+CALDAV_WRITE_ENABLED=true
+
+# Enable dry-run mode for testing (RECOMMENDED for initial setup)
+CALDAV_DRY_RUN=true
+
+# Default write policy for new sources (none = read-only, write = allow writes)
+CALDAV_WRITE_DEFAULT_POLICY=none
+
+# Admin API token for write operations (REQUIRED)
+ADMIN_API_TOKEN=your-secure-admin-token-here
+```
+
+### Enabling Write Access for Sources
+
+Write operations require **both** global enablement and per-source permission:
+
+1. **Global Enablement**: Set `CALDAV_WRITE_ENABLED=true`
+2. **Source Permission**: Set `writePolicy='write'` for specific sources
+
+```bash
+# Example: Enable writes for a specific CalDAV source
+# This would typically be done via database update or admin UI
+UPDATE calendar_sources 
+SET writePolicy = 'write' 
+WHERE id = 'your-source-id' AND type = 'caldav';
+```
+
+### Admin API Endpoints
+
+The write operations are available via admin API endpoints:
+
+#### Create Event
+```bash
+curl -X POST http://localhost:3000/api/admin/events \
+  -H "X-Admin-Token: your-admin-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "New Event",
+    "description": "Event description",
+    "location": "Event location",
+    "start": "2024-01-01T10:00:00Z",
+    "end": "2024-01-01T11:00:00Z",
+    "allDay": false,
+    "sourceId": "your-caldav-source-id"
+  }'
+```
+
+#### Update Event
+```bash
+curl -X PATCH http://localhost:3000/api/admin/events/event-id \
+  -H "X-Admin-Token: your-admin-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated Event Title",
+    "description": "Updated description"
+  }'
+```
+
+#### Delete Event
+```bash
+curl -X DELETE http://localhost:3000/api/admin/events/event-id \
+  -H "X-Admin-Token: your-admin-token"
+```
+
+### Write Operations Flow
+
+#### Create Event
+1. **Local Creation**: Event created in database with `status='pending'`
+2. **Remote Sync**: If writes allowed, event created on CalDAV server
+3. **Confirmation**: Local event updated with remote UID and ETag
+4. **Audit Trail**: Complete audit log of the operation
+
+#### Update Event
+1. **Conflict Check**: Uses `If-Match` header with stored ETag
+2. **Optimistic Concurrency**: Fails with 409 if event was modified remotely
+3. **Version Increment**: Local version number incremented
+4. **Audit Trail**: Before/after state recorded
+
+#### Delete Event
+1. **Soft Delete**: Creates tombstone record, marks as `cancelled`
+2. **Remote Delete**: Attempts to delete from CalDAV server
+3. **Graceful Handling**: Treats 404 as success (already deleted)
+4. **Audit Trail**: Deletion recorded with timestamp
+
+### Conflict Resolution
+
+The system uses optimistic concurrency control:
+
+- **ETag-based**: Each event has a `lastRemoteEtag` for conflict detection
+- **If-Match Headers**: All updates/deletes include ETag validation
+- **409 Conflicts**: Returns conflict details when ETags don't match
+- **No Overwrites**: Never overwrites remote changes without explicit resolution
+
+### Quota Management
+
+Write operations are rate-limited per source:
+
+- **30 writes per minute** per source (configurable)
+- **Token bucket algorithm** for smooth rate limiting
+- **429 responses** when quota exceeded
+- **Automatic cleanup** of old quota buckets
+
+### Retry Logic
+
+Network operations include automatic retry:
+
+- **Exponential backoff** for 5xx server errors
+- **No retry** for 4xx client errors (except 409 conflicts)
+- **Maximum 3 retries** with increasing delays
+- **Conflict errors** bubble up immediately
+
+### Dry-Run Mode
+
+Test write operations safely:
+
+```bash
+# Enable dry-run mode
+CALDAV_DRY_RUN=true
+
+# Operations will:
+# - Create audit entries
+# - Log what would be done
+# - Return success responses
+# - NOT modify remote calendars
+```
+
+### Audit and Monitoring
+
+All write operations are fully audited:
+
+#### CalendarAudit Table
+- **Operation Type**: `create`, `update`, `delete`
+- **Actor**: `user` (admin API) or `system` (sync)
+- **Before/After State**: Complete event snapshots
+- **Timestamps**: Precise operation timing
+
+#### Monitoring Commands
+```bash
+# View recent write operations
+docker-compose exec skylite-app npx prisma studio
+# Navigate to CalendarAudit table
+
+# Check quota status
+curl -H "X-Admin-Token: your-token" http://localhost:3000/api/admin/sources
+
+# Monitor logs
+docker-compose logs skylite-app | grep -i "CalDAV Write"
+```
+
+### Security Considerations
+
+#### Authentication
+- **Admin API Token**: Required for all write operations
+- **Source Credentials**: Stored securely, never logged
+- **HTTPS Only**: All CalDAV connections must use HTTPS
+
+#### Authorization
+- **Per-Source Permissions**: `writePolicy` field controls access
+- **Global Flags**: Multiple layers of write protection
+- **Audit Trail**: Complete operation history
+
+#### Data Protection
+- **No Secret Logging**: Passwords never appear in logs
+- **Credential Masking**: Usernames shown as `us****er`
+- **Secure Storage**: Database credentials encrypted at rest
+
+### Troubleshooting Write Operations
+
+#### Common Issues
+
+**Writes Not Working**
+```bash
+# Check global enablement
+echo $CALDAV_WRITE_ENABLED  # Should be 'true'
+
+# Check source write policy
+docker-compose exec skylite-app npx prisma studio
+# Look at CalendarSource.writePolicy field
+
+# Check admin token
+curl -H "X-Admin-Token: your-token" http://localhost:3000/api/admin/sources
+```
+
+**Conflict Errors (409)**
+- **Cause**: Event was modified by another client
+- **Resolution**: Check conflict details in response
+- **Prevention**: Use shorter sync intervals
+
+**Quota Exceeded (429)**
+- **Cause**: Too many write operations per minute
+- **Resolution**: Wait for quota to refill or reduce write frequency
+- **Monitoring**: Check quota status via admin API
+
+**Dry-Run Testing**
+```bash
+# Enable dry-run mode
+CALDAV_DRY_RUN=true
+
+# Test operations - they will be logged but not executed
+curl -X POST http://localhost:3000/api/admin/events \
+  -H "X-Admin-Token: your-token" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test", "start": "2024-01-01T10:00:00Z", "end": "2024-01-01T11:00:00Z", "sourceId": "your-source"}'
+
+# Check logs for dry-run messages
+docker-compose logs skylite-app | grep "DRY RUN"
+```
+
+### Backup and Recovery
+
+#### Before Enabling Writes
+```bash
+# 1. Backup your database
+docker-compose exec postgres pg_dump -U skylite skylite > backup.sql
+
+# 2. Test in dry-run mode first
+CALDAV_DRY_RUN=true
+
+# 3. Start with a single source
+# 4. Monitor audit logs closely
+```
+
+#### Recovery Procedures
+```bash
+# Disable writes globally
+CALDAV_WRITE_ENABLED=false
+docker-compose restart skylite-app
+
+# Reset source write policy
+UPDATE calendar_sources SET writePolicy = 'none' WHERE type = 'caldav';
+
+# Restore from backup if needed
+docker-compose exec postgres psql -U skylite skylite < backup.sql
+```
+
+### Example Workflows
+
+#### Family Calendar Management
+```bash
+# 1. Enable writes for family calendar
+UPDATE calendar_sources 
+SET writePolicy = 'write' 
+WHERE name = 'Family Calendar';
+
+# 2. Create family event
+curl -X POST http://localhost:3000/api/admin/events \
+  -H "X-Admin-Token: family-admin-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Family Dinner",
+    "start": "2024-01-15T18:00:00Z",
+    "end": "2024-01-15T20:00:00Z",
+    "sourceId": "family-calendar-source-id"
+  }'
+
+# 3. Event appears on kiosk display
+# 4. Family members see it in their CalDAV clients
+```
+
+#### Work Calendar Integration
+```bash
+# 1. Enable writes for work calendar
+UPDATE calendar_sources 
+SET writePolicy = 'write' 
+WHERE name = 'Work Calendar';
+
+# 2. Create meeting
+curl -X POST http://localhost:3000/api/admin/events \
+  -H "X-Admin-Token: work-admin-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Team Meeting",
+    "description": "Weekly team sync",
+    "location": "Conference Room A",
+    "start": "2024-01-16T14:00:00Z",
+    "end": "2024-01-16T15:00:00Z",
+    "sourceId": "work-calendar-source-id"
+  }'
+
+# 3. Meeting appears in Outlook/CalDAV clients
+# 4. Kiosk shows updated schedule
+```
+
+### Limitations (Phase 3)
+
+- **Experimental**: Use with caution in production
+- **No OAuth**: Username/password authentication only
+- **Manual Conflict Resolution**: 409 errors require manual intervention
+- **No Real-time**: Changes sync on next scheduled sync cycle
+- **Limited RRULE**: Basic recurrence rules only
+- **Single User**: No multi-user conflict resolution
+
+### Troubleshooting
+
+#### Authentication Issues
+```bash
+# Check if credentials are correct
+curl -u "username:password" "https://your-server.com/remote.php/dav/"
+
+# Verify server URL format
+# Nextcloud: https://domain.com/remote.php/dav
+# iCloud: https://caldav.icloud.com
+# Fastmail: https://caldav.fastmail.com/dav/calendars/user/username/
+```
+
+#### Sync Issues
+```bash
+# Check sync service status
+docker-compose logs skylite-app | grep -i caldav
+
+# Verify environment variables
+docker-compose exec skylite-app printenv CALDAV_SYNC_ENABLED
+```
+
+#### Calendar Not Found
+- **Check calendar name** - Use exact calendar name or remove `calendarName` filter
+- **Verify permissions** - Ensure user has access to the calendar
+- **Check server logs** - Look for permission denied errors
+
+### Example Configurations
+
+#### Family Setup
+```bash
+# Multiple family members with different colors
+CALDAV_ACCOUNTS='[
+  {
+    "name": "Mom's Calendar",
+    "serverUrl": "https://nc.example.com/remote.php/dav",
+    "username": "mom@example.com",
+    "password": "mom-password",
+    "color": "#FF6B6B"
+  },
+  {
+    "name": "Dad's Calendar", 
+    "serverUrl": "https://nc.example.com/remote.php/dav",
+    "username": "dad@example.com",
+    "password": "dad-password",
+    "color": "#4ECDC4"
+  },
+  {
+    "name": "Kids Calendar",
+    "serverUrl": "https://nc.example.com/remote.php/dav",
+    "username": "kids@example.com",
+    "password": "kids-password",
+    "color": "#45B7D1"
+  }
+]'
+```
+
+#### Work + Personal
+```bash
+# Separate work and personal calendars
+CALDAV_ACCOUNTS='[
+  {
+    "name": "Work Calendar",
+    "serverUrl": "https://caldav.fastmail.com/dav/calendars/user/work/",
+    "username": "work@company.com",
+    "password": "work-app-password",
+    "color": "#E85D04",
+    "calendarName": "Work"
+  },
+  {
+    "name": "Personal Calendar",
+    "serverUrl": "https://caldav.icloud.com",
+    "username": "personal@icloud.com", 
+    "password": "personal-app-password",
+    "color": "#007AFF"
+  }
+]'
+```
+
+## Persistent Sync State
+
+SkyLite-UX now maintains persistent sync state in the database, ensuring sync metadata survives restarts and enabling efficient incremental synchronization.
+
+### Database Schema
+
+The system uses the following database tables for sync state management:
+
+#### CalendarSource
+- **Sync Metadata**: `etag`, `ctag`, `syncToken` for conditional requests
+- **Timestamps**: `lastSyncAt`, `lastErrorAt` for tracking sync status
+- **Error Tracking**: `errorCount` for monitoring source health
+- **Credentials**: Secure storage of CalDAV credentials (server-side only)
+
+#### CalendarEvent
+- **Remote Identity**: `uid`, `recurrenceId`, `lastRemoteEtag` for deduplication
+- **Versioning**: `version` field for future write operations
+- **Unique Constraints**: Prevents duplicate events across sources
+
+#### CalendarAudit & CalendarTombstone
+- **Audit Trail**: Complete history of sync operations
+- **Tombstones**: Track deleted events for future two-way sync
+
+### Sync State Management
+
+#### Source Bootstrap
+Sources are automatically created from environment variables on startup:
+```bash
+# ICS sources
+ICS_FEEDS='[{"name": "Family Calendar", "url": "https://example.com/family.ics", "color": "#FF0000"}]'
+
+# CalDAV sources  
+CALDAV_ACCOUNTS='[{"name": "Work Calendar", "serverUrl": "https://caldav.example.com", "username": "user@example.com", "password": "app-password", "color": "#00FF00"}]'
+```
+
+#### Incremental Sync
+- **Conditional Requests**: Uses stored `etag`/`ctag` to avoid unnecessary downloads
+- **304 Responses**: Server returns "Not Modified" when content unchanged
+- **Metadata Persistence**: Sync tokens survive restarts, enabling efficient resumption
+
+#### Event Deduplication
+- **UID-based**: Primary deduplication using ICS/CalDAV UIDs
+- **Synthetic UIDs**: Generated for events without UID using content hash
+- **Recurrence Support**: Handles recurring events with `recurrenceId`
+- **Source Priority**: Local > CalDAV > ICS for conflict resolution
+
+### Troubleshooting Sync Issues
+
+#### Reset Source Sync State
+```bash
+# Reset sync metadata for a specific source
+docker-compose exec skylite-app npx prisma studio
+# Navigate to CalendarSource table and clear etag/ctag/syncToken fields
+```
+
+#### Re-bootstrap Sources
+```bash
+# Restart the application to re-run source bootstrap
+docker-compose restart skylite-app
+```
+
+#### Rotate CalDAV Credentials
+```bash
+# Update credentials in environment variables
+# Restart application - sources will be updated automatically
+docker-compose restart skylite-app
+```
+
+#### Monitor Sync Status
+```bash
+# Check sync status via API
+curl http://localhost:3000/api/sync/status
+
+# View sync logs
+docker-compose logs skylite-app | grep -i sync
+```
+
+### Database Management
+
+#### Run Migrations
+```bash
+# Apply database migrations
+npm run db:migrate
+
+# Reset test database
+npm run db:reset:test
+```
+
+#### Database Studio
+```bash
+# Open Prisma Studio for database inspection
+npm run db:studio
+```
+
+### Future: Phase 3 (Two-Way Sync)
+
+Phase 3 will add full CalDAV support with:
 - **Two-way sync** - Create, update, delete events
-- **Authentication** - Username/password or OAuth
-- **Real-time updates** - Immediate synchronization
+- **OAuth authentication** - Secure token-based auth
+- **Real-time updates** - WebSocket-based synchronization
+- **Conflict resolution** - Smart merging of conflicting changes
 - **Advanced RRULE** - Full recurrence rule support
+- **Per-source write controls** - Granular permission management
 
 ## Support
 

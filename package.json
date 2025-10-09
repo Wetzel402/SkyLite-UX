@@ -19,7 +19,16 @@
     "test:e2e:ui": "playwright test --ui",
     "test:unit:watch": "vitest",
     "prepare": "playwright install --with-deps",
-    "dev:test:e2e": "npm run build && npm run preview & sleep 5 && npm run test:e2e && pkill -f 'nuxt preview'"
+    "dev:test:e2e": "npm run build && npm run preview & sleep 5 && npm run test:e2e && pkill -f 'nuxt preview'",
+    "db:migrate": "npx prisma migrate deploy",
+    "db:reset:test": "npx prisma migrate reset --force",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
+    "db:seed": "npx prisma db seed",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f docker-compose.dev.yml down -v",
+    "db:psql": "docker compose -f docker-compose.dev.yml exec postgres psql -U postgres",
+    "smoke": "node scripts/smoke-sync.mjs"
   },
   "dependencies": {
     "@eslint/plugin-kit": "^0.3.4",
@@ -35,6 +44,7 @@
     "node-fetch": "^2.7.0",
     "pinia": "^3.0.1",
     "prisma": "^6.9.0",
+    "tsdav": "^2.1.5",
     "vue": "~3.5.13",
     "vue-router": "~4.5.0",
     "zod": "^4.1.12"

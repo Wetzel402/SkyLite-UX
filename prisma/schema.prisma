@@ -104,22 +104,83 @@ model Integration {
   @@map("integrations")
 }
 
+model CalendarSource {
+  id                 String   @id @default(cuid())
+  type               String   // 'local' | 'ics' | 'caldav'
+  name               String
+  color              String?
+  writePolicy        String   @default("none") // 'none' | 'write' (future)
+  serverUrl          String?  // caldav only
+  username           String?  // caldav only (server-side only)
+  password           String?  // caldav only (server-side only)
+  // sync metadata
+  etag               String?
+  ctag               String?
+  syncToken          String?
+  lastSyncAt         DateTime?
+  lastErrorAt        DateTime?
+  errorCount         Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  events             CalendarEvent[]
+
+  @@map("calendar_sources")
+}
+
 model CalendarEvent {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  start       DateTime
-  end         DateTime
-  allDay      Boolean  @default(false)
-  color       Json?  
-  location    String?
-  ical_event  Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  sourceId       String
+  source         CalendarSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  // Remote identity
+  uid            String?        // ICS/CalDAV UID (required for remote)
+  recurrenceId   String?        // RECURRENCE-ID when present
+  lastRemoteEtag String?
+
+  // Display / content
+  title          String
+  description    String?
+  location       String?
+  start          DateTime
+  end            DateTime
+  allDay         Boolean        @default(false)
+  status         String?        // 'confirmed' | 'cancelled' ...
+
+  // Versioning for future writes
+  version        Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   users CalendarEventUser[]
 
+  @@index([sourceId, uid, start, end])
+  @@unique([sourceId, uid, recurrenceId, start, end])
   @@map("calendar_events")
+}
+
+model CalendarAudit {
+  id        String   @id @default(cuid())
+  eventId   String?
+  sourceId  String?
+  op        String   // 'sync' | 'create' | 'update' | 'delete'
+  actor     String   // 'system' | 'user'
+  before    Json?
+  after     Json?
+  at        DateTime @default(now())
+
+  @@index([sourceId, at])
+  @@map("calendar_audit")
+}
+
+model CalendarTombstone {
+  id        String   @id @default(cuid())
+  eventId   String
+  sourceId  String
+  deletedAt DateTime @default(now())
+
+  @@index([sourceId, deletedAt])
+  @@map("calendar_tombstones")
 }
 
 model CalendarEventUser {

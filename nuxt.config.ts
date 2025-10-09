@@ -89,7 +89,9 @@ export default defineNuxtConfig({
   nitro: {
     plugins: [
       "../server/plugins/01.logging.ts",
+      "../server/plugins/01.sources-bootstrap.ts",
       "../server/plugins/02.syncManager.ts",
+      "../server/plugins/03.persistentSync.ts",
     ],
   },
 

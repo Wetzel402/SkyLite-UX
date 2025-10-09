@@ -17,6 +17,20 @@ const envSchema = z.object({
   // Optional integrations
   NUXT_PUBLIC_LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).optional(),
   NUXT_PUBLIC_TZ: z.string().optional(),
+  
+  // Calendar sync configuration
+  CALENDAR_SYNC_ENABLED: z.enum(['true', 'false']).transform(val => val === 'true').optional(),
+  CALDAV_SYNC_ENABLED: z.enum(['true', 'false']).transform(val => val === 'true').optional(),
+  ICS_SYNC_INTERVAL_SECONDS: z.string().regex(/^\d+$/).transform(Number).optional(),
+  CALDAV_SYNC_INTERVAL_SECONDS: z.string().regex(/^\d+$/).transform(Number).optional(),
+  CALDAV_ACCOUNTS: z.string().optional(),
+  ICS_FEEDS: z.string().optional(),
+  
+  // CalDAV write configuration (Phase 3 - Experimental)
+  CALDAV_WRITE_ENABLED: z.enum(['true', 'false']).transform(val => val === 'true').optional(),
+  CALDAV_DRY_RUN: z.enum(['true', 'false']).transform(val => val === 'true').optional(),
+  CALDAV_WRITE_DEFAULT_POLICY: z.enum(['none', 'write']).default('none'),
+  ADMIN_API_TOKEN: z.string().min(8, 'ADMIN_API_TOKEN must be at least 8 characters').optional(),
 });
 
 // Validate environment variables
@@ -31,6 +45,14 @@ export function validateEnvironment() {
     consola.info(`  - Database: ${env.DATABASE_URL ? 'CONFIGURED' : 'NOT SET'}`);
     consola.info(`  - Port: ${env.PORT}`);
     consola.info(`  - Environment: ${env.NODE_ENV}`);
+    consola.info(`  - Calendar sync: ${env.CALENDAR_SYNC_ENABLED ? 'ENABLED' : 'DISABLED'}`);
+    consola.info(`  - CalDAV sync: ${env.CALDAV_SYNC_ENABLED ? 'ENABLED' : 'DISABLED'}`);
+    consola.info(`  - ICS sync interval: ${env.ICS_SYNC_INTERVAL_SECONDS || 'default'}s`);
+    consola.info(`  - CalDAV sync interval: ${env.CALDAV_SYNC_INTERVAL_SECONDS || 'default'}s`);
+    consola.info(`  - CalDAV write: ${env.CALDAV_WRITE_ENABLED ? 'ENABLED' : 'DISABLED'}`);
+    consola.info(`  - CalDAV dry-run: ${env.CALDAV_DRY_RUN ? 'ENABLED' : 'DISABLED'}`);
+    consola.info(`  - CalDAV write policy: ${env.CALDAV_WRITE_DEFAULT_POLICY}`);
+    consola.info(`  - Admin API: ${env.ADMIN_API_TOKEN ? 'CONFIGURED' : 'NOT SET'}`);
     
     if (env.ENABLE_KIOSK_MODE && !env.DISPLAY_TOKEN) {
       consola.warn('Kiosk mode is enabled but no DISPLAY_TOKEN is set - kiosk will be publicly accessible');

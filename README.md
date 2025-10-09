@@ -39,6 +39,130 @@ View the [docs](https://wetzel402.github.io/Skylite-UX-docs/index.html#installat
 
 Read our [development guide](https://wetzel402.github.io/Skylite-UX-docs/DEVELOPMENT.html) for more details.
 
+### Admin Endpoints
+
+SkyLite-UX includes admin endpoints for monitoring and managing calendar sources:
+
+#### List Calendar Sources
+```bash
+curl -H "X-Admin-Token: your-admin-token" http://localhost:3000/api/admin/sources
+```
+
+#### Trigger Manual Sync
+```bash
+curl -X POST -H "X-Admin-Token: your-admin-token" http://localhost:3000/api/admin/sync
+```
+
+#### Environment Variables
+- `ADMIN_API_TOKEN`: Required for admin endpoint access
+- `ICS_FEEDS`: JSON array of ICS feed configurations
+- `CALDAV_ACCOUNTS`: JSON array of CalDAV account configurations
+
+### Bootstrapping Sources
+
+Calendar sources are automatically bootstrapped from environment variables on server startup:
+
+- **ICS Feeds**: Configured via `ICS_FEEDS` environment variable
+- **CalDAV Accounts**: Configured via `CALDAV_ACCOUNTS` environment variable
+- Sources are created with stable, deterministic IDs
+- Existing sources are updated if configuration changes
+- Passwords are never logged; usernames are masked in responses
+
+### Local Database Quickstart
+
+1. Start development PostgreSQL:
+   ```bash
+   npm run db:up
+   ```
+
+2. Run database migrations:
+   ```bash
+   npm run db:migrate
+   ```
+
+3. Set up environment:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. Start the application:
+   ```bash
+   npm run dev
+   ```
+
+### Testing Locally
+
+1. Start PostgreSQL:
+   ```bash
+   npm run db:up
+   ```
+
+2. Run database migrations:
+   ```bash
+   npm run db:migrate
+   ```
+
+3. Set up test environment:
+   ```bash
+   cp .env.test .env
+   ```
+
+4. Run tests:
+   ```bash
+   npm run test
+   ```
+
+### Admin Commands
+
+Test the admin endpoints with curl:
+
+```bash
+# List calendar sources
+curl -H "X-Admin-Token: test-admin" http://localhost:3000/api/admin/sources
+
+# Trigger manual sync
+curl -X POST -H "X-Admin-Token: test-admin" http://localhost:3000/api/admin/sync
+```
+
+### Troubleshooting Database 500 Errors
+
+If you encounter database connection errors:
+
+1. **Start the database**:
+   ```bash
+   npm run db:up
+   ```
+
+2. **Run migrations**:
+   ```bash
+   npm run db:migrate
+   ```
+
+3. **Check environment variables**:
+   ```bash
+   # Ensure DATABASE_URL is set correctly
+   echo $DATABASE_URL
+   ```
+
+4. **Test database connection**:
+   ```bash
+   npm run db:psql
+   ```
+
+5. **Run smoke test**:
+   ```bash
+   npm run smoke
+   ```
+
+### Database Management
+
+- **Start database**: `npm run db:up`
+- **Stop database**: `npm run db:down`
+- **Run migrations**: `npm run db:migrate`
+- **Connect to database**: `npm run db:psql`
+- **Reset test database**: `make db-reset-test`
+
 ## Contributing
 
 Check out the [contributor guide](https://wetzel402.github.io/Skylite-UX-docs/CONTRIBUTING.html) to get started.

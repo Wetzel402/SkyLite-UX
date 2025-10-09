@@ -1,6 +1,7 @@
 import { consola } from 'consola';
 import { CalendarAdapter, CalendarEvent, CalendarSource, CalendarSyncConfig, CalendarSyncResult } from '~/lib/calendar/types';
 import { ICSAdapter } from './adapters/ics';
+import { CalDAVAdapter } from './adapters/caldav';
 
 /**
  * Calendar Sync Service
@@ -18,7 +19,7 @@ class CalendarSyncService {
 
   private registerAdapters(): void {
     this.adapters.set('ics', new ICSAdapter());
-    // TODO: Add CalDAV adapter in Phase 2
+    this.adapters.set('caldav', new CalDAVAdapter());
   }
 
   async start(config: CalendarSyncConfig): Promise<void> {
@@ -165,11 +166,12 @@ function parseSyncConfig(): CalendarSyncConfig {
   
   let sources: CalendarSource[] = [];
   
+  // Parse ICS sources
   try {
     const feedsJson = process.env.ICS_FEEDS;
     if (feedsJson) {
       const feeds = JSON.parse(feedsJson);
-      sources = feeds.map((feed: any, index: number) => ({
+      const icsSources = feeds.map((feed: any, index: number) => ({
         id: `ics-${index}`,
         name: feed.name || `Feed ${index + 1}`,
         type: 'ics' as const,
@@ -177,9 +179,36 @@ function parseSyncConfig(): CalendarSyncConfig {
         url: feed.url,
         enabled: true,
       }));
+      sources.push(...icsSources);
     }
   } catch (error) {
-    consola.warn('Invalid ICS_FEEDS configuration, skipping calendar sync:', error);
+    consola.warn('Invalid ICS_FEEDS configuration, skipping ICS sync:', error);
+  }
+
+  // Parse CalDAV sources if enabled
+  if (process.env.CALDAV_SYNC_ENABLED === 'true') {
+    try {
+      const caldavAccountsJson = process.env.CALDAV_ACCOUNTS;
+      if (caldavAccountsJson) {
+        const accounts = JSON.parse(caldavAccountsJson);
+        const caldavSources = accounts.map((account: any, index: number) => ({
+          id: `caldav-${index}`,
+          name: account.name || `CalDAV ${index + 1}`,
+          type: 'caldav' as const,
+          color: account.color || '#2E7D32',
+          enabled: true,
+          credentials: {
+            username: account.username,
+            password: account.password,
+            serverUrl: account.serverUrl,
+            calendarName: account.calendarName,
+          },
+        }));
+        sources.push(...caldavSources);
+      }
+    } catch (error) {
+      consola.warn('Invalid CALDAV_ACCOUNTS configuration, skipping CalDAV sync:', error);
+    }
   }
 
   return {
