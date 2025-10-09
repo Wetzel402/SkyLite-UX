@@ -39,16 +39,38 @@ View the [docs](https://wetzel402.github.io/Skylite-UX-docs/index.html#installat
 
 Read our [development guide](https://wetzel402.github.io/Skylite-UX-docs/DEVELOPMENT.html) for more details.
 
-### Admin Endpoints
+### API Endpoints
 
-SkyLite-UX includes admin endpoints for monitoring and managing calendar sources:
+SkyLite-UX provides several API endpoints for calendar data and administration:
 
-#### List Calendar Sources
+#### Events API
+
+**GET /api/events/week** - Retrieve calendar events for a week
+- **Authentication**: Requires `DISPLAY_TOKEN` (kiosk mode) or `ADMIN_API_TOKEN`
+- **Query Parameters**:
+  - `from` (optional): Start date in ISO format (defaults to current week start)
+  - `to` (optional): End date in ISO format (defaults to current week end)
+  - `token`: Display token for kiosk mode
+- **Response**: Array of events with overlap predicate (start <= to AND end >= from)
+- **Cache**: 15-second cache with `Cache-Control: public, max-age=15`
+- **Features**: Excludes cancelled events, 500ms DB timeout, graceful error handling
+
+```bash
+# Kiosk mode (requires DISPLAY_TOKEN)
+curl "http://localhost:3000/api/events/week?token=your-display-token"
+
+# With custom date range
+curl "http://localhost:3000/api/events/week?token=your-display-token&from=2025-01-01T00:00:00.000Z&to=2025-01-07T00:00:00.000Z"
+```
+
+#### Admin Endpoints
+
+**GET /api/admin/sources** - List calendar sources
 ```bash
 curl -H "X-Admin-Token: your-admin-token" http://localhost:3000/api/admin/sources
 ```
 
-#### Trigger Manual Sync
+**POST /api/admin/sync** - Trigger manual sync
 ```bash
 curl -X POST -H "X-Admin-Token: your-admin-token" http://localhost:3000/api/admin/sync
 ```
