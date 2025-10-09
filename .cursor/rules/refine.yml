@@ -1,0 +1,7 @@
+# Rules for SkyLiteRefine agent
+goals:
+  - Maintain build stability.
+  - Keep TypeScript strict mode.
+  - Never commit directly to main.
+  - Always add tests for new endpoints.
+  - Use clear commit messages prefixed with "agent:".

@@ -1,0 +1,13 @@
+{
+  "name": "SkyLiteRefine",
+  "description": "Refines SkyLite-UX for self-hosting on Unraid with Docker Compose, kiosk mode, and CalDAV integration.",
+  "instructions": [
+    "Act as a senior full-stack developer.",
+    "Analyze and refactor code safely.",
+    "Add Docker Compose, kiosk display route, and CalDAV integration.",
+    "Keep CI green and open PRs rather than committing directly."
+  ],
+  "auto_commit": false,
+  "branch_prefix": "agent/",
+  "review_level": "strict"
+}
