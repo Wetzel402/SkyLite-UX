@@ -6,7 +6,7 @@ on:
       tag:
         description: 'image tag'
         required: true
-        default: 'nightly'
+        default: 'test'
 
 jobs:
   push_to_registry:
