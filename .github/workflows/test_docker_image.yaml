@@ -6,6 +6,7 @@ on:
       tag:
         description: 'image tag'
         required: true
+  push: #temporary to register workflow
 
 jobs:
   push_to_registry:
