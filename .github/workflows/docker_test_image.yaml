@@ -1,4 +1,4 @@
-name: Test Docker image
+name: Docker test image
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.event.inputs.tag }}
+          tags: ${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_TEST_REPOSITORY }}:${{ github.event.inputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -54,6 +54,6 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: index.docker.io/${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}
+          subject-name: index.docker.io/${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_TEST_REPOSITORY }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
