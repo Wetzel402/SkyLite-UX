@@ -28,7 +28,17 @@ const { getStableDate } = useStableDate();
 const currentDate = computed(() => props.currentDate || getStableDate());
 const view = computed(() => props.view || "week");
 
-const now = computed(() => getStableDate());
+const now = ref(new Date());
+
+onMounted(() => {
+  const interval = setInterval(() => {
+    now.value = new Date();
+  }, 30000);
+
+  onBeforeUnmount(() => {
+    clearInterval(interval);
+  });
+});
 
 const viewTitle = computed(() => {
   if (view.value === "month") {
