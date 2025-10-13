@@ -145,8 +145,8 @@ function isLastDay(day: Date) {
         style="height: 300px;"
         :class="{
           'bg-muted/25': day && !isToday(day) && !isLastDay(day),
-          'bg-info/10': day && isToday(day),
-          'bg-primary/20': day && isLastDay(day),
+          'bg-primary/10': day && isToday(day),
+          'bg-muted/50': day && isLastDay(day),
         }"
       >
         <template v-if="day && !isLastDay(day)">
@@ -198,7 +198,7 @@ function isLastDay(day: Date) {
             <div class="text-sm font-medium text-primary">
               Next Week
             </div>
-            <div class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold bg-primary text-white">
+            <div class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold bg-primary/20 text-white">
               <UIcon name="i-lucide-calendar-days" class="w-4 h-4" />
             </div>
           </div>
