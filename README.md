@@ -1,7 +1,7 @@
-<h3 align="center">Skylite UX</h3>
+<h3 align="center">Skylite-UX</h3>
 
 <p align="center">
-    The open-source family manager
+    Life, Organized.
 </p>
 
 <p align="center">
@@ -9,7 +9,7 @@
 </p>
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/KJn3YfWxn7)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/get-started/get-docker/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/wetzel402/skylite-ux)
 [![NUXT](https://img.shields.io/badge/Nuxt-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/docs/getting-started/introduction)
 [![NUXT UI](https://img.shields.io/badge/NuxtUI-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://ui.nuxt.com)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/docs/installation/using-vite)
@@ -25,6 +25,7 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 - Docker Deployment
 - Family Calendar
 - Task Lists
+- Shopping Lists
 - Meal Planning
 - User Management
 

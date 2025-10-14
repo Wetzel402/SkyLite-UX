@@ -18,6 +18,22 @@ export function useStableDate() {
     return new Date(dateInput);
   };
 
+  const scheduleNextMidnightUpdate = () => {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+
+    setTimeout(() => {
+      stableDate.value = new Date();
+      scheduleNextMidnightUpdate();
+    }, msUntilMidnight);
+  };
+
+  if (import.meta.client) {
+    scheduleNextMidnightUpdate();
+  }
+
   return {
     stableDate,
     getStableDate,

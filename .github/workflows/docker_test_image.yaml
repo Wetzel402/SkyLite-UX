@@ -1,8 +1,12 @@
-name: Publish Docker image
+name: Docker test image
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'image tag'
+        required: true
+        default: 'test'
 
 jobs:
   push_to_registry:
@@ -33,16 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}
-
-      - name: Prepare tags
-        id: tags
-        run: |
-          TAGS="${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.event.release.tag_name }}"
-          if [[ "${{ github.event.release.prerelease }}" != "true" ]] && [[ "${{ github.event.release.tag_name }}" != *"b"* ]]; then
-            TAGS="${TAGS},${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:latest"
-          fi
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          images: ${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_TEST_REPOSITORY }}
 
       - name: Build and push Docker image
         id: push
@@ -52,7 +47,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.tags.outputs.tags }}
+          tags: ${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_TEST_REPOSITORY }}:${{ github.event.inputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -60,6 +55,6 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: index.docker.io/${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}
+          subject-name: index.docker.io/${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_TEST_REPOSITORY }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
