@@ -162,10 +162,11 @@ const filteredEvents = computed(() => {
       break;
     }
     case "week": {
-      const sunday = new Date(now.getTime());
+      const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const dayOfWeek = sunday.getDay();
       sunday.setDate(sunday.getDate() - dayOfWeek);
-      const saturday = new Date(sunday.getTime() + 6 * 24 * 60 * 60 * 1000);
+      const saturday = new Date(sunday.getTime());
+      saturday.setDate(saturday.getDate() + 7);
       start = sunday;
       end = saturday;
       events = getEventsForDateRange(start, end);
