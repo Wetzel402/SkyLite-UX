@@ -1,8 +1,7 @@
-import type { ICalSettings, IntegrationConfig } from "~/types/integrations";
-// Shared integrations configuration
-// This file contains all integration configurations that are used by both client and server
+import type { GoogleCalendarSettings, ICalSettings, IntegrationConfig } from "~/types/integrations";
 import type { DialogField } from "~/types/ui";
 
+import { createGoogleCalendarService, handleGoogleCalendarSave } from "./google_calendar/googleCalendar";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
@@ -55,6 +54,57 @@ export const integrationConfigs: IntegrationConfig[] = [
     files: [],
     dialogFields: [],
     syncInterval: 10,
+  },
+  {
+    type: "calendar",
+    service: "google",
+    settingsFields:
+    [
+      {
+        key: "clientId",
+        label: "Client ID",
+        type: "text" as const,
+        placeholder: "paste your client id here",
+        required: true,
+        description: "Your Google OAuth Client ID",
+      },
+      {
+        key: "clientSecret",
+        label: "Client Secret",
+        type: "password" as const,
+        placeholder: "paste your client secret here",
+        required: true,
+        description: "Your Google OAuth Client Secret (required for server-side token exchange)",
+      },
+      {
+        key: "user",
+        label: "User",
+        type: "text" as const,
+        placeholder: "Jane Doe",
+        required: false,
+        description: "Select user(s) to link to this calendar or choose an event color",
+      },
+      {
+        key: "eventColor",
+        label: "Event Color",
+        type: "color" as const,
+        placeholder: "#06b6d4",
+        required: false,
+      },
+      {
+        key: "useUserColors",
+        label: "Use User Profile Colors",
+        type: "boolean" as const,
+        required: false,
+        description: "Use individual user profile colors for events instead of a single event color",
+      },
+    ],
+    capabilities: ["get_events", "oauth"],
+    icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
+    files: [],
+    dialogFields: [],
+    syncInterval: 10,
+    customSaveHandler: handleGoogleCalendarSave,
   },
   // ================================================
   // Meal integration configs can support the following list-level capabilities:
@@ -191,11 +241,24 @@ export const integrationConfigs: IntegrationConfig[] = [
 ];
 
 const serviceFactoryMap = {
-  "calendar:iCal": (_id: string, _apiKey: string, baseUrl: string, settings?: ICalSettings) => {
-    const eventColor = settings?.eventColor || "#06b6d4";
-    const user = settings?.user;
-    const useUserColors = settings?.useUserColors || false;
+  "calendar:iCal": (_id: string, _apiKey: string, baseUrl: string, settings?: ICalSettings | GoogleCalendarSettings) => {
+    const iCalSettings = settings as ICalSettings;
+    const eventColor = iCalSettings?.eventColor || "#06b6d4";
+    const user = iCalSettings?.user;
+    const useUserColors = iCalSettings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
+  },
+  "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, settings?: ICalSettings | GoogleCalendarSettings) => {
+    const googleSettings = settings as GoogleCalendarSettings;
+    return createGoogleCalendarService(
+      _id,
+      googleSettings?.clientId || "",
+      googleSettings?.clientSecret || "",
+      googleSettings?.eventColor,
+      googleSettings?.user,
+      googleSettings?.useUserColors,
+      googleSettings?.selectedCalendars,
+    );
   },
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,

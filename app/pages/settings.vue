@@ -12,7 +12,6 @@ import { createIntegrationService, integrationRegistry } from "~/types/integrati
 
 const { users, loading, error, createUser, deleteUser, updateUser } = useUsers();
 
-// Logo loading state
 const logoLoaded = ref(true);
 const { integrations, loading: integrationsLoading, servicesInitializing, createIntegration, updateIntegration, deleteIntegration } = useIntegrations();
 const { checkIntegrationCache, purgeIntegrationCache, triggerImmediateSync } = useSyncManager();
@@ -49,10 +48,12 @@ const availableIntegrationTypes = computed(() => {
   return Array.from(types);
 });
 
-onMounted(() => {
+onMounted(async () => {
   if (availableIntegrationTypes.value.length > 0) {
     activeIntegrationTab.value = availableIntegrationTypes.value[0] || "";
   }
+
+  await refreshNuxtData("integrations");
 });
 
 const filteredIntegrations = computed(() => {
@@ -603,9 +604,20 @@ function getIntegrationIconUrl(integration: Integration) {
                     />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="font-medium text-highlighted">
-                      {{ integration.name }}
-                    </p>
+                    <div class="flex items-center gap-2">
+                      <p class="font-medium text-highlighted">
+                        {{ integration.name }}
+                      </p>
+                      <UBadge
+                        v-if="(integration.settings as { needsReauth?: boolean })?.needsReauth"
+                        color="warning"
+                        variant="soft"
+                        size="sm"
+                      >
+                        <UIcon name="i-lucide-alert-triangle" class="h-4 w-4 mr-1" />
+                        Re-auth Required!
+                      </UBadge>
+                    </div>
                     <p class="text-sm text-muted capitalize">
                       {{ integration.service }}
                     </p>

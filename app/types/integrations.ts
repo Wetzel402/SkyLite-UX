@@ -1,12 +1,10 @@
 import consola from "consola";
 
 import type { CalendarEvent } from "~/types/calendar";
-import type { CreateShoppingListItemInput, CreateTodoInput, ShoppingListItem, ShoppingListWithItemsAndCount, Todo, TodoWithUser, UpdateShoppingListItemInput, UpdateTodoInput } from "~/types/database";
+import type { CreateShoppingListItemInput, CreateTodoInput, Integration, ShoppingListItem, ShoppingListWithItemsAndCount, Todo, TodoWithUser, UpdateShoppingListItemInput, UpdateTodoInput } from "~/types/database";
 import type { DialogField, IntegrationSettingsField } from "~/types/ui";
 
 import { getServiceFactories, integrationConfigs } from "~/integrations/integrationConfig";
-
-import type { Integration } from "./database";
 
 export type IntegrationService = {
   initialize: () => Promise<void>;
@@ -50,6 +48,12 @@ export type IntegrationConfig = {
   files: string[];
   dialogFields: DialogField[];
   syncInterval: number;
+  customSaveHandler?: (
+    integrationData: Record<string, unknown>,
+    settingsData: Record<string, unknown>,
+    isExisting: boolean,
+    originalIntegration?: Integration | null,
+  ) => Promise<boolean>;
 };
 
 export type ICalSettings = {
@@ -57,6 +61,20 @@ export type ICalSettings = {
   user?: string[];
   useUserColors?: boolean;
 };
+
+export type GoogleCalendarSettings = {
+  clientId: string;
+  clientSecret: string;
+  accessToken?: string;
+  tokenExpiry?: number;
+  needsReauth?: boolean;
+  eventColor?: string;
+  user?: string[];
+  useUserColors?: boolean;
+  selectedCalendars?: string[];
+};
+
+export type IntegrationSettings = ICalSettings | GoogleCalendarSettings;
 
 export const integrationRegistry = new Map<string, IntegrationConfig>();
 
@@ -88,7 +106,7 @@ export async function createIntegrationService(integration: Integration): Promis
       return null;
     }
 
-    return serviceFactory.factory(integration.id, integration.apiKey || "", integration.baseUrl || "", integration.settings as ICalSettings);
+    return serviceFactory.factory(integration.id, integration.apiKey || "", integration.baseUrl || "", integration.settings as IntegrationSettings);
   }
   catch (error) {
     consola.error(`Failed to create integration service for ${integration.type}:${integration.service}:`, error);
