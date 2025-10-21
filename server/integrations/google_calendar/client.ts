@@ -99,6 +99,7 @@ export class GoogleCalendarServerService {
         location: event.location || undefined,
         recurrence: event.recurrence || undefined,
         status: event.status || "",
+        calendarId,
       }));
     }
     catch (error) {

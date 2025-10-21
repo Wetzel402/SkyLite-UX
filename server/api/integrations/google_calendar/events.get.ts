@@ -51,7 +51,12 @@ export default defineEventHandler(async (event) => {
   const clientSecret = settings.clientSecret as string || "";
   const accessToken = settings.accessToken as string;
   const tokenExpiry = settings.tokenExpiry as number;
-  const selectedCalendars = (settings.selectedCalendars as string[]) || ["primary"];
+  const calendars = (settings.calendars as { id: string; enabled: boolean }[]) || [];
+  const selectedCalendars = calendars.filter(c => c.enabled).map(c => c.id);
+
+  if (selectedCalendars.length === 0) {
+    return { events: [], calendars: [] };
+  }
 
   if (!clientId) {
     throw createError({
@@ -64,7 +69,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const events = await service.fetchEvents(selectedCalendars);
-    return { events };
+    return { events, calendars: settings.calendars || [] };
   }
   catch (error: unknown) {
     const err = error as { code?: number; message?: string; response?: { data?: unknown } };

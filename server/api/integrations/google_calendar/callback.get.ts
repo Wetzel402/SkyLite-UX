@@ -120,7 +120,7 @@ export default defineEventHandler(async (event) => {
       consola.success(`Google Calendar integration ${integration.id} created and authenticated successfully`);
     }
 
-    return sendRedirect(event, "/settings?success=google_calendar_added");
+    return sendRedirect(event, `/settings?success=google_calendar_added&integrationId=${integration.id}`);
   }
   catch (error) {
     consola.error("Google Calendar OAuth callback: Failed to process:", error);

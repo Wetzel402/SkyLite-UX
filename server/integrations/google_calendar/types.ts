@@ -7,6 +7,7 @@ export type GoogleCalendarEvent = {
   location?: string;
   recurrence?: string[];
   status: string;
+  calendarId?: string;
 };
 
 export type GoogleCalendarListItem = {

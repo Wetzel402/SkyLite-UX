@@ -2,7 +2,7 @@ import consola from "consola";
 
 import type { CalendarEvent } from "~/types/calendar";
 import type { Integration } from "~/types/database";
-import type { CalendarIntegrationService, IntegrationStatus, UserWithColor } from "~/types/integrations";
+import type { CalendarConfig, CalendarIntegrationService, IntegrationStatus, UserWithColor } from "~/types/integrations";
 
 import { integrationRegistry } from "~/types/integrations";
 
@@ -14,10 +14,6 @@ export class GoogleCalendarService implements CalendarIntegrationService {
   private integrationId: string;
   private clientId: string;
   private clientSecret: string;
-  private eventColor?: string;
-  private user?: string[];
-  private useUserColors: boolean;
-  private selectedCalendars?: string[];
 
   private status: IntegrationStatus = {
     isConnected: false,
@@ -30,18 +26,10 @@ export class GoogleCalendarService implements CalendarIntegrationService {
     integrationId: string,
     clientId: string,
     clientSecret: string,
-    eventColor: string = "sky",
-    user?: string[],
-    useUserColors: boolean = false,
-    selectedCalendars?: string[],
   ) {
     this.integrationId = integrationId;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
-    this.eventColor = eventColor;
-    this.user = user;
-    this.useUserColors = useUserColors;
-    this.selectedCalendars = selectedCalendars;
 
     this.status.lastChecked = new Date();
   }
@@ -191,22 +179,22 @@ export class GoogleCalendarService implements CalendarIntegrationService {
   }
 
   async getEvents(): Promise<CalendarEvent[]> {
-    const result = await $fetch<{ events: GoogleCalendarEvent[] }>(
+    const result = await $fetch<{ events: GoogleCalendarEvent[]; calendars: CalendarConfig[] }>(
       "/api/integrations/google_calendar/events",
       { query: { integrationId: this.integrationId } },
     );
 
-    let users: UserWithColor[] = [];
-    if (this.useUserColors && this.user && this.user.length > 0) {
-      try {
-        const allUsers = await $fetch<{ id: string; name: string; color: string | null }[]>("/api/users");
-        if (allUsers) {
-          users = allUsers.filter((user: UserWithColor) => this.user?.includes(user.id));
-        }
+    const calendars = result.calendars || [];
+    let allUsers: UserWithColor[] = [];
+
+    try {
+      const users = await $fetch<{ id: string; name: string; color: string | null }[]>("/api/users");
+      if (users) {
+        allUsers = users;
       }
-      catch (error) {
-        consola.warn("GoogleCalendar: Failed to fetch users for Google Calendar integration:", error);
-      }
+    }
+    catch (error) {
+      consola.warn("GoogleCalendar: Failed to fetch users for Google Calendar integration:", error);
     }
 
     return result.events.map((event) => {
@@ -218,18 +206,22 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
       const isAllDay = !event.start.dateTime && !!event.start.date;
 
-      let color: string | string[] | undefined = this.eventColor || "sky";
-      if (this.useUserColors && users.length > 0) {
-        const userColors = users.map((user: UserWithColor) => user.color).filter((color): color is string => color !== null);
+      const calendarConfig = calendars.find(c => c.id === event.calendarId);
+      const eventColor = calendarConfig?.eventColor || "sky";
+      const useUserColors = calendarConfig?.useUserColors || false;
+      const userIds = calendarConfig?.user || [];
+
+      const users = allUsers.filter(u => userIds.includes(u.id));
+
+      let color: string | string[] | undefined = eventColor;
+      if (useUserColors && users.length > 0) {
+        const userColors = users.map(u => u.color).filter((color): color is string => color !== null);
         if (userColors.length > 0) {
           color = userColors.length === 1 ? userColors[0] : userColors;
         }
         else {
-          color = this.eventColor || "sky";
+          color = eventColor;
         }
-      }
-      else {
-        color = this.eventColor || "sky";
       }
 
       return {
@@ -242,7 +234,7 @@ export class GoogleCalendarService implements CalendarIntegrationService {
         color,
         location: event.location,
         integrationId: this.integrationId,
-        users: this.useUserColors ? users : undefined,
+        users: useUserColors ? users : undefined,
       };
     });
   }
@@ -252,19 +244,11 @@ export function createGoogleCalendarService(
   integrationId: string,
   clientId: string,
   clientSecret: string,
-  eventColor: string = "sky",
-  user?: string | string[],
-  useUserColors: boolean = false,
-  selectedCalendars?: string[],
 ): GoogleCalendarService {
   return new GoogleCalendarService(
     integrationId,
     clientId,
     clientSecret,
-    eventColor,
-    user as string[],
-    useUserColors,
-    selectedCalendars,
   );
 }
 

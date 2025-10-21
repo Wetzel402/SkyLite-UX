@@ -4,6 +4,7 @@ import { consola } from "consola";
 import type { CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
 import type { ConnectionTestResult } from "~/types/ui";
 
+import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
 import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
 import { integrationServices } from "~/plugins/02.appInit";
@@ -37,8 +38,12 @@ const selectedUser = ref<User | null>(null);
 const isUserDialogOpen = ref(false);
 const selectedIntegration = ref<Integration | null>(null);
 const isIntegrationDialogOpen = ref(false);
+const isCalendarSelectDialogOpen = ref(false);
+const calendarSelectIntegration = ref<Integration | null>(null);
 
 const connectionTestResult = ref<ConnectionTestResult>(null);
+
+const route = useRoute();
 
 const activeIntegrationTab = ref<string>("");
 
@@ -55,6 +60,19 @@ onMounted(async () => {
 
   await refreshNuxtData("integrations");
 });
+
+watch(() => route.query, (query) => {
+  if (query.success === "google_calendar_added" && query.integrationId) {
+    nextTick(() => {
+      const allIntegrations = integrations.value as Integration[];
+      const integration = allIntegrations.find(i => i.id === query.integrationId);
+      if (integration) {
+        calendarSelectIntegration.value = integration;
+        isCalendarSelectDialogOpen.value = true;
+      }
+    });
+  }
+}, { immediate: true });
 
 const filteredIntegrations = computed(() => {
   return (integrations.value as Integration[]).filter(integration => integration.type === activeIntegrationTab.value);
@@ -247,6 +265,30 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
       isLoading: false,
     };
   }
+}
+
+function handleSelectCalendars(integrationId: string) {
+  const integration = (integrations.value as Integration[]).find(i => i.id === integrationId);
+  if (integration) {
+    calendarSelectIntegration.value = integration;
+    isCalendarSelectDialogOpen.value = true;
+  }
+}
+
+async function handleCalendarsSaved() {
+  if (calendarSelectIntegration.value) {
+    await triggerImmediateSync(
+      calendarSelectIntegration.value.type,
+      calendarSelectIntegration.value.id,
+    );
+
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    await refreshNuxtData("calendar-events");
+  }
+
+  isCalendarSelectDialogOpen.value = false;
+  calendarSelectIntegration.value = null;
 }
 
 async function handleIntegrationDelete(integrationId: string) {
@@ -749,6 +791,14 @@ function getIntegrationIconUrl(integration: Integration) {
       @close="() => { isIntegrationDialogOpen = false; selectedIntegration = null; }"
       @save="handleIntegrationSave"
       @delete="handleIntegrationDelete"
+      @select-calendars="handleSelectCalendars"
+    />
+
+    <SettingsCalendarSelectDialog
+      :integration="calendarSelectIntegration"
+      :is-open="isCalendarSelectDialogOpen"
+      @close="isCalendarSelectDialogOpen = false; calendarSelectIntegration = null"
+      @save="handleCalendarsSaved"
     />
   </div>
 </template>

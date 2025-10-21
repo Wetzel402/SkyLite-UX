@@ -62,16 +62,22 @@ export type ICalSettings = {
   useUserColors?: boolean;
 };
 
+export type CalendarConfig = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  user?: string[];
+  eventColor?: string;
+  useUserColors?: boolean;
+};
+
 export type GoogleCalendarSettings = {
   clientId: string;
   clientSecret: string;
   accessToken?: string;
   tokenExpiry?: number;
   needsReauth?: boolean;
-  eventColor?: string;
-  user?: string[];
-  useUserColors?: boolean;
-  selectedCalendars?: string[];
+  calendars?: CalendarConfig[];
 };
 
 export type IntegrationSettings = ICalSettings | GoogleCalendarSettings;

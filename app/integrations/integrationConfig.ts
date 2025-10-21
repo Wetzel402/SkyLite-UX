@@ -13,6 +13,8 @@ export const integrationConfigs: IntegrationConfig[] = [
   // - add_events: Can add events to the calendar
   // - edit_events: Can edit events in the calendar
   // - delete_events: Can delete events from the calendar
+  // - oauth: Can authenticate using Google OAuth
+  // - select_calendars: Can select calendars from the user's account
   // ================================================
   {
     type: "calendar",
@@ -76,30 +78,8 @@ export const integrationConfigs: IntegrationConfig[] = [
         required: true,
         description: "Your Google OAuth Client Secret (required for server-side token exchange)",
       },
-      {
-        key: "user",
-        label: "User",
-        type: "text" as const,
-        placeholder: "Jane Doe",
-        required: false,
-        description: "Select user(s) to link to this calendar or choose an event color",
-      },
-      {
-        key: "eventColor",
-        label: "Event Color",
-        type: "color" as const,
-        placeholder: "#06b6d4",
-        required: false,
-      },
-      {
-        key: "useUserColors",
-        label: "Use User Profile Colors",
-        type: "boolean" as const,
-        required: false,
-        description: "Use individual user profile colors for events instead of a single event color",
-      },
     ],
-    capabilities: ["get_events", "oauth"],
+    capabilities: ["get_events", "oauth", "select_calendars"],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
     files: [],
     dialogFields: [],
@@ -254,10 +234,6 @@ const serviceFactoryMap = {
       _id,
       googleSettings?.clientId || "",
       googleSettings?.clientSecret || "",
-      googleSettings?.eventColor,
-      googleSettings?.user,
-      googleSettings?.useUserColors,
-      googleSettings?.selectedCalendars,
     );
   },
   "shopping:mealie": createMealieService,

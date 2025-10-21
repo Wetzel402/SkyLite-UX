@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { JsonValue } from "type-fest";
+
 import type { CreateIntegrationInput, Integration } from "~/types/database";
 import type { ConnectionTestResult, IntegrationSettingsField } from "~/types/ui";
 
@@ -16,7 +18,8 @@ const emit = defineEmits<{
   (e: "close"): void;
   (e: "save", integration: CreateIntegrationInput): void;
   (e: "delete", integrationId: string): void;
-  (e: "test-connection", integration: CreateIntegrationInput): void;
+  (e: "testConnection", integration: CreateIntegrationInput): void;
+  (e: "selectCalendars", integrationId: string): void;
 }>();
 
 const show = ref(false);
@@ -41,7 +44,19 @@ const currentIntegrationConfig = computed(() => {
 });
 
 const settingsFields = computed((): IntegrationSettingsField[] => {
-  return currentIntegrationConfig.value?.settingsFields || [];
+  const config = currentIntegrationConfig.value;
+  if (!config)
+    return [];
+
+  const hasCalendarSelect = config.capabilities.includes("select_calendars");
+
+  if (hasCalendarSelect) {
+    return config.settingsFields.filter(field =>
+      !["user", "eventColor", "useUserColors"].includes(field.key),
+    );
+  }
+
+  return config.settingsFields;
 });
 
 const availableTypes = computed(() => {
@@ -246,7 +261,7 @@ async function handleSave() {
   try {
     const integrationName = name.value.trim() || generateUniqueName(service.value, props.existingIntegrations);
 
-    const integrationData = {
+    const integrationData: CreateIntegrationInput = {
       name: integrationName,
       type: type.value,
       service: service.value,
@@ -260,9 +275,14 @@ async function handleSave() {
         useUserColors: Boolean(settingsData.value.useUserColors),
         clientId: settingsData.value.clientId || "",
         clientSecret: settingsData.value.clientSecret || "",
+        ...(
+          props.integration?.id
+          && currentIntegrationConfig.value?.capabilities.includes("select_calendars")
+          && !settingsData.value.clientSecret
+            ? { calendars: (props.integration.settings as { calendars?: unknown })?.calendars as JsonValue || [] }
+            : {}
+        ),
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
 
     const config = currentIntegrationConfig.value;
@@ -490,6 +510,17 @@ function handleDelete() {
             </p>
           </div>
         </template>
+
+        <UButton
+          v-if="integration?.id && currentIntegrationConfig?.capabilities.includes('select_calendars')"
+          color="primary"
+          variant="outline"
+          icon="i-lucide-calendar"
+          class="w-full"
+          @click="emit('selectCalendars', integration.id); emit('close')"
+        >
+          Select Calendars
+        </UButton>
 
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
