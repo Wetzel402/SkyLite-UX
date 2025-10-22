@@ -15,7 +15,7 @@ const { users, loading, error, createUser, deleteUser, updateUser } = useUsers()
 
 const logoLoaded = ref(true);
 const { integrations, loading: integrationsLoading, servicesInitializing, createIntegration, updateIntegration, deleteIntegration } = useIntegrations();
-const { checkIntegrationCache, purgeIntegrationCache, triggerImmediateSync } = useSyncManager();
+const { checkIntegrationCache, purgeIntegrationCache, triggerImmediateSync, purgeCalendarEvents } = useSyncManager();
 
 const colorMode = useColorMode();
 const isDark = computed({
@@ -289,6 +289,21 @@ async function handleCalendarsSaved() {
 
   isCalendarSelectDialogOpen.value = false;
   calendarSelectIntegration.value = null;
+}
+
+function handleCalendarsDisabled(calendarIds: string[]) {
+  if (!calendarSelectIntegration.value?.id) {
+    return;
+  }
+
+  const integrationId = calendarSelectIntegration.value.id;
+
+  consola.debug(
+    `Settings: Purging events from ${calendarIds.length} disabled calendar(s) in integration ${integrationId}:`,
+    calendarIds,
+  );
+
+  purgeCalendarEvents(integrationId, calendarIds);
 }
 
 async function handleIntegrationDelete(integrationId: string) {
@@ -799,6 +814,7 @@ function getIntegrationIconUrl(integration: Integration) {
       :is-open="isCalendarSelectDialogOpen"
       @close="isCalendarSelectDialogOpen = false; calendarSelectIntegration = null"
       @save="handleCalendarsSaved"
+      @calendars-disabled="handleCalendarsDisabled"
     />
   </div>
 </template>

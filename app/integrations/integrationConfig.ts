@@ -8,13 +8,15 @@ import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoor
 
 export const integrationConfigs: IntegrationConfig[] = [
   // ================================================
-  // Calendar integration configs can support the following list-level capabilities:
+  // Calendar integration configs can support the following capabilities:
   // - get_events: Can get events from the calendar
   // - add_events: Can add events to the calendar
   // - edit_events: Can edit events in the calendar
   // - delete_events: Can delete events from the calendar
-  // - oauth: Can authenticate using Google OAuth
+  // - oauth: Can authenticate using OAuth
   // - select_calendars: Can select calendars from the user's account
+  //   - individual calendars define access role: read or write
+  //   - if access role is read, add_events, edit_events, and delete_events permissions are stripped
   // ================================================
   {
     type: "calendar",
@@ -79,7 +81,7 @@ export const integrationConfigs: IntegrationConfig[] = [
         description: "Your Google OAuth Client Secret (required for server-side token exchange)",
       },
     ],
-    capabilities: ["get_events", "oauth", "select_calendars"],
+    capabilities: ["get_events", "edit_events", "add_events", "delete_events", "oauth", "select_calendars"],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
     files: [],
     dialogFields: [],

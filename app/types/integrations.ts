@@ -23,6 +23,8 @@ export type IntegrationStatus = {
 
 export type CalendarIntegrationService = IntegrationService & {
   getEvents: () => Promise<CalendarEvent[]>;
+  updateEvent?: (eventId: string, eventData: Partial<CalendarEvent>) => Promise<CalendarEvent>;
+  // Future: addEvent?, deleteEvent?
 };
 
 export type ShoppingIntegrationService = IntegrationService & {
@@ -69,6 +71,7 @@ export type CalendarConfig = {
   user?: string[];
   eventColor?: string;
   useUserColors?: boolean;
+  accessRole?: "read" | "write";
 };
 
 export type GoogleCalendarSettings = {

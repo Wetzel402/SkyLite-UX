@@ -95,7 +95,7 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
       const client = window.google.accounts.oauth2.initCodeClient({
         client_id: this.clientId,
-        scope: "https://www.googleapis.com/auth/calendar.readonly",
+        scope: "https://www.googleapis.com/auth/calendar.events",
         ux_mode: "redirect",
         redirect_uri: redirectUri,
         state,
@@ -234,9 +234,31 @@ export class GoogleCalendarService implements CalendarIntegrationService {
         color,
         location: event.location,
         integrationId: this.integrationId,
+        calendarId: event.calendarId,
         users: useUserColors ? users : undefined,
       };
     });
+  }
+
+  async updateEvent(eventId: string, eventData: Partial<CalendarEvent>): Promise<CalendarEvent> {
+    try {
+      const baseEventId = eventId.includes("-") ? eventId.split("-")[0] : eventId;
+
+      const response = await $fetch<CalendarEvent>(`/api/integrations/google_calendar/events/${baseEventId}`, {
+        method: "PUT",
+        body: {
+          integrationId: this.integrationId,
+          calendarId: eventData.calendarId,
+          ...eventData,
+        },
+      });
+
+      return response;
+    }
+    catch (error) {
+      consola.error("GoogleCalendarService: Failed to update event:", error);
+      throw error;
+    }
   }
 }
 

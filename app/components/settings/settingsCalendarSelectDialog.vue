@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { consola } from "consola";
+
 import type { Integration } from "~/types/database";
 import type { CalendarConfig } from "~/types/integrations";
 
@@ -9,7 +11,7 @@ type GoogleCalendarListItem = {
   backgroundColor: string;
   foregroundColor: string;
   primary?: boolean;
-  accessRole: string;
+  accessRole: "read" | "write";
 };
 
 const props = defineProps<{
@@ -20,6 +22,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "save"): void;
+  (e: "calendarsDisabled", calendarIds: string[]): void;
 }>();
 
 const { users, fetchUsers } = useUsers();
@@ -27,12 +30,16 @@ const { users, fetchUsers } = useUsers();
 const pending = ref(false);
 const availableCalendars = ref<GoogleCalendarListItem[]>([]);
 const calendarConfigs = ref<CalendarConfig[]>([]);
+const originalCalendarConfigs = ref<CalendarConfig[]>([]);
 const error = ref<string | null>(null);
 
 watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
     await fetchUsers();
     await loadCalendars();
+    originalCalendarConfigs.value = JSON.parse(
+      JSON.stringify(calendarConfigs.value),
+    );
   }
 });
 
@@ -68,6 +75,7 @@ async function loadCalendars() {
           user: [],
           eventColor: cal.backgroundColor || "#06b6d4",
           useUserColors: false,
+          accessRole: cal.accessRole,
         });
       }
     });
@@ -101,6 +109,21 @@ async function handleSave() {
     });
 
     await refreshNuxtData("integrations");
+
+    const disabledCalendars = originalCalendarConfigs.value
+      .filter((original) => {
+        const updated = calendarConfigs.value.find(c => c.id === original.id);
+        return original.enabled && updated && !updated.enabled;
+      })
+      .map(c => c.id);
+
+    if (disabledCalendars.length > 0) {
+      consola.debug(
+        `Settings Calendar Select: Detected ${disabledCalendars.length} disabled calendar(s)`,
+        disabledCalendars,
+      );
+      emit("calendarsDisabled", disabledCalendars);
+    }
 
     emit("save");
     emit("close");
@@ -164,6 +187,11 @@ async function handleSave() {
                 :label="config.name"
               />
             </div>
+          </div>
+
+          <div v-if="config.accessRole === 'read'" class="bg-warning/10 text-warning rounded-md px-3 py-2 text-sm flex items-center gap-2">
+            <UIcon name="i-lucide-alert-triangle" class="h-4 w-4" />
+            <span>Read only: events cannot be created or edited</span>
           </div>
 
           <template v-if="config.enabled">

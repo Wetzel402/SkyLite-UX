@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, getQuery } from "h3";
 
-import { GoogleCalendarServerService } from "../../../integrations/google_calendar/client";
+import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
 
 const prisma = new PrismaClient();
 

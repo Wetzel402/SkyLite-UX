@@ -5,6 +5,7 @@ import type { Integration } from "~/types/database";
 import { useAlertToast } from "~/composables/useAlertToast";
 import { useCalendar } from "~/composables/useCalendar";
 import { useCalendarEvents } from "~/composables/useCalendarEvents";
+import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
 import { useIntegrations } from "~/composables/useIntegrations";
 import { integrationRegistry } from "~/types/integrations";
 
@@ -106,7 +107,41 @@ async function handleEventUpdate(event: CalendarEvent) {
       }
     }
     else {
-      showError("Not Supported", "Updating events in this integration is not yet supported");
+      const nuxtApp = useNuxtApp();
+      const { getCachedIntegrationData } = useSyncManager();
+
+      function updateIntegrationCache(integrationId: string, data: unknown) {
+        const cacheKey = `calendar-events-${integrationId}`;
+        nuxtApp.payload.data = {
+          ...nuxtApp.payload.data,
+          [cacheKey]: data,
+        };
+      }
+
+      const integrationEvents = getCachedIntegrationData("calendar", event.integrationId) as CalendarEvent[];
+      const previousEvents = integrationEvents ? [...integrationEvents] : [];
+
+      if (integrationEvents && Array.isArray(integrationEvents)) {
+        const eventIndex = integrationEvents.findIndex((e: CalendarEvent) => e.id === event.id);
+        if (eventIndex !== -1) {
+          const updatedEvents = [...integrationEvents];
+          updatedEvents[eventIndex] = { ...updatedEvents[eventIndex], ...event };
+          updateIntegrationCache(event.integrationId, updatedEvents);
+        }
+      }
+
+      try {
+        const { updateCalendarEvent } = useCalendarIntegrations();
+        await updateCalendarEvent(event.integrationId, event.id, event);
+
+        showSuccess("Event Updated", "Calendar event updated successfully");
+      }
+      catch (error) {
+        if (integrationEvents && previousEvents.length > 0) {
+          updateIntegrationCache(event.integrationId, previousEvents);
+        }
+        throw error;
+      }
     }
   }
   catch {
@@ -157,13 +192,26 @@ function getEventIntegrationCapabilities(event: CalendarEvent): { capabilities: 
     return undefined;
 
   const { integrations } = useIntegrations();
+  const { getCalendarAccessRole } = useCalendarIntegrations();
   const integration = (integrations.value as readonly Integration[] || []).find(i => i.id === event.integrationId);
   if (!integration)
     return undefined;
 
   const config = integrationRegistry.get(`${integration.type}:${integration.service}`);
+  let capabilities = config?.capabilities || [];
+
+  if (event.calendarId && capabilities.includes("select_calendars")) {
+    const calendarRole = getCalendarAccessRole(event.integrationId, event.calendarId);
+
+    if (calendarRole === "read") {
+      capabilities = capabilities.filter(cap =>
+        !["edit_events", "add_events", "delete_events"].includes(cap),
+      );
+    }
+  }
+
   return {
-    capabilities: config?.capabilities || [],
+    capabilities,
     serviceName: integration.service,
   };
 }

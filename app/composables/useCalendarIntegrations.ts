@@ -3,7 +3,7 @@ import { computed, readonly } from "vue";
 
 import type { CalendarEvent } from "~/types/calendar";
 import type { Integration } from "~/types/database";
-import type { CalendarIntegrationService, IntegrationService } from "~/types/integrations";
+import type { CalendarConfig, CalendarIntegrationService, IntegrationService } from "~/types/integrations";
 
 import { useCalendar } from "./useCalendar";
 import { useIntegrations } from "./useIntegrations";
@@ -116,6 +116,46 @@ export function useCalendarIntegrations() {
     }
   };
 
+  function getCalendarAccessRole(integrationId: string, calendarId: string): "read" | "write" | null {
+    const integration = calendarIntegrations.value.find(i => i.id === integrationId);
+    if (!integration)
+      return null;
+
+    const settings = integration.settings as { calendars?: CalendarConfig[] };
+    const calendar = settings?.calendars?.find(c => c.id === calendarId);
+
+    return calendar?.accessRole || null;
+  }
+
+  function canEditCalendar(integrationId: string, calendarId: string): boolean {
+    const role = getCalendarAccessRole(integrationId, calendarId);
+    return role === "write";
+  }
+
+  const updateCalendarEvent = async (
+    integrationId: string,
+    eventId: string,
+    updates: Partial<CalendarEvent>,
+  ): Promise<CalendarEvent> => {
+    const service = calendarServices.value.get(integrationId);
+    if (!service) {
+      throw new Error(`Integration service not found for ${integrationId}`);
+    }
+
+    if (!service.updateEvent) {
+      throw new Error(`Integration service does not support updating events`);
+    }
+
+    try {
+      const updatedEvent = await service.updateEvent(eventId, updates);
+      return updatedEvent;
+    }
+    catch (err) {
+      consola.error(`Use Calendar Integrations: Error updating event ${eventId} in integration ${integrationId}:`, err);
+      throw err;
+    }
+  };
+
   return {
     calendarEvents: readonly(processedCalendarEvents),
     calendarIntegrations: readonly(calendarIntegrations),
@@ -126,5 +166,8 @@ export function useCalendarIntegrations() {
     integrationsError: readonly(integrationsError),
 
     getProcessedIntegrationEvents,
+    getCalendarAccessRole,
+    canEditCalendar,
+    updateCalendarEvent,
   };
 }

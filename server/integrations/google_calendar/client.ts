@@ -51,15 +51,20 @@ export class GoogleCalendarServerService {
       const response = await this.calendar.calendarList.list();
       const calendars = response.data.items || [];
 
-      return calendars.map(cal => ({
-        id: cal.id || "",
-        summary: cal.summary || "",
-        description: cal.description || undefined,
-        backgroundColor: cal.backgroundColor || "#000000",
-        foregroundColor: cal.foregroundColor || "#FFFFFF",
-        primary: cal.primary || undefined,
-        accessRole: cal.accessRole || "",
-      }));
+      return calendars.map((cal) => {
+        const googleRole = cal.accessRole || "";
+        const accessRole = (googleRole === "writer" || googleRole === "owner") ? "write" : "read";
+
+        return {
+          id: cal.id || "",
+          summary: cal.summary || "",
+          description: cal.description || undefined,
+          backgroundColor: cal.backgroundColor || "#000000",
+          foregroundColor: cal.foregroundColor || "#FFFFFF",
+          primary: cal.primary || undefined,
+          accessRole,
+        };
+      });
     }
     catch (error) {
       consola.error("GoogleCalendarServerService: Failed to list calendars:", error);
@@ -139,5 +144,53 @@ export class GoogleCalendarServerService {
     }
 
     return allEvents;
+  }
+
+  async updateEvent(calendarId: string, eventId: string, eventData: {
+    summary: string;
+    description?: string;
+    start: { dateTime?: string; date?: string; timeZone?: string };
+    end: { dateTime?: string; date?: string; timeZone?: string };
+    location?: string;
+    recurrence?: string[];
+  }): Promise<GoogleCalendarEvent> {
+    await this.ensureValidToken();
+
+    try {
+      const response = await this.calendar.events.update({
+        calendarId,
+        eventId,
+        requestBody: {
+          summary: eventData.summary,
+          description: eventData.description,
+          location: eventData.location,
+          start: eventData.start,
+          end: eventData.end,
+          recurrence: eventData.recurrence,
+        },
+      });
+
+      return {
+        id: response.data.id || "",
+        summary: response.data.summary || "",
+        description: response.data.description || undefined,
+        start: {
+          dateTime: response.data.start?.dateTime || undefined,
+          date: response.data.start?.date || undefined,
+        },
+        end: {
+          dateTime: response.data.end?.dateTime || undefined,
+          date: response.data.end?.date || undefined,
+        },
+        location: response.data.location || undefined,
+        recurrence: response.data.recurrence || undefined,
+        status: response.data.status || "",
+        calendarId,
+      };
+    }
+    catch (error) {
+      consola.error(`GoogleCalendarServerService: Failed to update event ${eventId}:`, error);
+      throw error;
+    }
   }
 }

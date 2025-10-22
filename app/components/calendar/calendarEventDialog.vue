@@ -880,6 +880,8 @@ function handleSave() {
       color: props.event?.color || "sky",
       users: selectedUserObjects,
       ical_event: icalEvent,
+      ...(props.event?.integrationId && { integrationId: props.event.integrationId }),
+      ...(props.event?.calendarId && { calendarId: props.event.calendarId }),
     };
 
     emit("save", eventData);

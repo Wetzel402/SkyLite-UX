@@ -13,6 +13,7 @@ export type CalendarEvent = {
   location?: string;
   ical_event?: ICalEvent;
   integrationId?: string;
+  calendarId?: string;
   users?: Array<{
     id: string;
     name: string;

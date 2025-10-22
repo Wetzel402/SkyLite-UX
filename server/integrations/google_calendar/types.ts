@@ -17,5 +17,5 @@ export type GoogleCalendarListItem = {
   backgroundColor: string;
   foregroundColor: string;
   primary?: boolean;
-  accessRole: string;
+  accessRole: "read" | "write";
 };
