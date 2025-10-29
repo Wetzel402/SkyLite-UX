@@ -156,6 +156,97 @@ export function useCalendarIntegrations() {
     }
   };
 
+  const getCalendarEvent = async (
+    integrationId: string,
+    eventId: string,
+    calendarId?: string,
+  ): Promise<CalendarEvent> => {
+    const service = calendarServices.value.get(integrationId);
+    if (!service) {
+      throw new Error(`Integration service not found for ${integrationId}`);
+    }
+
+    if (!service.getEvent) {
+      throw new Error(`Integration service does not support fetching individual events`);
+    }
+
+    try {
+      const event = await service.getEvent(eventId, calendarId);
+      return event;
+    }
+    catch (err) {
+      consola.error(`Error fetching event ${eventId}:`, err);
+      throw err;
+    }
+  };
+
+  const deleteCalendarEvent = async (
+    integrationId: string,
+    eventId: string,
+    calendarId?: string,
+  ): Promise<void> => {
+    const service = calendarServices.value.get(integrationId);
+    if (!service) {
+      throw new Error(`Integration service not found for ${integrationId}`);
+    }
+
+    if (!service.deleteEvent) {
+      throw new Error(`Integration service does not support deleting events`);
+    }
+
+    try {
+      await service.deleteEvent(eventId, calendarId);
+    }
+    catch (err) {
+      consola.error(`Use Calendar Integrations: Error deleting event ${eventId} in integration ${integrationId}:`, err);
+      throw err;
+    }
+  };
+
+  const addCalendarEvent = async (
+    integrationId: string,
+    calendarId: string,
+    eventData: Partial<CalendarEvent>,
+  ): Promise<CalendarEvent> => {
+    const service = calendarServices.value.get(integrationId);
+    if (!service) {
+      throw new Error(`Integration service not found for ${integrationId}`);
+    }
+
+    if (!service.addEvent) {
+      throw new Error(`Integration service does not support adding events`);
+    }
+
+    try {
+      const event = await service.addEvent(calendarId, eventData);
+      return event;
+    }
+    catch (err) {
+      consola.error(`Use Calendar Integrations: Error adding event in integration ${integrationId}:`, err);
+      throw err;
+    }
+  };
+
+  const getAvailableCalendars = async (integrationId: string): Promise<CalendarConfig[]> => {
+    const service = calendarServices.value.get(integrationId);
+    if (!service) {
+      return [];
+    }
+
+    if (!service.getAvailableCalendars) {
+      return [];
+    }
+
+    try {
+      const calendars = await service.getAvailableCalendars();
+      return calendars.filter(c => c.accessRole === "write") || [];
+    }
+    catch (err) {
+      consola.error(`Use Calendar Integrations: Error fetching calendars for integration ${integrationId}:`, err);
+      return [];
+    }
+  };
+
   return {
     calendarEvents: readonly(processedCalendarEvents),
     calendarIntegrations: readonly(calendarIntegrations),
@@ -169,5 +260,9 @@ export function useCalendarIntegrations() {
     getCalendarAccessRole,
     canEditCalendar,
     updateCalendarEvent,
+    getCalendarEvent,
+    deleteCalendarEvent,
+    addCalendarEvent,
+    getAvailableCalendars,
   };
 }

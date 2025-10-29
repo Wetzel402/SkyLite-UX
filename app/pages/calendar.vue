@@ -12,6 +12,14 @@ import { integrationRegistry } from "~/types/integrations";
 const { allEvents, getEventUserColors } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
 
+const nuxtApp = useNuxtApp();
+function updateIntegrationCache(integrationId: string, data: unknown) {
+  nuxtApp.payload.data = {
+    ...nuxtApp.payload.data,
+    [`calendar-events-${integrationId}`]: data,
+  };
+}
+
 async function handleEventAdd(event: CalendarEvent) {
   try {
     if (!event.integrationId) {
@@ -61,7 +69,63 @@ async function handleEventAdd(event: CalendarEvent) {
       }
     }
     else {
-      showError("Not Supported", "Adding events to this integration is not yet supported");
+      if (!event.calendarId) {
+        showError("Calendar Not Selected", "Please select a calendar for this event.");
+        return;
+      }
+
+      const cacheKey = `calendar-events-${event.integrationId}`;
+      const { data: cachedEvents } = useNuxtData(cacheKey);
+      const previousEvents = cachedEvents.value ? [...cachedEvents.value] : [];
+
+      const prevPayloadEventsAdd = Array.isArray(nuxtApp.payload.data[cacheKey]) ? [...(nuxtApp.payload.data[cacheKey] as CalendarEvent[])] : [];
+
+      const tempId = `temp-${Date.now()}`;
+      const tempEvent: CalendarEvent = {
+        ...event,
+        id: tempId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        color: getEventUserColors(event),
+      } as CalendarEvent;
+
+      if (cachedEvents.value && Array.isArray(cachedEvents.value)) {
+        cachedEvents.value.push(tempEvent);
+      }
+      {
+        const existing = Array.isArray(nuxtApp.payload.data[cacheKey]) ? (nuxtApp.payload.data[cacheKey] as CalendarEvent[]) : [];
+        updateIntegrationCache(event.integrationId, [...existing, tempEvent]);
+      }
+
+      try {
+        const { addCalendarEvent } = useCalendarIntegrations();
+        const created = await addCalendarEvent(event.integrationId, event.calendarId, event);
+
+        if (cachedEvents.value && Array.isArray(cachedEvents.value)) {
+          const idx = cachedEvents.value.findIndex((e: CalendarEvent) => e.id === tempId);
+          if (idx !== -1)
+            cachedEvents.value[idx] = created as unknown as CalendarEvent;
+        }
+        {
+          const existing = Array.isArray(nuxtApp.payload.data[cacheKey]) ? (nuxtApp.payload.data[cacheKey] as CalendarEvent[]) : [];
+          const idx = existing.findIndex((e: CalendarEvent) => e.id === tempId);
+          if (idx !== -1) {
+            const updated = [...existing];
+            updated[idx] = created as unknown as CalendarEvent;
+            updateIntegrationCache(event.integrationId, updated);
+          }
+        }
+
+        await refreshNuxtData(cacheKey);
+        showSuccess("Event Created", "Calendar event created successfully");
+      }
+      catch (error) {
+        if (cachedEvents.value && previousEvents.length > 0) {
+          cachedEvents.value.splice(0, cachedEvents.value.length, ...previousEvents);
+        }
+        updateIntegrationCache(event.integrationId, prevPayloadEventsAdd);
+        throw error;
+      }
     }
   }
   catch {
@@ -107,39 +171,42 @@ async function handleEventUpdate(event: CalendarEvent) {
       }
     }
     else {
-      const nuxtApp = useNuxtApp();
-      const { getCachedIntegrationData } = useSyncManager();
+      const cacheKey = `calendar-events-${event.integrationId}`;
+      const { data: cachedEvents } = useNuxtData(cacheKey);
+      const previousEvents = cachedEvents.value ? [...cachedEvents.value] : [];
+      const prevPayloadEventsUpdate = Array.isArray(nuxtApp.payload.data[cacheKey]) ? [...(nuxtApp.payload.data[cacheKey] as CalendarEvent[])] : [];
 
-      function updateIntegrationCache(integrationId: string, data: unknown) {
-        const cacheKey = `calendar-events-${integrationId}`;
-        nuxtApp.payload.data = {
-          ...nuxtApp.payload.data,
-          [cacheKey]: data,
-        };
+      const isExpanded = event.id.includes("-");
+      const baseEventId = isExpanded ? (event.id.split("-")[0] || event.id) : event.id;
+
+      if (cachedEvents.value && Array.isArray(cachedEvents.value)) {
+        const idx = cachedEvents.value.findIndex((e: CalendarEvent) => e.id === baseEventId);
+        if (idx !== -1) {
+          cachedEvents.value[idx] = { ...cachedEvents.value[idx], ...event } as CalendarEvent;
+        }
       }
-
-      const integrationEvents = getCachedIntegrationData("calendar", event.integrationId) as CalendarEvent[];
-      const previousEvents = integrationEvents ? [...integrationEvents] : [];
-
-      if (integrationEvents && Array.isArray(integrationEvents)) {
-        const eventIndex = integrationEvents.findIndex((e: CalendarEvent) => e.id === event.id);
-        if (eventIndex !== -1) {
-          const updatedEvents = [...integrationEvents];
-          updatedEvents[eventIndex] = { ...updatedEvents[eventIndex], ...event };
-          updateIntegrationCache(event.integrationId, updatedEvents);
+      {
+        const existing = Array.isArray(nuxtApp.payload.data[cacheKey]) ? (nuxtApp.payload.data[cacheKey] as CalendarEvent[]) : [];
+        const idx = existing.findIndex((e: CalendarEvent) => e.id === baseEventId);
+        if (idx !== -1) {
+          const updated = [...existing];
+          updated[idx] = { ...updated[idx], ...event } as CalendarEvent;
+          updateIntegrationCache(event.integrationId, updated);
         }
       }
 
       try {
         const { updateCalendarEvent } = useCalendarIntegrations();
-        await updateCalendarEvent(event.integrationId, event.id, event);
+        await updateCalendarEvent(event.integrationId, baseEventId, event);
 
+        await refreshNuxtData(cacheKey);
         showSuccess("Event Updated", "Calendar event updated successfully");
       }
       catch (error) {
-        if (integrationEvents && previousEvents.length > 0) {
-          updateIntegrationCache(event.integrationId, previousEvents);
+        if (cachedEvents.value && previousEvents.length > 0) {
+          cachedEvents.value.splice(0, cachedEvents.value.length, ...previousEvents);
         }
+        updateIntegrationCache(event.integrationId, prevPayloadEventsUpdate);
         throw error;
       }
     }
@@ -179,7 +246,36 @@ async function handleEventDelete(eventId: string) {
       }
     }
     else {
-      showError("Not Supported", "Deleting events from this integration is not yet supported");
+      const cacheKey = `calendar-events-${event.integrationId}`;
+      const { data: cachedEvents } = useNuxtData(cacheKey);
+      const previousEvents = cachedEvents.value ? [...cachedEvents.value] : [];
+
+      const isExpanded = event.id.includes("-");
+      const baseEventId = isExpanded ? (event.id.split("-")[0] || event.id) : event.id;
+
+      if (cachedEvents.value && Array.isArray(cachedEvents.value)) {
+        cachedEvents.value = cachedEvents.value.filter((e: CalendarEvent) => e.id !== baseEventId) as unknown as CalendarEvent[];
+      }
+      {
+        const existing = Array.isArray(nuxtApp.payload.data[cacheKey]) ? (nuxtApp.payload.data[cacheKey] as CalendarEvent[]) : [];
+        const updated = existing.filter((e: CalendarEvent) => e.id !== baseEventId);
+        updateIntegrationCache(event.integrationId, updated);
+      }
+
+      try {
+        const { deleteCalendarEvent } = useCalendarIntegrations();
+        await deleteCalendarEvent(event.integrationId, baseEventId, event.calendarId);
+
+        await refreshNuxtData(cacheKey);
+        showSuccess("Event Deleted", "Calendar event deleted successfully");
+      }
+      catch (error) {
+        if (cachedEvents.value && previousEvents.length > 0) {
+          cachedEvents.value.splice(0, cachedEvents.value.length, ...previousEvents);
+        }
+        await refreshNuxtData(cacheKey);
+        throw error;
+      }
     }
   }
   catch {

@@ -8,8 +8,21 @@ import type { GoogleCalendarEvent, GoogleCalendarListItem } from "./types";
 export class GoogleCalendarServerService {
   private oauth2Client;
   private calendar: calendar_v3.Calendar;
+  private refreshPromise: Promise<void> | null = null;
+  private integrationId?: string;
+  private onTokenRefresh?: (integrationId: string, accessToken: string, expiry: number) => Promise<void>;
 
-  constructor(clientId: string, clientSecret: string, refreshToken: string, accessToken?: string, expiry?: number) {
+  constructor(
+    clientId: string,
+    clientSecret: string,
+    refreshToken: string,
+    accessToken?: string,
+    expiry?: number,
+    integrationId?: string,
+    onTokenRefresh?: (integrationId: string, accessToken: string, expiry: number) => Promise<void>,
+  ) {
+    this.integrationId = integrationId;
+    this.onTokenRefresh = onTokenRefresh;
     this.oauth2Client = new google.auth.OAuth2(
       clientId,
       clientSecret,
@@ -37,11 +50,46 @@ export class GoogleCalendarServerService {
 
   private async ensureValidToken(): Promise<void> {
     const credentials = this.oauth2Client.credentials;
+    const now = Date.now();
+    const expiryDate = credentials.expiry_date;
 
-    if (!credentials.expiry_date || credentials.expiry_date < Date.now() + 300000) {
-      consola.debug("GoogleCalendarServerService: Proactively refreshing access token");
-      await this.oauth2Client.refreshAccessToken();
+    const needsRefresh = !expiryDate || expiryDate < now + 30000;
+
+    if (!needsRefresh) {
+      return;
     }
+
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = (async () => {
+      try {
+        await this.oauth2Client.refreshAccessToken();
+
+        const newCredentials = this.oauth2Client.credentials;
+        const newAccessToken = newCredentials.access_token;
+        const newExpiry = newCredentials.expiry_date;
+
+        if (this.integrationId && this.onTokenRefresh && newAccessToken && newExpiry) {
+          try {
+            await this.onTokenRefresh(this.integrationId, newAccessToken, newExpiry);
+          }
+          catch (callbackError) {
+            consola.error("GoogleCalendarServerService: Failed to persist refreshed token via callback:", callbackError);
+          }
+        }
+      }
+      catch (error) {
+        consola.error("GoogleCalendarServerService: Failed to refresh access token:", error);
+        throw error;
+      }
+      finally {
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
   }
 
   async listCalendars(): Promise<GoogleCalendarListItem[]> {
@@ -83,8 +131,7 @@ export class GoogleCalendarServerService {
         timeMin: startDate.toISOString(),
         timeMax: endDate.toISOString(),
         maxResults: 2500,
-        singleEvents: true,
-        orderBy: "startTime",
+        singleEvents: false,
       });
 
       const events = response.data.items || [];
@@ -146,6 +193,41 @@ export class GoogleCalendarServerService {
     return allEvents;
   }
 
+  async fetchEvent(calendarId: string, eventId: string): Promise<GoogleCalendarEvent> {
+    await this.ensureValidToken();
+
+    try {
+      const response = await this.calendar.events.get({
+        calendarId,
+        eventId,
+      });
+
+      const event = response.data;
+
+      return {
+        id: event.id || "",
+        summary: event.summary || "",
+        description: event.description || undefined,
+        start: {
+          dateTime: event.start?.dateTime || undefined,
+          date: event.start?.date || undefined,
+        },
+        end: {
+          dateTime: event.end?.dateTime || undefined,
+          date: event.end?.date || undefined,
+        },
+        location: event.location || undefined,
+        recurrence: event.recurrence || undefined,
+        status: event.status || "",
+        calendarId,
+      };
+    }
+    catch (error) {
+      consola.error(`GoogleCalendarServerService: Failed to fetch event ${eventId} from calendar ${calendarId}:`, error);
+      throw error;
+    }
+  }
+
   async updateEvent(calendarId: string, eventId: string, eventData: {
     summary: string;
     description?: string;
@@ -190,6 +272,69 @@ export class GoogleCalendarServerService {
     }
     catch (error) {
       consola.error(`GoogleCalendarServerService: Failed to update event ${eventId}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteEvent(calendarId: string, eventId: string): Promise<void> {
+    await this.ensureValidToken();
+
+    try {
+      await this.calendar.events.delete({
+        calendarId,
+        eventId,
+        sendUpdates: "all",
+      });
+    }
+    catch (error) {
+      consola.error(`GoogleCalendarServerService: Failed to delete event ${eventId}:`, error);
+      throw error;
+    }
+  }
+
+  async addEvent(calendarId: string, eventData: {
+    summary: string;
+    description?: string;
+    start: { dateTime?: string; date?: string; timeZone?: string };
+    end: { dateTime?: string; date?: string; timeZone?: string };
+    location?: string;
+    recurrence?: string[];
+  }): Promise<GoogleCalendarEvent> {
+    await this.ensureValidToken();
+
+    try {
+      const response = await this.calendar.events.insert({
+        calendarId,
+        requestBody: {
+          summary: eventData.summary,
+          description: eventData.description,
+          location: eventData.location,
+          start: eventData.start,
+          end: eventData.end,
+          recurrence: eventData.recurrence,
+        },
+      });
+
+      return {
+        id: response.data.id || "",
+        summary: response.data.summary || "",
+        description: response.data.description || undefined,
+        start: {
+          dateTime: response.data.start?.dateTime || undefined,
+          date: response.data.start?.date || undefined,
+        },
+        end: {
+          dateTime: response.data.end?.dateTime || undefined,
+          date: response.data.end?.date || undefined,
+        },
+        location: response.data.location || undefined,
+        recurrence: response.data.recurrence || undefined,
+        status: response.data.status || "",
+        calendarId,
+      };
+    }
+    catch (error) {
+      consola.error(`GoogleCalendarServerService: Failed to add event:`, error);
       throw error;
     }
   }

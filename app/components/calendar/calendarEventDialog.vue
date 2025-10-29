@@ -7,10 +7,14 @@ import { isBefore } from "date-fns";
 import ical from "ical.js";
 
 import type { CalendarEvent } from "~/types/calendar";
+import type { Integration } from "~/types/database";
+import type { CalendarConfig } from "~/types/integrations";
 
 import { useCalendar } from "~/composables/useCalendar";
+import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
 import { useUsers } from "~/composables/useUsers";
 import { getBrowserTimezone } from "~/types/global";
+import { integrationRegistry } from "~/types/integrations";
 
 import type { ICalEvent } from "../../../server/integrations/iCal/types";
 
@@ -19,6 +23,7 @@ const props = defineProps<{
   isOpen: boolean;
   integrationCapabilities?: string[];
   integrationServiceName?: string;
+  integrations?: Integration[];
 }>();
 
 const emit = defineEmits<{
@@ -30,6 +35,7 @@ const emit = defineEmits<{
 const { users, fetchUsers } = useUsers();
 
 const { getEventStartTimeForInput, getEventEndTimeForInput, getLocalTimeFromUTC } = useCalendar();
+const { getAvailableCalendars } = useCalendarIntegrations();
 
 const StartHour = 0;
 const EndHour = 23;
@@ -45,6 +51,10 @@ const allDay = ref(false);
 const location = ref("");
 const selectedUsers = ref<string[]>([]);
 const error = ref<string | null>(null);
+
+const selectedIntegrationId = ref<string | null>("local");
+const selectedCalendarId = ref<string | null>(null);
+const availableIntegrations = ref<Array<{ id: string; name: string; calendars: CalendarConfig[]; supportsSelectCalendars: boolean }>>([]);
 
 const isRecurring = ref(false);
 const recurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("weekly");
@@ -165,9 +175,231 @@ const isReadOnly = computed(() => {
   return Boolean(props.event && !canEdit.value);
 });
 
+const currentIntegration = computed(() => {
+  const integrationId = props.event?.integrationId || selectedIntegrationId.value;
+  if (!integrationId || integrationId === "local" || !props.integrations)
+    return null;
+  return props.integrations.find(i => i.id === integrationId);
+});
+
+const selectedIntegrationConfig = computed(() => {
+  return availableIntegrations.value.find(i => i.id === selectedIntegrationId.value);
+});
+
+const integrationAssignedUserIds = computed(() => {
+  const integration = currentIntegration.value;
+  if (!integration?.settings)
+    return [];
+
+  const hasSelectCalendars = (selectedIntegrationConfig.value?.supportsSelectCalendars ?? false)
+    || Array.isArray((integration as unknown as { settings?: Record<string, unknown> }).settings?.calendars);
+
+  if (hasSelectCalendars) {
+    const calendarId = props.event?.calendarId || selectedCalendarId.value;
+    if (!calendarId)
+      return [];
+
+    const calendars = integration.settings.calendars;
+    if (!Array.isArray(calendars))
+      return [];
+
+    const calendar = calendars.find((c) => {
+      if (typeof c !== "object" || c === null)
+        return false;
+      const cal = c as Record<string, unknown>;
+      return cal.id === calendarId;
+    });
+    if (!calendar || typeof calendar !== "object" || calendar === null)
+      return [];
+    const cal = calendar as Record<string, unknown>;
+    const userIds = cal.user;
+    return Array.isArray(userIds) ? userIds : [];
+  }
+  else {
+    const userIds = integration.settings.user;
+    return Array.isArray(userIds) ? userIds : [];
+  }
+});
+
+const allowsUserSelection = computed(() => {
+  if (!currentIntegration.value)
+    return true;
+  return props.integrationCapabilities?.includes("select_users") ?? false;
+});
+
+const showLockedUserMessage = computed(() => {
+  return !allowsUserSelection.value && canEdit.value;
+});
+
+const showCalendarPicker = computed(() => {
+  if (props.event && props.event.id) {
+    return false;
+  }
+  const shouldShow = availableIntegrations.value.length > 0;
+  consola.debug("CalendarEventDialog: showCalendarPicker computed", {
+    hasEvent: !!props.event,
+    eventId: props.event?.id,
+    availableIntegrationsCount: availableIntegrations.value.length,
+    shouldShow,
+  });
+  return shouldShow;
+});
+
+const calendarPickerOptions = computed(() => {
+  const options = [{ value: "local", label: "Local Calendar" }];
+
+  availableIntegrations.value.forEach((integration) => {
+    options.push({ value: integration.id, label: integration.name });
+  });
+
+  return options;
+});
+
+const integrationCalendarOptions = computed(() => {
+  const integration = selectedIntegrationConfig.value;
+  if (!integration || !integration.supportsSelectCalendars)
+    return [];
+
+  return integration.calendars
+    .filter(c => c.accessRole === "write" && c.enabled)
+    .map(c => ({ value: c.id, label: c.name }));
+});
+
 watch(() => props.isOpen, async (isOpen) => {
-  if (isOpen) {
-    await fetchUsers();
+  if (isOpen && (!props.event || !props.event.id) && props.integrations) {
+    consola.debug("CalendarEventDialog: Processing integrations for calendar picker", {
+      event: props.event,
+      hasIntegrations: !!props.integrations,
+      integrationsLength: props.integrations?.length,
+    });
+
+    availableIntegrations.value = [];
+    const integrations = props.integrations as Integration[];
+
+    for (const integration of integrations) {
+      const config = integrationRegistry.get(`calendar:${integration.service}`);
+      consola.debug("CalendarEventDialog: Checking integration", {
+        id: integration.id,
+        service: integration.service,
+        hasConfig: !!config,
+        configCapabilities: config?.capabilities,
+      });
+
+      if (!config)
+        continue;
+
+      const hasAddEvents = config.capabilities.includes("add_events");
+      const hasSelectCalendars = config.capabilities.includes("select_calendars");
+
+      if (!hasAddEvents) {
+        consola.debug("CalendarEventDialog: Skipping integration - no add_events capability", integration.id);
+        continue;
+      }
+
+      let calendars: CalendarConfig[] = [];
+
+      if (hasSelectCalendars) {
+        try {
+          consola.debug("CalendarEventDialog: Fetching calendars for integration", integration.id);
+          const fetchedCalendars = await getAvailableCalendars(integration.id);
+          calendars = fetchedCalendars;
+          consola.debug("CalendarEventDialog: Fetched calendars", {
+            integrationId: integration.id,
+            calendarsCount: fetchedCalendars.length,
+            calendars: fetchedCalendars,
+          });
+        }
+        catch (error) {
+          consola.error("CalendarEventDialog: Failed to fetch calendars", error);
+
+          if (integration.settings?.calendars) {
+            calendars = Array.isArray(integration.settings.calendars)
+              ? integration.settings.calendars as CalendarConfig[]
+              : [];
+          }
+        }
+      }
+      else if (integration.settings?.calendars) {
+        calendars = Array.isArray(integration.settings.calendars)
+          ? integration.settings.calendars as CalendarConfig[]
+          : [];
+      }
+
+      availableIntegrations.value.push({
+        id: integration.id,
+        name: integration.name || `${integration.service} Calendar`,
+        calendars,
+        supportsSelectCalendars: hasSelectCalendars,
+      });
+
+      consola.debug("CalendarEventDialog: Added integration to picker", {
+        id: integration.id,
+        name: integration.name || `${integration.service} Calendar`,
+        calendarsCount: calendars.length,
+        supportsSelectCalendars: hasSelectCalendars,
+      });
+    }
+
+    consola.debug("CalendarEventDialog: Available integrations after processing", {
+      count: availableIntegrations.value.length,
+      integrations: availableIntegrations.value,
+    });
+
+    selectedIntegrationId.value = "local";
+    selectedCalendarId.value = null;
+  }
+  await fetchUsers();
+}, { immediate: true });
+
+watch(selectedIntegrationId, (newIntegrationId) => {
+  consola.debug("CalendarEventDialog: Integration selected", {
+    integrationId: newIntegrationId,
+    selectedIntegrationConfig: selectedIntegrationConfig.value,
+  });
+
+  selectedCalendarId.value = null;
+
+  if (newIntegrationId && newIntegrationId !== "local" && !allowsUserSelection.value) {
+    selectedUsers.value = integrationAssignedUserIds.value || [];
+  }
+
+  if (!newIntegrationId || newIntegrationId === "local") {
+    selectedUsers.value = [];
+  }
+
+  nextTick(() => {
+    if (selectedIntegrationConfig.value?.supportsSelectCalendars && integrationCalendarOptions.value.length > 0 && !selectedCalendarId.value) {
+      const firstCalendar = integrationCalendarOptions.value[0];
+      if (firstCalendar) {
+        selectedCalendarId.value = firstCalendar.value as string;
+        consola.debug("CalendarEventDialog: Auto-selected first calendar", {
+          calendarId: firstCalendar.value,
+          calendarName: firstCalendar.label,
+        });
+        if (!allowsUserSelection.value) {
+          selectedUsers.value = integrationAssignedUserIds.value || [];
+        }
+      }
+    }
+  });
+});
+
+watch(integrationCalendarOptions, (options) => {
+  if (selectedIntegrationConfig.value?.supportsSelectCalendars && options.length > 0 && !selectedCalendarId.value) {
+    const firstCalendar = options[0];
+    if (firstCalendar) {
+      selectedCalendarId.value = firstCalendar.value as string;
+      consola.debug("CalendarEventDialog: Auto-selected first calendar from options watch", {
+        calendarId: firstCalendar.value,
+        calendarName: firstCalendar.label,
+      });
+    }
+  }
+});
+
+watch(selectedCalendarId, () => {
+  if (selectedIntegrationConfig.value?.supportsSelectCalendars && !allowsUserSelection.value) {
+    selectedUsers.value = integrationAssignedUserIds.value || [];
   }
 });
 
@@ -307,6 +539,37 @@ watch(() => props.event, async (newEvent) => {
       }
     }
 
+    if (isExpandedEvent && newEvent.integrationId) {
+      const originalId = newEvent.id.split("-")[0];
+      try {
+        if (currentIntegration.value?.service === "google") {
+          const { getCalendarEvent } = useCalendarIntegrations();
+          const fetchedEvent = await getCalendarEvent(
+            newEvent.integrationId,
+            originalId || "",
+            newEvent.calendarId,
+          );
+
+          if (fetchedEvent) {
+            originalEvent = {
+              ...fetchedEvent,
+              start: newEvent.start,
+              end: newEvent.end,
+              ical_event: newEvent.ical_event
+                ? {
+                    ...fetchedEvent.ical_event,
+                    dtstart: newEvent.ical_event.dtstart,
+                    dtend: newEvent.ical_event.dtend,
+                  }
+                : null,
+            } as CalendarEvent;
+          }
+        }
+      }
+      catch {
+      }
+    }
+
     title.value = originalEvent.title || "";
     description.value = originalEvent.description || "";
     const start = originalEvent.start instanceof Date ? originalEvent.start : new Date(originalEvent.start);
@@ -350,7 +613,12 @@ watch(() => props.event, async (newEvent) => {
     }
     allDay.value = newEvent.allDay || false;
     location.value = newEvent.location || "";
-    selectedUsers.value = newEvent.users?.map(user => user.id) || [];
+    if (currentIntegration.value && !allowsUserSelection.value) {
+      selectedUsers.value = integrationAssignedUserIds.value || [];
+    }
+    else {
+      selectedUsers.value = newEvent.users?.map(user => user.id) || [];
+    }
     error.value = null;
 
     if (newEvent.ical_event) {
@@ -880,6 +1148,8 @@ function handleSave() {
       color: props.event?.color || "sky",
       users: selectedUserObjects,
       ical_event: icalEvent,
+      ...((selectedIntegrationId.value && selectedIntegrationId.value !== "local") && { integrationId: selectedIntegrationId.value }),
+      ...((selectedCalendarId.value && selectedIntegrationId.value !== "local") && { calendarId: selectedCalendarId.value }),
       ...(props.event?.integrationId && { integrationId: props.event.integrationId }),
       ...(props.event?.calendarId && { calendarId: props.event.calendarId }),
     };
@@ -934,6 +1204,28 @@ function handleDelete() {
         </div>
         <div v-if="isReadOnly" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm">
           This event cannot be edited. {{ integrationServiceName || 'This integration' }} does not support editing events.
+        </div>
+        <div v-if="showCalendarPicker" class="space-y-2">
+          <label class="block text-sm font-medium text-highlighted">Calendar</label>
+          <USelect
+            :items="calendarPickerOptions"
+            option-attribute="label"
+            value-attribute="value"
+            placeholder="Select calendar"
+            class="w-full"
+            :model-value="selectedIntegrationId || undefined"
+            @update:model-value="selectedIntegrationId = $event || null"
+          />
+          <USelect
+            v-if="selectedIntegrationConfig?.supportsSelectCalendars && integrationCalendarOptions.length > 0"
+            :items="integrationCalendarOptions"
+            option-attribute="label"
+            value-attribute="value"
+            placeholder="Select specific calendar"
+            class="w-full mt-2"
+            :model-value="selectedCalendarId || undefined"
+            @update:model-value="selectedCalendarId = $event || null"
+          />
         </div>
         <div class="space-y-2">
           <label class="block text-sm font-medium text-highlighted">Title</label>
@@ -1298,6 +1590,12 @@ function handleDelete() {
             <div class="text-sm text-muted mb-2">
               {{ event?.id ? 'Edit users for this event:' : 'Select users for this event:' }}
             </div>
+            <div v-if="showLockedUserMessage" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm mb-2">
+              Users are selected based on integration settings and can be changed in the <NuxtLink to="/settings" class="text-primary">
+                settings
+                page
+              </NuxtLink>.
+            </div>
             <div class="flex flex-wrap gap-2">
               <UButton
                 v-for="user in users"
@@ -1306,7 +1604,7 @@ function handleDelete() {
                 size="sm"
                 class="p-1"
                 :class="selectedUsers.includes(user.id) ? 'ring-2 ring-primary-500' : ''"
-                :disabled="isReadOnly"
+                :disabled="isReadOnly || !allowsUserSelection"
                 @click="selectedUsers.includes(user.id) ? selectedUsers = selectedUsers.filter(id => id !== user.id) : selectedUsers.push(user.id)"
               >
                 <UAvatar

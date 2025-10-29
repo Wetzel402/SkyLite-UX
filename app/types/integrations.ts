@@ -24,7 +24,10 @@ export type IntegrationStatus = {
 export type CalendarIntegrationService = IntegrationService & {
   getEvents: () => Promise<CalendarEvent[]>;
   updateEvent?: (eventId: string, eventData: Partial<CalendarEvent>) => Promise<CalendarEvent>;
-  // Future: addEvent?, deleteEvent?
+  getEvent?: (eventId: string, calendarId?: string) => Promise<CalendarEvent>;
+  deleteEvent?: (eventId: string, calendarId?: string) => Promise<void>;
+  addEvent?: (calendarId: string, eventData: Partial<CalendarEvent>) => Promise<CalendarEvent>;
+  getAvailableCalendars?: () => Promise<CalendarConfig[]>;
 };
 
 export type ShoppingIntegrationService = IntegrationService & {

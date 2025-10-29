@@ -2,10 +2,12 @@
 import { addDays, addMonths, addWeeks, isSameMonth, subMonths, subWeeks } from "date-fns";
 
 import type { CalendarEvent, CalendarView } from "~/types/calendar";
+import type { Integration } from "~/types/database";
 
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import { useCalendar } from "~/composables/useCalendar";
+import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
 import { useStableDate } from "~/composables/useStableDate";
 
 const props = defineProps<{
@@ -24,6 +26,7 @@ const _emit = defineEmits<{
 
 const { getStableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
+const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
 const view = ref<CalendarView>(props.initialView || "week");
 const isEventDialogOpen = ref(false);
@@ -264,6 +267,7 @@ function getDaysForAgenda(date: Date) {
   <CalendarEventDialog
     :event="selectedEvent"
     :is-open="isEventDialogOpen"
+    :integrations="calendarIntegrations && calendarIntegrations.length > 0 ? calendarIntegrations as Integration[] : undefined"
     :integration-capabilities="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.capabilities : undefined"
     :integration-service-name="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.serviceName : undefined"
     @close="isEventDialogOpen = false"

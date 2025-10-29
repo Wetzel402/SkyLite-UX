@@ -1,25 +1,26 @@
 import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
-import { createError, defineEventHandler, getQuery } from "h3";
+import { createError, defineEventHandler, getQuery, getRouterParam } from "h3";
 
-import { GoogleCalendarServerService } from "../../../integrations/google_calendar/client";
+import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
 
 const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
-  const integrationId = getQuery(event).integrationId as string;
+  const eventId = getRouterParam(event, "eventId");
+  const { integrationId, calendarId } = getQuery(event) as { integrationId?: string; calendarId?: string };
 
-  if (!integrationId || typeof integrationId !== "string") {
+  if (!eventId) {
     throw createError({
       statusCode: 400,
-      message: "integrationId is required",
+      message: "eventId is required",
     });
   }
 
-  if (integrationId === "temp") {
+  if (!integrationId) {
     throw createError({
       statusCode: 400,
-      message: "Cannot fetch calendars for temporary integration. Please complete OAuth authentication first.",
+      message: "integrationId is required",
     });
   }
 
@@ -42,7 +43,7 @@ export default defineEventHandler(async (event) => {
   if (!integration.apiKey) {
     throw createError({
       statusCode: 400,
-      message: "Google Calendar integration is not authenticated. Please complete OAuth flow.",
+      message: "Google Calendar integration is not authenticated",
     });
   }
 
@@ -93,40 +94,39 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const calendars = await service.listCalendars();
-    return { calendars };
-  }
-  catch (error: unknown) {
-    const err = error as { code?: number; message?: string; response?: { data?: unknown } };
+    const baseEventId = eventId.includes("-") ? (eventId.split("-")[0] || eventId) : eventId;
 
-    consola.error("Integrations Google Calendar Calendars: Error details:", {
-      code: err?.code,
-      message: err?.message,
-      response: err?.response?.data,
-    });
-
-    if (err?.code === 401 || err?.message?.includes("invalid_grant") || err?.message?.includes("Invalid Credentials")) {
-      await prisma.integration.update({
-        where: { id: integrationId },
-        data: {
-          apiKey: null,
-          settings: {
-            ...(integration.settings as object),
-            needsReauth: true,
-          },
-        },
-      });
-
-      throw createError({
-        statusCode: 401,
-        message: "Google Calendar authentication expired. Please re-authorize in Settings.",
-      });
+    if (calendarId) {
+      await service.deleteEvent(calendarId, baseEventId);
+      return { success: true };
     }
 
-    consola.error("Integrations Google Calendar Calendars: Failed to list calendars:", error);
+    try {
+      const primaryEvent = await service.fetchEvent("primary", baseEventId);
+      const calId = primaryEvent.calendarId || "primary";
+      await service.deleteEvent(calId, baseEventId);
+      return { success: true };
+    }
+    catch {}
+
+    const calendars = await service.listCalendars();
+    for (const cal of calendars) {
+      try {
+        await service.fetchEvent(cal.id, baseEventId);
+        await service.deleteEvent(cal.id, baseEventId);
+        return { success: true };
+      }
+      catch {}
+    }
+
+    throw createError({ statusCode: 404, message: "Event not found in any calendar" });
+  }
+  catch (error) {
+    consola.error(`Failed to delete Google Calendar event ${eventId}:`, error);
+    const statusCode = (error as { statusCode?: number }).statusCode || 500;
     throw createError({
-      statusCode: 400,
-      message: error instanceof Error ? error.message : "Failed to list Google calendars",
+      statusCode,
+      message: error instanceof Error ? error.message : "Failed to delete event",
     });
   }
 });

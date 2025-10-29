@@ -17,6 +17,7 @@ export const integrationConfigs: IntegrationConfig[] = [
   // - select_calendars: Can select calendars from the user's account
   //   - individual calendars define access role: read or write
   //   - if access role is read, add_events, edit_events, and delete_events permissions are stripped
+  // - select_users: Can select users to link to the calendar event (currently only enables the user selection in the event dialog if declared)
   // ================================================
   {
     type: "calendar",

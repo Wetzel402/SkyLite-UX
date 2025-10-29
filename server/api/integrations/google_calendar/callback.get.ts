@@ -37,11 +37,6 @@ export default defineEventHandler(async (event) => {
     const clientSecret = settings?.clientSecret;
     const isReAuth = !!integrationId;
 
-    consola.debug("Google OAuth callback - Integration data:", { name, type, service, clientId: clientId ? `${clientId.substring(0, 20)}...` : undefined, isReAuth });
-    consola.debug("Google OAuth callback - Redirect URI:", redirectUri);
-    consola.debug("Google OAuth callback - Code length:", code?.length);
-    consola.debug("Google OAuth callback - Has client secret:", !!clientSecret);
-
     if (!clientId) {
       throw createError({
         statusCode: 400,
@@ -69,9 +64,7 @@ export default defineEventHandler(async (event) => {
       redirectUri,
     );
 
-    consola.debug("Attempting to exchange auth code for tokens...");
     const { tokens } = await oauth2Client.getToken(code);
-    consola.debug("Successfully received tokens, has refresh_token:", !!tokens.refresh_token);
 
     if (!tokens.refresh_token) {
       throw createError({

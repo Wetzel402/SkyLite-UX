@@ -1,10 +1,64 @@
 import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, getQuery } from "h3";
+import ical from "ical.js";
+
+import type { CalendarEvent } from "~/types/calendar";
+
+import type { GoogleCalendarEvent } from "../../../../integrations/google_calendar/types";
+import type { ICalEvent } from "../../../../integrations/iCal/types";
 
 import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
+import { expandRecurringEvents, parseRRuleString } from "../../../../utils/rrule";
 
 const prisma = new PrismaClient();
+
+function convertToCalendarEvent(
+  event: GoogleCalendarEvent,
+  integrationId: string,
+): CalendarEvent {
+  const startDateTime = event.start.dateTime || event.start.date;
+  const endDateTime = event.end.dateTime || event.end.date;
+
+  const start = new Date(startDateTime || "");
+  const end = new Date(endDateTime || "");
+  const isAllDay = !event.start.dateTime && !!event.start.date;
+
+  const rrule = event.recurrence && event.recurrence.length > 0
+    ? parseRRuleString(event.recurrence[0] || "")
+    : undefined;
+
+  let icalEvent: ICalEvent | undefined;
+
+  if (rrule) {
+    const startTime = ical.Time.fromJSDate(start, true);
+    const endTime = ical.Time.fromJSDate(end, true);
+
+    icalEvent = {
+      type: "VEVENT",
+      uid: event.id,
+      summary: event.summary,
+      description: event.description,
+      location: event.location,
+      dtstart: startTime.toString(),
+      dtend: endTime.toString(),
+      rrule,
+    };
+  }
+
+  return {
+    id: event.id,
+    title: event.summary,
+    description: event.description || "",
+    start,
+    end,
+    allDay: isAllDay,
+    location: event.location,
+    integrationId,
+    calendarId: event.calendarId,
+    ical_event: icalEvent,
+  };
+}
 
 export default defineEventHandler(async (event) => {
   const integrationId = getQuery(event).integrationId as string;
@@ -65,11 +119,48 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const service = new GoogleCalendarServerService(clientId, clientSecret, integration.apiKey, accessToken, tokenExpiry);
+  const onTokenRefresh = async (id: string, newAccessToken: string, newExpiry: number) => {
+    try {
+      const existingIntegration = await prisma.integration.findUnique({ where: { id } });
+      if (!existingIntegration)
+        return;
+
+      const currentSettings = (existingIntegration.settings as Record<string, unknown>) || {};
+      await prisma.integration.update({
+        where: { id },
+        data: {
+          settings: {
+            ...currentSettings,
+            accessToken: newAccessToken,
+            tokenExpiry: newExpiry,
+          },
+        },
+      });
+    }
+    catch (error) {
+      consola.error(`Failed to save refreshed token for integration ${id}:`, error);
+    }
+  };
+
+  const service = new GoogleCalendarServerService(
+    clientId,
+    clientSecret,
+    integration.apiKey,
+    accessToken,
+    tokenExpiry,
+    integrationId,
+    onTokenRefresh,
+  );
 
   try {
     const events = await service.fetchEvents(selectedCalendars);
-    return { events, calendars: settings.calendars || [] };
+    const calendarEvents = events.map(event => convertToCalendarEvent(event, integrationId));
+    const now = new Date();
+    const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const endDate = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
+    const expandedEvents = expandRecurringEvents(calendarEvents, startDate, endDate);
+
+    return { events: expandedEvents, calendars: settings.calendars || [] };
   }
   catch (error: unknown) {
     const err = error as { code?: number; message?: string; response?: { data?: unknown } };
@@ -80,7 +171,7 @@ export default defineEventHandler(async (event) => {
       response: err?.response?.data,
     });
 
-    if (err?.code === 401 || err?.code === 400 || err?.message?.includes("invalid_grant") || err?.message?.includes("invalid_request") || err?.message?.includes("Invalid Credentials")) {
+    if (err?.code === 401 || err?.message?.includes("invalid_grant") || err?.message?.includes("Invalid Credentials")) {
       await prisma.integration.update({
         where: { id: integrationId },
         data: {

@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
-import { createError, defineEventHandler, getRouterParam, readBody } from "h3";
+import { createError, defineEventHandler, readBody } from "h3";
 import ical from "ical.js";
 
 import type { CalendarEvent } from "~/types/calendar";
@@ -47,16 +47,8 @@ function rruleObjectToString(rrule: {
 
 export default defineEventHandler(async (event) => {
   try {
-    const eventId = getRouterParam(event, "eventId");
     const body = await readBody(event);
     const { integrationId, calendarId, ...eventData }: { integrationId: string; calendarId: string } & CalendarEvent = body;
-
-    if (!eventId) {
-      throw createError({
-        statusCode: 400,
-        message: "Event ID is required",
-      });
-    }
 
     if (!integrationId || !calendarId) {
       throw createError({
@@ -64,8 +56,6 @@ export default defineEventHandler(async (event) => {
         message: "integrationId and calendarId are required",
       });
     }
-
-    const baseEventId = eventId.includes("-") ? eventId.split("-")[0] : eventId;
 
     const integration = await prisma.integration.findFirst({
       where: {
@@ -79,14 +69,14 @@ export default defineEventHandler(async (event) => {
     if (!integration) {
       throw createError({
         statusCode: 404,
-        message: "Google Calendar integration not found or not configured",
+        message: "Google Calendar integration not found",
       });
     }
 
     if (!integration.apiKey) {
       throw createError({
         statusCode: 400,
-        message: "Google Calendar integration is not authenticated. Please complete OAuth flow.",
+        message: "Google Calendar integration is not authenticated",
       });
     }
 
@@ -99,7 +89,7 @@ export default defineEventHandler(async (event) => {
     if (!clientId) {
       throw createError({
         statusCode: 400,
-        message: "Google Calendar integration is not properly configured",
+        message: "Client ID not found in integration settings",
       });
     }
 
@@ -152,14 +142,14 @@ export default defineEventHandler(async (event) => {
       recurrence: eventData.ical_event?.rrule ? [rruleObjectToString(eventData.ical_event.rrule)] : undefined,
     };
 
-    const updatedEvent = await service.updateEvent(calendarId as string, baseEventId as string, googleEventData);
+    const createdEvent = await service.addEvent(calendarId, googleEventData);
 
-    const start = updatedEvent.start.dateTime ? new Date(updatedEvent.start.dateTime) : new Date(`${updatedEvent.start.date}T00:00:00Z`);
-    const end = updatedEvent.end.dateTime ? new Date(updatedEvent.end.dateTime) : new Date(`${updatedEvent.end.date}T00:00:00Z`);
-    const isAllDay = !updatedEvent.start.dateTime;
+    const start = createdEvent.start.dateTime ? new Date(createdEvent.start.dateTime) : new Date(`${createdEvent.start.date}T00:00:00Z`);
+    const end = createdEvent.end.dateTime ? new Date(createdEvent.end.dateTime) : new Date(`${createdEvent.end.date}T00:00:00Z`);
+    const isAllDay = !createdEvent.start.dateTime;
 
-    const rrule = updatedEvent.recurrence && updatedEvent.recurrence.length > 0
-      ? parseRRuleString(updatedEvent.recurrence[0] || "")
+    const rrule = createdEvent.recurrence && createdEvent.recurrence.length > 0
+      ? parseRRuleString(createdEvent.recurrence[0] || "")
       : undefined;
 
     let icalEvent: ICalEvent | undefined;
@@ -170,10 +160,10 @@ export default defineEventHandler(async (event) => {
 
       icalEvent = {
         type: "VEVENT",
-        uid: updatedEvent.id,
-        summary: updatedEvent.summary,
-        description: updatedEvent.description,
-        location: updatedEvent.location,
+        uid: createdEvent.id,
+        summary: createdEvent.summary,
+        description: createdEvent.description,
+        location: createdEvent.location,
         dtstart: startTime.toString(),
         dtend: endTime.toString(),
         rrule,
@@ -181,13 +171,13 @@ export default defineEventHandler(async (event) => {
     }
 
     return {
-      id: updatedEvent.id,
-      title: updatedEvent.summary,
-      description: updatedEvent.description || "",
+      id: createdEvent.id,
+      title: createdEvent.summary,
+      description: createdEvent.description || "",
       start,
       end,
       allDay: isAllDay,
-      location: updatedEvent.location,
+      location: createdEvent.location,
       integrationId,
       calendarId,
       ical_event: icalEvent,
@@ -196,14 +186,15 @@ export default defineEventHandler(async (event) => {
   catch (error: unknown) {
     const err = error as { code?: number; message?: string; response?: { data?: unknown } };
 
-    consola.error("Integrations Google Calendar Event Update: Error details:", {
+    consola.error("Integrations Google Calendar Event Creation: Error details:", {
       code: err?.code,
       message: err?.message,
       response: err?.response?.data,
     });
 
     if (err?.code === 401 || err?.message?.includes("invalid_grant") || err?.message?.includes("Invalid Credentials")) {
-      const integrationId = (await readBody(event)).integrationId;
+      const body = await readBody(event);
+      const integrationId = (body as { integrationId?: string }).integrationId;
       if (integrationId) {
         await prisma.integration.update({
           where: { id: integrationId },
@@ -223,10 +214,10 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    consola.error("Integrations Google Calendar Event Update: Failed to update event:", error);
+    consola.error("Integrations Google Calendar Event Creation: Failed to create event:", error);
     throw createError({
       statusCode: 400,
-      message: error instanceof Error ? error.message : "Failed to update Google Calendar event",
+      message: error instanceof Error ? error.message : "Failed to create Google Calendar event",
     });
   }
 });
