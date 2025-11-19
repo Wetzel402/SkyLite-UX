@@ -37,6 +37,11 @@ const isTestingConnection = computed(() => {
   return props.connectionTestResult?.isLoading || (isSaving.value && !props.connectionTestResult);
 });
 
+const integrationNeedsReauth = computed(() => {
+  const settings = props.integration?.settings as { needsReauth?: boolean } | undefined;
+  return Boolean(settings?.needsReauth);
+});
+
 const currentIntegrationConfig = computed(() => {
   if (!type.value || !service.value)
     return null;
@@ -379,7 +384,7 @@ function handleDelete() {
         </div>
 
         <div
-          v-if="integration?.id && (integration.settings as { needsReauth?: boolean })?.needsReauth"
+          v-if="integration?.id && integrationNeedsReauth"
           class="bg-warning/10 text-warning rounded-md px-3 py-2 text-sm"
         >
           <div class="flex items-start gap-2">

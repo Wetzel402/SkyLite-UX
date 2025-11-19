@@ -477,6 +477,13 @@ function getIntegrationIconUrl(integration: Integration) {
   const config = integrationRegistry.get(`${integration.type}:${integration.service}`);
   return config?.icon || null;
 }
+
+function integrationNeedsReauth(integration?: Integration | null): boolean {
+  if (!integration)
+    return false;
+  const settings = integration.settings as { needsReauth?: boolean } | undefined;
+  return Boolean(settings?.needsReauth);
+}
 </script>
 
 <template>
@@ -666,7 +673,7 @@ function getIntegrationIconUrl(integration: Integration) {
                         {{ integration.name }}
                       </p>
                       <UBadge
-                        v-if="(integration.settings as { needsReauth?: boolean })?.needsReauth"
+                        v-if="integrationNeedsReauth(integration)"
                         color="warning"
                         variant="soft"
                         size="sm"
