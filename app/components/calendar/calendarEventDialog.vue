@@ -302,7 +302,22 @@ watch(() => props.isOpen, async (isOpen) => {
         try {
           consola.debug("CalendarEventDialog: Fetching calendars for integration", integration.id);
           const fetchedCalendars = await getAvailableCalendars(integration.id);
-          calendars = fetchedCalendars;
+
+          const settingsCalendars = Array.isArray(integration.settings?.calendars)
+            ? integration.settings.calendars as CalendarConfig[]
+            : [];
+
+          const integrationEnabled = integration.enabled ?? false;
+
+          calendars = fetchedCalendars.map((fetched) => {
+            const settingsCalendar = settingsCalendars.find(sc => sc.id === fetched.id);
+            const calendarEnabled = settingsCalendar?.enabled ?? false;
+            return {
+              ...fetched,
+              enabled: integrationEnabled && calendarEnabled,
+            };
+          });
+
           consola.debug("CalendarEventDialog: Fetched calendars", {
             integrationId: integration.id,
             calendarsCount: fetchedCalendars.length,
@@ -313,31 +328,47 @@ watch(() => props.isOpen, async (isOpen) => {
           consola.error("CalendarEventDialog: Failed to fetch calendars", error);
 
           if (integration.settings?.calendars) {
-            calendars = Array.isArray(integration.settings.calendars)
+            const settingsCalendars = Array.isArray(integration.settings.calendars)
               ? integration.settings.calendars as CalendarConfig[]
               : [];
+            const integrationEnabled = integration.enabled ?? false;
+            calendars = settingsCalendars.map(cal => ({
+              ...cal,
+              enabled: integrationEnabled && (cal.enabled ?? false),
+            }));
           }
         }
       }
       else if (integration.settings?.calendars) {
-        calendars = Array.isArray(integration.settings.calendars)
+        const settingsCalendars = Array.isArray(integration.settings.calendars)
           ? integration.settings.calendars as CalendarConfig[]
           : [];
+        const integrationEnabled = integration.enabled ?? false;
+        calendars = settingsCalendars.map(cal => ({
+          ...cal,
+          enabled: integrationEnabled && (cal.enabled ?? false),
+        }));
       }
 
-      availableIntegrations.value.push({
-        id: integration.id,
-        name: integration.name || `${integration.service} Calendar`,
-        calendars,
-        supportsSelectCalendars: hasSelectCalendars,
-      });
+      const hasEnabledCalendars = calendars.some(
+        cal => cal.accessRole === "write" && cal.enabled,
+      );
 
-      consola.debug("CalendarEventDialog: Added integration to picker", {
-        id: integration.id,
-        name: integration.name || `${integration.service} Calendar`,
-        calendarsCount: calendars.length,
-        supportsSelectCalendars: hasSelectCalendars,
-      });
+      if (!hasSelectCalendars || hasEnabledCalendars) {
+        availableIntegrations.value.push({
+          id: integration.id,
+          name: integration.name || `${integration.service} Calendar`,
+          calendars,
+          supportsSelectCalendars: hasSelectCalendars,
+        });
+
+        consola.debug("CalendarEventDialog: Added integration to picker", {
+          id: integration.id,
+          name: integration.name || `${integration.service} Calendar`,
+          calendarsCount: calendars.length,
+          supportsSelectCalendars: hasSelectCalendars,
+        });
+      }
     }
 
     consola.debug("CalendarEventDialog: Available integrations after processing", {

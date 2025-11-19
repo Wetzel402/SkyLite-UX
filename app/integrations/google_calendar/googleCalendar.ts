@@ -95,7 +95,7 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
       const client = window.google.accounts.oauth2.initCodeClient({
         client_id: this.clientId,
-        scope: "https://www.googleapis.com/auth/calendar.events",
+        scope: "https://www.googleapis.com/auth/calendar",
         ux_mode: "redirect",
         redirect_uri: redirectUri,
         state,

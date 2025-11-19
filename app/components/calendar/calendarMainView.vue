@@ -24,7 +24,7 @@ const _emit = defineEmits<{
   (e: "eventDelete", eventId: string): void;
 }>();
 
-const { getStableDate } = useStableDate();
+const { getStableDate, stableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
 const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
@@ -102,6 +102,35 @@ function handleToday() {
     scrollToDate(getStableDate(), view.value);
   });
 }
+
+function getDayString(date: Date): string {
+  return date.toISOString().split("T")[0] || date.toISOString().substring(0, 10);
+}
+
+const lastDay = ref(getDayString(getStableDate()));
+let dayChangeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(stableDate, (newDate) => {
+  const newDay = getDayString(newDate);
+  if (newDay !== lastDay.value) {
+    lastDay.value = newDay;
+
+    if (dayChangeTimeout) {
+      clearTimeout(dayChangeTimeout);
+    }
+
+    dayChangeTimeout = setTimeout(() => {
+      handleToday();
+      dayChangeTimeout = null;
+    }, 1000);
+  }
+});
+
+onUnmounted(() => {
+  if (dayChangeTimeout) {
+    clearTimeout(dayChangeTimeout);
+  }
+});
 
 function handleEventSelect(event: CalendarEvent) {
   selectedEvent.value = event;
