@@ -59,6 +59,12 @@ function getPriorityColor(priority: Priority) {
         >
           {{ item.name }}
         </span>
+        <UIcon
+          v-if="isTodoItem(item) && item.recurringGroupId"
+          name="i-lucide-repeat"
+          class="h-3.5 w-3.5 text-primary flex-shrink-0"
+          aria-label="Recurring todo"
+        />
       </div>
       <div class="flex items-center gap-2 mt-1">
         <span

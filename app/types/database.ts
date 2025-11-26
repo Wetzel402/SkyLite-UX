@@ -150,6 +150,8 @@ export type TodoListItem = BaseListItem & {
   dueDate: Date | null;
   todoColumnId: string;
   shoppingListId: string;
+  recurringGroupId?: string | null;
+  recurrencePattern?: RecurrencePattern | null;
 };
 
 export type TodoWithOrder = TodoWithUser & { order: number };
@@ -183,3 +185,25 @@ export type RawIntegrationItem = {
 };
 
 export type { Priority };
+
+// Recurrence types
+export type RecurrenceType = "daily" | "weekly" | "monthly";
+
+export type DailyPattern = {
+  type: "daily";
+  interval: number; // Every N days
+};
+
+export type WeeklyPattern = {
+  type: "weekly";
+  interval: number; // Every N weeks
+  daysOfWeek: number[]; // 0=Sunday, 1=Monday, ..., 6=Saturday
+};
+
+export type MonthlyPattern = {
+  type: "monthly";
+  interval: number; // Every N months
+  dayOfMonth: number; // 1-31
+};
+
+export type RecurrencePattern = DailyPattern | WeeklyPattern | MonthlyPattern;

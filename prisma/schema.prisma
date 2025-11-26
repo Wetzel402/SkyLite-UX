@@ -57,6 +57,9 @@ model Todo {
   todoColumnId String?
   todoColumn   TodoColumn? @relation(fields: [todoColumnId], references: [id], onDelete: Cascade)
 
+  recurringGroupId  String?
+  recurrencePattern Json?
+
   @@map("todos")
 }
 
@@ -96,7 +99,7 @@ model Integration {
   baseUrl   String?
   icon      String?
   enabled   Boolean  @default(true)
-  settings  Json?   
+  settings  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -111,7 +114,7 @@ model CalendarEvent {
   start       DateTime
   end         DateTime
   allDay      Boolean  @default(false)
-  color       Json?  
+  color       Json?
   location    String?
   ical_event  Json?
   createdAt   DateTime @default(now())
