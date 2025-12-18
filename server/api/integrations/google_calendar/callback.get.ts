@@ -33,29 +33,70 @@ export default defineEventHandler(async (event) => {
   try {
     const integrationData = JSON.parse(decodeURIComponent(state));
     const { name, type, service, enabled, settings, redirectUri, integrationId } = integrationData;
-    const clientId = settings?.clientId;
-    const clientSecret = settings?.clientSecret;
     const isReAuth = !!integrationId;
-
-    if (!clientId) {
-      throw createError({
-        statusCode: 400,
-        message: "Client ID not found in integration data",
-      });
-    }
-
-    if (!clientSecret) {
-      throw createError({
-        statusCode: 400,
-        message: "Client Secret not found in integration data",
-      });
-    }
 
     if (!redirectUri) {
       throw createError({
         statusCode: 400,
         message: "Redirect URI not found in state data",
       });
+    }
+
+    let clientId: string;
+    let clientSecret: string;
+    let existingIntegration;
+
+    if (isReAuth && integrationId) {
+      existingIntegration = await prisma.integration.findFirst({
+        where: {
+          id: integrationId,
+          type: "calendar",
+          service: "google",
+        },
+      });
+
+      if (!existingIntegration) {
+        throw createError({
+          statusCode: 404,
+          message: "Integration not found",
+        });
+      }
+
+      const dbSettings = existingIntegration.settings as Record<string, unknown> || {};
+      clientId = dbSettings.clientId as string;
+      clientSecret = dbSettings.clientSecret as string;
+
+      if (!clientId) {
+        throw createError({
+          statusCode: 400,
+          message: "Client ID not found in integration settings",
+        });
+      }
+
+      if (!clientSecret) {
+        throw createError({
+          statusCode: 400,
+          message: "Client Secret not found in integration settings",
+        });
+      }
+    }
+    else {
+      clientId = settings?.clientId as string;
+      clientSecret = settings?.clientSecret as string;
+
+      if (!clientId) {
+        throw createError({
+          statusCode: 400,
+          message: "Client ID not found in integration data",
+        });
+      }
+
+      if (!clientSecret) {
+        throw createError({
+          statusCode: 400,
+          message: "Client Secret not found in integration data",
+        });
+      }
     }
 
     const oauth2Client = new google.auth.OAuth2(
@@ -75,13 +116,14 @@ export default defineEventHandler(async (event) => {
 
     let integration;
 
-    if (isReAuth && integrationId) {
+    if (isReAuth && integrationId && existingIntegration) {
+      const existingSettings = existingIntegration.settings as Record<string, unknown> || {};
       integration = await prisma.integration.update({
         where: { id: integrationId },
         data: {
           apiKey: tokens.refresh_token,
           settings: {
-            ...settings,
+            ...existingSettings,
             accessToken: tokens.access_token,
             tokenExpiry: tokens.expiry_date,
             needsReauth: undefined,

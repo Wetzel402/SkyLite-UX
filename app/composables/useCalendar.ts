@@ -4,17 +4,20 @@ import { consola } from "consola";
 import { format } from "date-fns";
 import ical from "ical.js";
 
-import type { CalendarEvent, PlaceholderEvent } from "~/types/calendar";
+import type { CalendarEvent, PlaceholderEvent, SourceCalendar } from "~/types/calendar";
 import type { Integration } from "~/types/database";
+import type { CalendarConfig } from "~/types/integrations";
 
 import { useStableDate } from "~/composables/useStableDate";
 import { useSyncManager } from "~/composables/useSyncManager";
-import { getBrowserTimezone, isTimezoneRegistered } from "~/types/global";
+import { DEFAULT_LOCAL_EVENT_COLOR, getBrowserTimezone, isTimezoneRegistered } from "~/types/global";
+import { integrationRegistry } from "~/types/integrations";
 
 export function useCalendar() {
   const { data: nativeEvents } = useNuxtData<CalendarEvent[]>("calendar-events");
 
   const { integrations } = useIntegrations();
+  const { users } = useUsers();
 
   const { getSyncDataByType, getCachedIntegrationData } = useSyncManager();
 
@@ -332,11 +335,121 @@ export function useCalendar() {
     return new Date(utcTime);
   }
 
+  function mapSourceCalendars(
+    integration: Integration,
+    event: CalendarEvent,
+    eventColorParam?: string,
+    userColorParam?: string,
+  ): SourceCalendar[] {
+    const config = integrationRegistry.get(`${integration.type}:${integration.service}`);
+    const capabilities = config?.capabilities || [];
+    const hasEditEvents = capabilities.includes("edit_events");
+    const supportsSelectCalendars = capabilities.includes("select_calendars");
+    const calendars = Array.isArray(integration.settings?.calendars)
+      ? integration.settings?.calendars as CalendarConfig[]
+      : [];
+
+    let eventColor: string;
+    let userColor = userColorParam;
+
+    if (supportsSelectCalendars && calendars.length > 0 && event.calendarId) {
+      const calendarConfig = calendars.find(c => c.id === event.calendarId);
+      eventColor = eventColorParam || calendarConfig?.eventColor || "#06b6d4";
+
+      if (userColor === undefined && calendarConfig?.user) {
+        const userIds = calendarConfig.user;
+        if (Array.isArray(userIds) && userIds.length > 0) {
+          const user = users.value?.find(u => userIds.includes(u.id) && u.color !== null && u.color !== undefined);
+          userColor = user?.color || undefined;
+        }
+      }
+
+      if (calendarConfig) {
+        const accessRole = hasEditEvents && calendarConfig.accessRole === "write" ? "write" : "read";
+        return [{
+          integrationId: integration.id,
+          integrationName: integration.name || integration.service,
+          calendarId: calendarConfig.id,
+          calendarName: calendarConfig.name,
+          accessRole,
+          canEdit: accessRole === "write",
+          eventColor,
+          userColor,
+          eventId: event.id,
+        }];
+      }
+
+      return [{
+        integrationId: integration.id,
+        integrationName: integration.name || integration.service,
+        calendarId: event.calendarId || integration.id,
+        calendarName: event.calendarId,
+        accessRole: "read",
+        canEdit: false,
+        eventColor,
+        userColor,
+        eventId: event.id,
+      }];
+    }
+
+    eventColor = eventColorParam || integration.settings?.eventColor as string || "#06b6d4";
+
+    if (userColor === undefined) {
+      const userIds = integration.settings?.user as string[] | undefined;
+      if (Array.isArray(userIds) && userIds.length > 0) {
+        const user = users.value?.find(u => userIds.includes(u.id) && u.color !== null && u.color !== undefined);
+        userColor = user?.color || undefined;
+      }
+    }
+
+    const accessRole = hasEditEvents ? "write" : "read";
+    return [{
+      integrationId: integration.id,
+      integrationName: integration.name || integration.service,
+      calendarId: event.calendarId || integration.id,
+      calendarName: event.calendarId,
+      accessRole,
+      canEdit: hasEditEvents,
+      eventColor,
+      userColor,
+      eventId: event.id,
+    }];
+  }
+
+  function mapLocalEventSourceCalendar(event: CalendarEvent): SourceCalendar[] {
+    const userColors = event.users
+      ? [...new Set(event.users.map(u => u.color).filter((c): c is string => c !== null && c !== undefined))]
+      : [];
+
+    return [{
+      integrationId: "",
+      integrationName: "Local Calendar",
+      calendarId: "local",
+      calendarName: "Local Calendar",
+      accessRole: "write",
+      canEdit: true,
+      eventId: event.id,
+      eventColor: DEFAULT_LOCAL_EVENT_COLOR,
+      userColor: userColors.length > 0 ? userColors : undefined,
+    }];
+  }
+
   const allEvents = computed(() => {
     const events: CalendarEvent[] = [];
 
     if (nativeEvents.value) {
-      events.push(...nativeEvents.value);
+      const processedLocalEvents = nativeEvents.value.map((event: CalendarEvent) => {
+        const sourceCalendars = mapLocalEventSourceCalendar(event);
+
+        const processedEvent: CalendarEvent = {
+          ...event,
+          sourceCalendars,
+          color: getCombinedEventColors({ ...event, sourceCalendars }),
+        };
+
+        return processedEvent;
+      });
+      events.push(...processedLocalEvents);
     }
 
     const calendarIntegrations = (integrations.value as readonly Integration[] || []).filter(integration =>
@@ -351,7 +464,11 @@ export function useCalendar() {
         const integrationEvents = integrationEventsData.value ?? getCachedIntegrationData("calendar", integration.id) as CalendarEvent[];
 
         if (integrationEvents && Array.isArray(integrationEvents)) {
-          events.push(...integrationEvents);
+          const processedEvents = integrationEvents.map((event: CalendarEvent) => ({
+            ...event,
+            sourceCalendars: mapSourceCalendars(integration, event),
+          }));
+          events.push(...processedEvents);
         }
       }
       catch (error) {
@@ -396,7 +513,7 @@ export function useCalendar() {
       eventColor: string;
       useUserColors?: boolean;
       defaultColor: string;
-    } = { eventColor: "#06b6d4", defaultColor: "#06b6d4" },
+    } = { eventColor: DEFAULT_LOCAL_EVENT_COLOR, defaultColor: DEFAULT_LOCAL_EVENT_COLOR },
   ): string | string[] {
     const { eventColor, useUserColors = true, defaultColor } = options;
 
@@ -423,6 +540,77 @@ export function useCalendar() {
     return result;
   }
 
+  function mergeSourceCalendars(
+    existingSources: SourceCalendar[] | undefined,
+    incomingSources: SourceCalendar[] | undefined,
+  ): SourceCalendar[] | undefined {
+    const sources = [...(existingSources || []), ...(incomingSources || [])];
+    if (sources.length === 0) {
+      return undefined;
+    }
+
+    const sourceMap = new Map<string, SourceCalendar>();
+    sources.forEach((source) => {
+      if (!source) {
+        return;
+      }
+      const key = `${source.integrationId}-${source.calendarId}`;
+      if (!sourceMap.has(key)) {
+        sourceMap.set(key, source);
+      }
+      else {
+        const stored = sourceMap.get(key)!;
+        if (!stored.canEdit && source.canEdit) {
+          sourceMap.set(key, {
+            ...stored,
+            accessRole: "write",
+            canEdit: true,
+            eventId: source.eventId || stored.eventId,
+          });
+        }
+        else if (source.eventId && !stored.eventId) {
+          sourceMap.set(key, {
+            ...stored,
+            eventId: source.eventId,
+          });
+        }
+      }
+    });
+
+    return Array.from(sourceMap.values());
+  }
+
+  function getCombinedEventColors(event: CalendarEvent): string | string[] {
+    const colors: string[] = [];
+
+    if (event.sourceCalendars && event.sourceCalendars.length > 0) {
+      event.sourceCalendars.forEach((source) => {
+        if (source.userColor) {
+          if (Array.isArray(source.userColor)) {
+            colors.push(...source.userColor);
+          }
+          else {
+            colors.push(source.userColor);
+          }
+        }
+        else if (source.eventColor) {
+          colors.push(source.eventColor);
+        }
+      });
+    }
+
+    const uniqueColors = [...new Set(colors)].sort();
+
+    if (uniqueColors.length === 0) {
+      return DEFAULT_LOCAL_EVENT_COLOR;
+    }
+    else if (uniqueColors.length === 1) {
+      return uniqueColors[0]!;
+    }
+
+    return uniqueColors;
+  }
+
   function combineEvents(events: CalendarEvent[]): CalendarEvent[] {
     const eventMap = new Map<string, CalendarEvent>();
 
@@ -439,13 +627,16 @@ export function useCalendar() {
         const allUsers = [...(existingEvent.users || []), ...newUsers];
         existingEvent.users = allUsers.sort((a, b) => a.id.localeCompare(b.id));
 
-        existingEvent.color = getEventUserColors(existingEvent);
+        existingEvent.sourceCalendars = mergeSourceCalendars(existingEvent.sourceCalendars, event.sourceCalendars);
+
+        existingEvent.color = getCombinedEventColors(existingEvent);
       }
       else {
         const newEvent = {
           ...event,
-          color: getEventUserColors(event),
+          sourceCalendars: event.sourceCalendars,
         };
+        newEvent.color = getCombinedEventColors(newEvent);
         eventMap.set(key, newEvent);
       }
     });

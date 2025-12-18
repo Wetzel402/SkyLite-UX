@@ -9,6 +9,7 @@ import GlobalFloatingActionButton from "~/components/global/globalFloatingAction
 import { useCalendar } from "~/composables/useCalendar";
 import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
 import { useStableDate } from "~/composables/useStableDate";
+import { DEFAULT_LOCAL_EVENT_COLOR } from "~/types/global";
 
 const props = defineProps<{
   events?: CalendarEvent[];
@@ -145,7 +146,7 @@ function handleEventCreate(date: Date) {
     start: date,
     end: addDays(date, 1),
     allDay: false,
-    color: "sky",
+    color: DEFAULT_LOCAL_EVENT_COLOR,
   };
   isEventDialogOpen.value = true;
 }

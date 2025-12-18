@@ -4,6 +4,7 @@ import type { CalendarEvent } from "~/types/calendar";
 import type { Integration } from "~/types/database";
 import type { CalendarConfig, CalendarIntegrationService, IntegrationStatus, UserWithColor } from "~/types/integrations";
 
+import { DEFAULT_LOCAL_EVENT_COLOR } from "~/types/global";
 import { integrationRegistry } from "~/types/integrations";
 
 import type { GoogleCalendarListItem } from "../../../server/integrations/google_calendar/types";
@@ -204,7 +205,7 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
     return result.events.map((event) => {
       const calendarConfig = calendars.find(c => c.id === event.calendarId);
-      const eventColor = calendarConfig?.eventColor || "sky";
+      const eventColor = calendarConfig?.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
       const useUserColors = calendarConfig?.useUserColors || false;
       const userIds = calendarConfig?.user || [];
 
