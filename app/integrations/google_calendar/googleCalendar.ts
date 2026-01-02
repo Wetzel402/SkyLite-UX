@@ -193,14 +193,20 @@ export class GoogleCalendarService implements CalendarIntegrationService {
     const calendars = result.calendars || [];
     let allUsers: UserWithColor[] = [];
 
-    try {
-      const users = await $fetch<{ id: string; name: string; color: string | null }[]>("/api/users");
-      if (users) {
-        allUsers = users;
+    const needsUsers = calendars.some(cal =>
+      cal.useUserColors && cal.user && cal.user.length > 0,
+    );
+
+    if (needsUsers) {
+      try {
+        const users = await $fetch<{ id: string; name: string; color: string | null }[]>("/api/users");
+        if (users) {
+          allUsers = users;
+        }
       }
-    }
-    catch (error) {
-      consola.warn("GoogleCalendar: Failed to fetch users for Google Calendar integration:", error);
+      catch (error) {
+        consola.warn("GoogleCalendar: Failed to fetch users for Google Calendar integration:", error);
+      }
     }
 
     return result.events.map((event) => {
