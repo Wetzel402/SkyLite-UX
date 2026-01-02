@@ -38,7 +38,6 @@ const emit = defineEmits<{
 const { users, fetchUsers } = useUsers();
 
 const { getEventStartTimeForInput, getEventEndTimeForInput, getLocalTimeFromUTC } = useCalendar();
-const { getAvailableCalendars } = useCalendarIntegrations();
 const {
   convert12To24,
   convert24To12,
@@ -508,22 +507,7 @@ async function loadCalendarEventUsers() {
   }
 }
 
-function mergeCalendarsWithSettings(
-  fetchedCalendars: CalendarConfig[],
-  settingsCalendars: CalendarConfig[],
-  integrationEnabled: boolean,
-): CalendarConfig[] {
-  return fetchedCalendars.map((fetched) => {
-    const settingsCalendar = settingsCalendars.find(sc => sc.id === fetched.id);
-    const calendarEnabled = settingsCalendar?.enabled ?? false;
-    return {
-      ...fetched,
-      enabled: integrationEnabled && calendarEnabled,
-    };
-  });
-}
-
-async function processIntegrationForPicker(integration: Integration): Promise<{ id: string; name: string; calendars: CalendarConfig[]; supportsSelectCalendars: boolean } | null> {
+function processIntegrationForPicker(integration: Integration): { id: string; name: string; calendars: CalendarConfig[]; supportsSelectCalendars: boolean } | null {
   const config = integrationRegistry.get(`calendar:${integration.service}`);
   if (!config)
     return null;
@@ -534,31 +518,15 @@ async function processIntegrationForPicker(integration: Integration): Promise<{ 
   if (!hasAddEvents)
     return null;
 
-  let calendars: CalendarConfig[] = [];
   const settingsCalendars = Array.isArray(integration.settings?.calendars)
     ? integration.settings.calendars as CalendarConfig[]
     : [];
   const integrationEnabled = integration.enabled ?? false;
 
-  if (hasSelectCalendars) {
-    try {
-      const fetchedCalendars = await getAvailableCalendars(integration.id);
-      calendars = mergeCalendarsWithSettings(fetchedCalendars, settingsCalendars, integrationEnabled);
-    }
-    catch (error) {
-      consola.error("CalendarEventDialog: Failed to fetch calendars", error);
-      calendars = settingsCalendars.map(cal => ({
-        ...cal,
-        enabled: integrationEnabled && (cal.enabled ?? false),
-      }));
-    }
-  }
-  else if (settingsCalendars.length > 0) {
-    calendars = settingsCalendars.map(cal => ({
-      ...cal,
-      enabled: integrationEnabled && (cal.enabled ?? false),
-    }));
-  }
+  const calendars = settingsCalendars.map(cal => ({
+    ...cal,
+    enabled: integrationEnabled && (cal.enabled ?? false),
+  }));
 
   const hasEnabledCalendars = calendars.some(
     cal => cal.accessRole === "write" && cal.enabled,
