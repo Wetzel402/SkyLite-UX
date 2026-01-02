@@ -202,6 +202,10 @@ export function useSyncManager() {
 
     if (removedCount > 0) {
       nuxtApp.payload.data[cacheKey] = filteredEvents;
+      const { data: integrationEventsData } = useNuxtData<CalendarEvent[]>(cacheKey);
+      if (integrationEventsData) {
+        integrationEventsData.value = filteredEvents;
+      }
       consola.debug(
         `Use Sync Manager: Purged ${removedCount} events from ${calendarIds.length} disabled calendar(s) in integration ${integrationId}`,
       );
