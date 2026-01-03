@@ -35,7 +35,7 @@ jobs:
         with:
           images: ${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}
 
-       - name: Prepare tags
+      - name: Prepare tags
         id: tags
         run: |
           TAGS="${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.event.release.tag_name }}"
