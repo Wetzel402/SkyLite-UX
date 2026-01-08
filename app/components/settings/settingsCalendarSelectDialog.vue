@@ -50,6 +50,19 @@ watch(() => props.integration, (integration) => {
   }
 }, { immediate: true });
 
+watch(() => calendarConfigs.value.map(config => config.user), (userArrays) => {
+  calendarConfigs.value.forEach((config, index) => {
+    const userArray = userArrays[index];
+    const hasUsers = Array.isArray(userArray) && userArray.length > 0;
+    if (hasUsers) {
+      config.useUserColors = true;
+    }
+    else {
+      config.useUserColors = false;
+    }
+  });
+}, { deep: true });
+
 async function loadCalendars() {
   if (!props.integration?.id)
     return;
@@ -96,6 +109,14 @@ async function handleSave() {
     pending.value = true;
     error.value = null;
 
+    const validatedCalendarConfigs = calendarConfigs.value.map((config) => {
+      const hasUsers = Array.isArray(config.user) && config.user.length > 0;
+      return {
+        ...config,
+        useUserColors: hasUsers ? config.useUserColors : false,
+      };
+    });
+
     const currentSettings = props.integration.settings as Record<string, unknown> || {};
 
     await $fetch(`/api/integrations/${props.integration.id}`, {
@@ -103,7 +124,7 @@ async function handleSave() {
       body: {
         settings: {
           ...currentSettings,
-          calendars: calendarConfigs.value,
+          calendars: validatedCalendarConfigs,
         },
       },
     });
@@ -112,7 +133,7 @@ async function handleSave() {
 
     const disabledCalendars = originalCalendarConfigs.value
       .filter((original) => {
-        const updated = calendarConfigs.value.find(c => c.id === original.id);
+        const updated = validatedCalendarConfigs.find(c => c.id === original.id);
         return original.enabled && updated && !updated.enabled;
       })
       .map(c => c.id);

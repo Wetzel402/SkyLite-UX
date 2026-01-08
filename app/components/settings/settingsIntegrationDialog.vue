@@ -113,7 +113,7 @@ function initializeSettingsData() {
     }
     else if (field.type === "boolean") {
       if (field.key === "useUserColors") {
-        initialData[field.key] = true;
+        initialData[field.key] = false;
       }
       else {
         initialData[field.key] = false;
@@ -196,6 +196,16 @@ watch(() => props.integration, (newIntegration) => {
   }
 }, { immediate: true });
 
+watch(() => settingsData.value.user, (userSelection) => {
+  const hasUsers = Array.isArray(userSelection) && userSelection.length > 0;
+  if (hasUsers) {
+    settingsData.value.useUserColors = true;
+  }
+  else {
+    settingsData.value.useUserColors = false;
+  }
+}, { deep: true });
+
 function resetForm() {
   name.value = "";
   const firstType = availableTypes.value[0];
@@ -266,6 +276,10 @@ async function handleSave() {
   try {
     const integrationName = name.value.trim() || generateUniqueName(service.value, props.existingIntegrations);
 
+    const userSelection = settingsData.value.user || [];
+    const hasUsers = Array.isArray(userSelection) && userSelection.length > 0;
+    const useUserColors = hasUsers ? Boolean(settingsData.value.useUserColors) : false;
+
     const integrationData: CreateIntegrationInput = {
       name: integrationName,
       type: type.value,
@@ -275,9 +289,9 @@ async function handleSave() {
       icon: null,
       enabled: enabled.value,
       settings: {
-        user: settingsData.value.user || [],
+        user: userSelection,
         eventColor: settingsData.value.eventColor || "#06b6d4",
-        useUserColors: Boolean(settingsData.value.useUserColors),
+        useUserColors,
         clientId: settingsData.value.clientId || "",
         clientSecret: settingsData.value.clientSecret || "",
         ...(
