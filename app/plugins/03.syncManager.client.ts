@@ -219,26 +219,44 @@ export default defineNuxtPlugin(() => {
     const nuxtApp = useNuxtApp();
 
     switch (integrationType) {
-      case "calendar":
+      case "calendar": {
+        const cacheKey = `calendar-events-${integrationId}`;
         nuxtApp.payload.data = {
           ...nuxtApp.payload.data,
-          [`calendar-events-${integrationId}`]: data,
+          [cacheKey]: data,
         };
+        const { data: integrationEventsData } = useNuxtData<CalendarEvent[]>(cacheKey);
+        if (integrationEventsData) {
+          integrationEventsData.value = data as CalendarEvent[];
+        }
         break;
+      }
 
-      case "shopping":
+      case "shopping": {
+        const cacheKey = `shopping-lists-${integrationId}`;
         nuxtApp.payload.data = {
           ...nuxtApp.payload.data,
-          [`shopping-lists-${integrationId}`]: data,
+          [cacheKey]: data,
         };
+        const { data: integrationListsData } = useNuxtData<ShoppingListWithItemsAndCount[]>(cacheKey);
+        if (integrationListsData) {
+          integrationListsData.value = data as ShoppingListWithItemsAndCount[];
+        }
         break;
+      }
 
-      case "todo":
+      case "todo": {
+        const cacheKey = `todos-${integrationId}`;
         nuxtApp.payload.data = {
           ...nuxtApp.payload.data,
-          [`todos-${integrationId}`]: data,
+          [cacheKey]: data,
         };
+        const { data: integrationTodosData } = useNuxtData<TodoWithUser[]>(cacheKey);
+        if (integrationTodosData) {
+          integrationTodosData.value = data as TodoWithUser[];
+        }
         break;
+      }
     }
   }
 

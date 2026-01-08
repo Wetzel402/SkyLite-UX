@@ -458,10 +458,7 @@ export function useCalendar() {
 
     calendarIntegrations.forEach((integration) => {
       try {
-        const cacheKey = `calendar-events-${integration.id}`;
-        const { data: integrationEventsData } = useNuxtData<CalendarEvent[]>(cacheKey);
-
-        const integrationEvents = integrationEventsData.value ?? getCachedIntegrationData("calendar", integration.id) as CalendarEvent[];
+        const integrationEvents = getCachedIntegrationData("calendar", integration.id) as CalendarEvent[];
 
         if (integrationEvents && Array.isArray(integrationEvents)) {
           const processedEvents = integrationEvents.map((event: CalendarEvent) => ({
