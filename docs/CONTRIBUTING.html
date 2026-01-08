@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contributing Guide - Skylite UX</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e1e4e8;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin: 10px 0;
+            color: #24292e;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: #586069;
+            margin: 10px 0;
+        }
+
+        .nav-links {
+            margin: 20px 0;
+        }
+
+        .nav-links a {
+            color: #0366d6;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 30px 0;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            font-size: 1.4em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            font-size: 1.2em;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        ul,
+        ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        code {
+            background-color: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid #e1e4e8;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e4e8;
+            color: #586069;
+        }
+
+        .code-of-conduct {
+            background-color: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+            margin: 20px 0;
+        }
+
+        .standards {
+            background-color: #f0fff4;
+            border: 1px solid #c6f6d5;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .unacceptable {
+            background-color: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .contribution-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .contribution-card {
+            background-color: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+        }
+
+        .contribution-card h4 {
+            margin-top: 0;
+            color: #24292e;
+        }
+
+        .contribution-card ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .contribution-card li {
+            margin: 5px 0;
+        }
+
+
+
+        .pr-template {
+            background-color: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+            margin: 20px 0;
+        }
+
+        .pr-template pre {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            margin: 0;
+        }
+
+        .code-examples {
+            background-color: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+            margin: 20px 0;
+        }
+
+        .code-examples pre {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            margin: 0;
+        }
+
+        .bug-template,
+        .enhancement-template {
+            background-color: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+            margin: 20px 0;
+        }
+
+        .bug-template pre,
+        .enhancement-template pre {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            margin: 0;
+        }
+
+        .contact-info {
+            background-color: #f0fff4;
+            border: 1px solid #c6f6d5;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .contact-info h2 {
+            color: #22543d;
+            border-bottom-color: #c6f6d5;
+        }
+
+        .contact-info a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+
+        .recognition {
+            background-color: #f0fff4;
+            border: 1px solid #c6f6d5;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .recognition h2 {
+            color: #22543d;
+            border-bottom-color: #c6f6d5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Contributing to Skylite UX</h1>
+        <p>Thank you for your interest in contributing to Skylite UX! We welcome contributions from the community and
+            appreciate your help in making this project better.</p>
+
+        <div class="nav-links">
+            <a href="index.html">Home</a> •
+            <a href="DEVELOPMENT.html">Development</a> •
+            <a href="#code-of-conduct">Code of Conduct</a> •
+            <a href="#how-can-i-contribute">How to Contribute</a> •
+            <a href="#development-process">Development Process</a>
+        </div>
+    </div>
+
+
+
+    <section id="code-of-conduct">
+        <h2>Code of Conduct</h2>
+        <div class="code-of-conduct">
+            <p>This project and everyone participating in it is governed by our Code of Conduct. By participating, you
+                are expected to uphold this code.</p>
+        </div>
+
+        <h3>Our Standards</h3>
+        <div class="standards">
+            <ul>
+                <li><strong>Be respectful</strong> - Treat everyone with respect and dignity</li>
+                <li><strong>Be inclusive</strong> - Welcome people of all backgrounds and experience levels</li>
+                <li><strong>Be collaborative</strong> - Work together to achieve common goals</li>
+                <li><strong>Be constructive</strong> - Provide helpful, constructive feedback</li>
+                <li><strong>Be patient</strong> - Understand that everyone has different schedules and priorities</li>
+            </ul>
+        </div>
+
+        <h3>Unacceptable Behavior</h3>
+        <div class="unacceptable">
+            <ul>
+                <li>Harassment, discrimination, or offensive behavior</li>
+                <li>Trolling, insulting, or derogatory comments</li>
+                <li>Publishing others' private information without permission</li>
+                <li>Other conduct that could reasonably be considered inappropriate</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="how-can-i-contribute">
+        <h2>How Can I Contribute</h2>
+        <p>There are many ways to contribute to Skylite UX:</p>
+
+        <div class="contribution-types">
+            <div class="contribution-card">
+                <h4>Bug Reports</h4>
+                <ul>
+                    <li>Report bugs you encounter</li>
+                    <li>Help reproduce and verify bug fixes</li>
+                    <li>Test bug fixes in different environments</li>
+                </ul>
+            </div>
+
+            <div class="contribution-card">
+                <h4>Feature Requests</h4>
+                <ul>
+                    <li>Suggest new features</li>
+                    <li>Discuss feature implementations</li>
+                    <li>Help prioritize features</li>
+                </ul>
+            </div>
+
+            <div class="contribution-card">
+                <h4>Documentation</h4>
+                <ul>
+                    <li>Improve existing documentation</li>
+                    <li>Write tutorials and guides</li>
+                    <li>Translate documentation</li>
+                    <li>Fix typos and grammar</li>
+                </ul>
+            </div>
+
+            <div class="contribution-card">
+                <h4>Code Contributions</h4>
+                <ul>
+                    <li>Fix bugs</li>
+                    <li>Implement new features</li>
+                    <li>Improve performance</li>
+                    <li>Add tests</li>
+                    <li>Refactor code</li>
+                </ul>
+            </div>
+
+            <div class="contribution-card">
+                <h4>Testing</h4>
+                <ul>
+                    <li>Write unit tests</li>
+                    <li>Write integration tests</li>
+                    <li>Test on different platforms</li>
+                    <li>Report test results</li>
+                </ul>
+            </div>
+
+            <div class="contribution-card">
+                <h4>Design</h4>
+                <ul>
+                    <li>Improve UI/UX</li>
+                    <li>Create mockups</li>
+                    <li>Provide design feedback</li>
+                    <li>Help with accessibility</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="development-process">
+        <h2>Development Process</h2>
+
+        <h3>1. Choose an Issue</h3>
+        <ul>
+            <li>Check the <a href="https://github.com/wetzel402/Skylite-UX/issues">Issues</a> page</li>
+            <li>Look for issues labeled:
+                <ul>
+                    <li><code>good first issue</code> - Great for beginners</li>
+                    <li><code>help wanted</code> - Issues that need help</li>
+                    <li><code>bug</code> - Bug fixes</li>
+                    <li><code>enhancement</code> - New features</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>2. Comment on the Issue</h3>
+        <ul>
+            <li>Comment on the issue you want to work on</li>
+            <li>Let others know you're working on it</li>
+            <li>Ask questions if you need clarification</li>
+        </ul>
+
+        <h3>3. Make Your Changes</h3>
+        <ul>
+            <li>Follow the <a href="#code-style-guidelines">Code Style Guidelines</a></li>
+            <li>Write tests for new features</li>
+            <li>Update documentation as needed</li>
+            <li>Test your changes thoroughly</li>
+        </ul>
+
+        <h3>4. Commit Your Changes</h3>
+        <ul>
+            <li>Follow the <a href="#commit-message-guidelines">Commit Message Guidelines</a></li>
+            <li>Make small, focused commits</li>
+            <li>Include tests with your changes</li>
+        </ul>
+
+        <h3>5. Push and Create a Pull Request</h3>
+        <pre><code>git push origin feature/your-feature-name</code></pre>
+        <p>Then create a Pull Request on GitHub.</p>
+    </section>
+
+    <section id="pull-request-guidelines">
+        <h2>Pull Request Guidelines</h2>
+
+        <h3>Before Submitting</h3>
+        <ul>
+            <li>[ ] Code follows the style guidelines</li>
+            <li>[ ] Self-review your code</li>
+            <li>[ ] Add tests for new functionality</li>
+            <li>[ ] Update documentation</li>
+            <li>[ ] Ensure all tests pass</li>
+            <li>[ ] Check for any linting errors</li>
+        </ul>
+
+        <h3>Pull Request Template</h3>
+        <div class="pr-template">
+            <p>When creating a Pull Request, use this template:</p>
+            <pre><code>## Description
+Brief description of what this PR does.
+
+## Type of Change
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+
+## Testing
+- [ ] I have tested this change locally
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] All existing tests pass
+
+## Checklist
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+
+## Screenshots (if applicable)
+Add screenshots to help explain your changes.
+
+## Additional Notes
+Any additional information or context.</code></pre>
+        </div>
+
+        <h3>Review Process</h3>
+        <ol>
+            <li><strong>Automated Checks</strong> - CI/CD will run tests and linting</li>
+            <li><strong>Code Review</strong> - Maintainers will review your code</li>
+            <li><strong>Feedback</strong> - You may receive feedback and requested changes</li>
+            <li><strong>Approval</strong> - Once approved, your PR will be merged</li>
+        </ol>
+    </section>
+
+    <section id="code-style-guidelines">
+        <h2>Code Style Guidelines</h2>
+
+        <h4>General Principles</h4>
+        <ul>
+            <li><strong>Readability</strong> - Write code that's easy to read and understand</li>
+            <li><strong>Consistency</strong> - Follow existing patterns in the codebase</li>
+            <li><strong>Simplicity</strong> - Keep things simple and avoid over-engineering</li>
+            <li><strong>Documentation</strong> - Comment complex logic and public APIs</li>
+        </ul>
+
+        <h4>Vue & TypeScript Guidelines</h4>
+        <ul>
+            <li>Use <code>&lt;script setup lang="ts"&gt;</code> for all components</li>
+            <li>Define proper TypeScript types and interfaces</li>
+            <li>Leverage Nuxt auto-imports (no need to import <code>ref</code>, <code>computed</code>, etc.)</li>
+            <li>Use <code>defineProps</code> and <code>defineEmits</code> with TypeScript generics</li>
+            <li>Avoid <code>any</code> type - use proper typing or <code>unknown</code></li>
+        </ul>
+
+        <div class="code-examples">
+            <pre><code>// Good
+interface User {
+  id: string
+  name: string
+  email: string
+}
+
+const getUser = (id: string): Promise&lt;User&gt; => {
+  // implementation
+}
+
+// Avoid
+const getUser = (id: any): any => {
+  // implementation
+}</code></pre>
+        </div>
+
+        <h4>Styling Guidelines</h4>
+        <ul>
+            <li>Use Tailwind CSS utility classes for styling</li>
+            <li>Leverage Nuxt UI components when available</li>
+            <li>Follow mobile-first responsive design approach</li>
+            <li>Use consistent spacing and color tokens</li>
+        </ul>
+
+        <div class="code-examples">
+            <pre><code>&lt;template&gt;
+  &lt;div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm"&gt;
+    &lt;h2 class="text-lg font-semibold text-gray-900"&gt;{{ title }}&lt;/h2&gt;
+    &lt;button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"&gt;
+      Action
+    &lt;/button&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+        </div>
+    </section>
+
+    <section id="commit-message-guidelines">
+        <h2>Commit Message Guidelines</h2>
+        <p>We follow the <a href="https://www.conventionalcommits.org/">Conventional Commits</a> specification.</p>
+
+        <h3>Format</h3>
+        <pre><code>&lt;type&gt;[optional scope]: &lt;description&gt;
+
+[optional body]
+
+[optional footer(s)]</code></pre>
+
+        <h3>Types</h3>
+        <ul>
+            <li><strong>feat</strong>: A new feature</li>
+            <li><strong>fix</strong>: A bug fix</li>
+            <li><strong>docs</strong>: Documentation only changes</li>
+            <li><strong>style</strong>: Changes that do not affect the meaning of the code</li>
+            <li><strong>refactor</strong>: A code change that neither fixes a bug nor adds a feature</li>
+            <li><strong>perf</strong>: A code change that improves performance</li>
+            <li><strong>test</strong>: Adding missing tests or correcting existing tests</li>
+            <li><strong>chore</strong>: Changes to the build process or auxiliary tools</li>
+        </ul>
+
+        <h3>Examples</h3>
+        <pre><code>feat: add user authentication system
+fix(auth): resolve login redirect issue
+docs: update installation instructions
+style: format code with prettier
+refactor(components): extract reusable button component
+test: add unit tests for user service
+chore: update dependencies</code></pre>
+    </section>
+
+    <section id="reporting-bugs">
+        <h2>Reporting Bugs</h2>
+
+        <h3>Before Reporting</h3>
+        <ul>
+            <li>Check if the bug has already been reported</li>
+            <li>Try to reproduce the bug consistently</li>
+            <li>Check if it's a configuration issue</li>
+        </ul>
+
+        <h3>Bug Report Template</h3>
+        <div class="bug-template">
+            <pre><code>## Bug Description
+Clear and concise description of the bug.
+
+## Steps to Reproduce
+1. Go to '...'
+2. Click on '...'
+3. Scroll down to '...'
+4. See error
+
+## Expected Behavior
+What you expected to happen.
+
+## Actual Behavior
+What actually happened.
+
+## Environment
+- Host OS: [e.g. Linux fork, NAS type, etc...]
+- Client OS: [e.g. Android, Raspberry Pi OS, etc...]
+- Browser: [e.g. Chrome, Firefox]
+
+## Additional Context
+Add any other context about the problem here.
+
+## Screenshots
+If applicable, add screenshots to help explain your problem.</code></pre>
+        </div>
+    </section>
+
+    <section id="suggesting-enhancements">
+        <h2>Suggesting Enhancements</h2>
+
+        <h3>Before Suggesting</h3>
+        <ul>
+            <li>Check if the feature has already been requested</li>
+            <li>Think about the use case and benefits</li>
+            <li>Consider implementation complexity</li>
+        </ul>
+
+        <h3>Enhancement Request Template</h3>
+        <div class="enhancement-template">
+            <pre><code>## Problem Statement
+Is your feature request related to a problem? Please describe.
+
+## Proposed Solution
+A clear and concise description of what you want to happen.
+
+## Alternative Solutions
+A clear and concise description of any alternative solutions you've considered.
+
+## Additional Context
+Add any other context or screenshots about the feature request here.
+
+## Use Cases
+Describe specific use cases where this feature would be helpful.</code></pre>
+        </div>
+    </section>
+
+    <section id="questions-and-discussions">
+        <h2>Questions and Discussions</h2>
+
+        <h3>Getting Help</h3>
+        <ul>
+            <li><strong>GitHub Discussions</strong>: Use the <a
+                    href="https://github.com/wetzel402/Skylite-UX/discussions">Discussions</a> tab for questions</li>
+            <li><strong>Discord</strong>: Join our <a href="https://discord.gg/KJn3YfWxn7">Discord server</a> for
+                real-time help</li>
+            <li><strong>Issues</strong>: Use issues for bug reports and feature requests only</li>
+        </ul>
+
+        <h3>Asking Good Questions</h3>
+        <ul>
+            <li>Provide context about your environment</li>
+            <li>Include error messages and logs</li>
+            <li>Show what you've already tried</li>
+            <li>Be specific about what you're trying to achieve</li>
+        </ul>
+    </section>
+
+    <div class="recognition">
+        <h2>Recognition</h2>
+        <p>Contributors will be recognized in several ways:</p>
+        <ul>
+            <li><strong>Release notes</strong> for significant contributions</li>
+            <li><strong>Special thanks</strong> for major contributions</li>
+            <li><strong>Maintainer status</strong> for consistent contributors</li>
+        </ul>
+    </div>
+
+    <div class="contact-info">
+        <h2>Contact</h2>
+        <p>If you have any questions about contributing:</p>
+        <ul>
+            <li><strong>Discord</strong>: <a href="https://discord.gg/KJn3YfWxn7">Join our server</a></li>
+            <li><strong>GitHub Issues</strong>: <a href="https://github.com/wetzel402/Skylite-UX/issues">Create an
+                    issue</a></li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p><small>Thank you for contributing to Skylite UX!</small></p>
+    </div>
+</body>
+
+</html>
