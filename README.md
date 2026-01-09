@@ -31,15 +31,15 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 
 ## Installation
 
-View the [docs](https://wetzel402.github.io/Skylite-UX-docs/index.html#installation) for details.
+View the [docs](https://wetzel402.github.io/SkyLite-UX/#installation) for details.
 
 ## Development
 
-Read our [development guide](https://wetzel402.github.io/Skylite-UX-docs/DEVELOPMENT.html) for more details.
+Read our [development guide](https://wetzel402.github.io/SkyLite-UX/DEVELOPMENT.html) for more details.
 
 ## Contributing
 
-Check out the [contributor guide](https://wetzel402.github.io/Skylite-UX-docs/CONTRIBUTING.html) to get started.
+Check out the [contributor guide](https://wetzel402.github.io/SkyLite-UX/CONTRIBUTING.html) to get started.
 
 ## License
 
