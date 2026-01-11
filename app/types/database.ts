@@ -182,4 +182,33 @@ export type RawIntegrationItem = {
   integrationData?: JsonObject;
 };
 
+export type MealPlan = Prisma.MealPlanGetPayload<Record<string, never>>;
+
+export type Meal = Prisma.MealGetPayload<Record<string, never>>;
+
+export type MealPlanWithMeals = Prisma.MealPlanGetPayload<{
+  include: {
+    meals: true;
+    _count: { select: { meals: true } };
+  };
+}>;
+
+export type CreateMealPlanInput = {
+  weekStart: Date;
+  order?: number;
+};
+
+export type CreateMealInput = {
+  name: string;
+  description?: string;
+  mealType: MealType;
+  dayOfWeek: number;
+  daysInAdvance?: number;
+  completed?: boolean;
+  order?: number;
+};
+
+export type UpdateMealInput = Partial<Omit<CreateMealInput, "mealPlanId">>;
+
 export type { Priority };
+export type { MealType } from "@prisma/client";

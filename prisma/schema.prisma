@@ -141,3 +141,40 @@ enum Priority {
   HIGH
   URGENT
 }
+
+model MealPlan {
+  id        String   @id @default(cuid())
+  weekStart DateTime
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meals Meal[]
+
+  @@unique([weekStart])
+  @@map("meal_plans")
+}
+
+model Meal {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  mealType      MealType
+  dayOfWeek     Int
+  daysInAdvance Int      @default(0)
+  completed     Boolean  @default(false)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  mealPlanId String
+  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+
+  @@map("meals")
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
