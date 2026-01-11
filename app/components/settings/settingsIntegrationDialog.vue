@@ -30,6 +30,15 @@ const isSaving = ref(false);
 
 const settingsData = ref<Record<string, string | string[] | boolean>>({});
 
+// OAuth flow state
+const isOAuthFlow = computed(() => service.value === "google-calendar" && !props.integration?.id);
+const oauthStep = ref<"init" | "select-calendars" | "complete">("init");
+const tempOAuthTokens = ref<{
+  accessToken: string;
+  refreshToken: string;
+  tokenExpiry: string;
+} | null>(null);
+
 const isTestingConnection = computed(() => {
   return props.connectionTestResult?.isLoading || (isSaving.value && !props.connectionTestResult);
 });
@@ -77,7 +86,32 @@ const { users, fetchUsers } = useUsers();
 
 onMounted(() => {
   fetchUsers();
+
+  // Check URL params for OAuth callback
+  if (typeof window !== "undefined") {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("oauth_success") === "true" && urlParams.get("service") === "google-calendar") {
+      tempOAuthTokens.value = {
+        accessToken: urlParams.get("access_token") || "",
+        refreshToken: urlParams.get("refresh_token") || "",
+        tokenExpiry: urlParams.get("token_expiry") || "",
+      };
+      oauthStep.value = "select-calendars";
+
+      // Set service to google-calendar
+      type.value = "calendar";
+      service.value = "google-calendar";
+
+      // Clean URL
+      window.history.replaceState({}, "", "/settings");
+    }
+  }
 });
+
+function handleCalendarsSelected(calendarIds: string[]) {
+  settingsData.value.selectedCalendars = calendarIds;
+  oauthStep.value = "complete";
+}
 
 watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
@@ -223,7 +257,20 @@ async function handleSave() {
     return;
   }
 
-  if (!props.integration?.id) {
+  // For OAuth flows (Google Calendar), check OAuth completion
+  if (service.value === "google-calendar" && !props.integration?.id) {
+    if (oauthStep.value !== "complete" || !tempOAuthTokens.value) {
+      error.value = "Please complete the OAuth flow and select calendars";
+      return;
+    }
+
+    if (!settingsData.value.selectedCalendars || (settingsData.value.selectedCalendars as string[]).length === 0) {
+      error.value = "Please select at least one calendar";
+      return;
+    }
+  }
+
+  if (!props.integration?.id && service.value !== "google-calendar") {
     const missingFields = settingsFields.value
       .filter(field => field.required && !settingsData.value[field.key]?.toString().trim())
       .map(field => field.label);
@@ -252,12 +299,22 @@ async function handleSave() {
         user: settingsData.value.user || [],
         eventColor: settingsData.value.eventColor || "#06b6d4",
         useUserColors: Boolean(settingsData.value.useUserColors),
+        ...(service.value === "google-calendar" && {
+          selectedCalendars: settingsData.value.selectedCalendars || [],
+        }),
       },
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
+    } as any;
 
-    if (!props.integration?.id) {
+    // Handle OAuth tokens for Google Calendar
+    if (service.value === "google-calendar" && !props.integration?.id && tempOAuthTokens.value) {
+      integrationData.accessToken = tempOAuthTokens.value.accessToken;
+      integrationData.refreshToken = tempOAuthTokens.value.refreshToken;
+      integrationData.tokenExpiry = new Date(Number(tempOAuthTokens.value.tokenExpiry));
+      integrationData.tokenType = "Bearer";
+    }
+    else if (!props.integration?.id) {
       integrationData.apiKey = settingsData.value.apiKey?.toString().trim() || "";
       integrationData.baseUrl = settingsData.value.baseUrl?.toString().trim() || "";
     }
@@ -382,7 +439,23 @@ function handleDelete() {
           </p>
         </div>
 
-        <template v-if="currentIntegrationConfig">
+        <!-- Google Calendar OAuth Flow -->
+        <template v-if="isOAuthFlow">
+          <settingsGoogleCalendarOAuth v-if="oauthStep === 'init'" />
+          <settingsGoogleCalendarSelector
+            v-else-if="oauthStep === 'select-calendars' && tempOAuthTokens"
+            :access-token="tempOAuthTokens.accessToken"
+            :refresh-token="tempOAuthTokens.refreshToken"
+            :token-expiry="tempOAuthTokens.tokenExpiry"
+            @calendars-selected="handleCalendarsSelected"
+          />
+          <div v-else-if="oauthStep === 'complete'" class="bg-success/10 text-success rounded-md px-3 py-2 text-sm flex items-center gap-2">
+            <UIcon name="i-lucide-check-circle" class="h-4 w-4" />
+            Calendars selected successfully. Click Save to complete setup.
+          </div>
+        </template>
+
+        <template v-else-if="currentIntegrationConfig">
           <div
             v-for="field in settingsFields"
             :key="field.key"

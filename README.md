@@ -22,12 +22,80 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 
 ## Features
 
-- Docker Deployment
-- Family Calendar
-- Task Lists
-- Shopping Lists
-- Meal Planning
-- User Management
+- **Family Calendar** - Two-way Google Calendar sync with multi-user support
+- **Chores System** - Track chores with point values and parent verification
+- **Rewards System** - Kids redeem earned points for rewards
+- **Weather Integration** - Open-Meteo, OpenWeatherMap, or Home Assistant
+- **Photo Screensaver** - Google Photos integration for idle display
+- **Task Lists** - Columnar to-do lists with drag-and-drop
+- **Shopping Lists** - Shared shopping lists with check-off
+- **Meal Planning** - Integrations with Mealie and Tandoor
+- **User Management** - Parent/child roles with permissions
+- **Skylight-Inspired UI** - Bright pastel colors, touch-friendly design
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+- (Optional) Google Cloud Console project for Calendar/Photos
+
+### Development Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/wetzel402/SkyLite-UX.git
+cd SkyLite-UX
+```
+
+2. Run the setup script:
+```bash
+chmod +x init.sh
+./init.sh
+```
+
+Or manually:
+```bash
+npm install
+cp .env.example .env  # Configure your settings
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
+
+3. Open http://localhost:3000
+
+### Environment Variables
+
+Create a `.env` file with:
+
+```env
+# Required
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/skylite?schema=public"
+
+# Google Integration (optional)
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/integrations/google-calendar/oauth/callback"
+OAUTH_ENCRYPTION_KEY=""  # Generate with: openssl rand -hex 32
+
+# Optional
+NUXT_PUBLIC_TZ="America/Chicago"
+NUXT_PUBLIC_LOG_LEVEL="info"
+```
+
+## Development Commands
+
+```bash
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run preview          # Preview production build
+npm run lint             # Run ESLint with auto-fix
+npm run format           # Format code with Prettier
+npm run type-check       # Run TypeScript type checking
+npx prisma studio        # Open Prisma database GUI
+```
 
 ## Installation
 
