@@ -1,6 +1,6 @@
 import { defineEventHandler, sendRedirect } from "h3";
 
-import { createOAuth2Client, generateAuthUrl } from "~/server/integrations/google-calendar/oauth";
+import { createOAuth2Client, generateAuthUrl } from "../../../../integrations/google-calendar/oauth";
 
 /**
  * Initiate Google OAuth2 authorization flow

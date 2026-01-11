@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery, sendRedirect } from "h3";
 import { consola } from "consola";
 
-import { createOAuth2Client, encryptToken, exchangeCodeForTokens } from "~/server/integrations/google-calendar/oauth";
+import { createOAuth2Client, encryptToken, exchangeCodeForTokens } from "../../../../integrations/google-calendar/oauth";
 
 /**
  * Handle OAuth2 callback from Google

@@ -57,6 +57,127 @@ export const integrationConfigs: IntegrationConfig[] = [
     dialogFields: [],
     syncInterval: 10,
   },
+  {
+    type: "calendar",
+    service: "google-calendar",
+    settingsFields: [
+      {
+        key: "oauth",
+        label: "Google Account",
+        type: "oauth" as const,
+        required: true,
+        description: "Connect your Google account to sync calendars",
+      },
+      {
+        key: "selectedCalendars",
+        label: "Calendars to Sync",
+        type: "multiselect" as const,
+        required: false,
+        description: "Select which Google Calendars to sync",
+      },
+    ],
+    capabilities: ["get_events", "add_events", "edit_events", "delete_events"],
+    icon: "https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png",
+    files: [],
+    dialogFields: [],
+    syncInterval: 1,
+  },
+  // ================================================
+  // Weather integration configs
+  // - get_current: Get current weather conditions
+  // - get_forecast: Get weather forecast
+  // ================================================
+  {
+    type: "weather",
+    service: "open-meteo",
+    settingsFields: [
+      {
+        key: "location",
+        label: "Location",
+        type: "text" as const,
+        placeholder: "City name or coordinates (lat,lon)",
+        required: true,
+        description: "Your location for weather data",
+      },
+      {
+        key: "units",
+        label: "Temperature Units",
+        type: "select" as const,
+        options: ["fahrenheit", "celsius"],
+        required: false,
+        description: "Choose temperature display units",
+      },
+    ],
+    capabilities: ["get_current", "get_forecast"],
+    icon: "https://unpkg.com/lucide-static@latest/icons/cloud-sun.svg",
+    files: [],
+    dialogFields: [],
+    syncInterval: 30,
+  },
+  {
+    type: "weather",
+    service: "home-assistant",
+    settingsFields: [
+      {
+        key: "baseUrl",
+        label: "Home Assistant URL",
+        type: "url" as const,
+        placeholder: "http://homeassistant.local:8123",
+        required: true,
+        description: "Your Home Assistant instance URL",
+      },
+      {
+        key: "apiKey",
+        label: "Long-Lived Access Token",
+        type: "password" as const,
+        required: true,
+        description: "Create a token in Home Assistant under Profile > Security",
+      },
+      {
+        key: "entityId",
+        label: "Weather Entity",
+        type: "text" as const,
+        placeholder: "weather.home",
+        required: true,
+        description: "The weather entity ID to use",
+      },
+    ],
+    capabilities: ["get_current", "get_forecast"],
+    icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/home-assistant.svg",
+    files: [],
+    dialogFields: [],
+    syncInterval: 30,
+  },
+  // ================================================
+  // Photos integration configs
+  // - get_albums: List available albums
+  // - get_photos: Get photos from selected albums
+  // ================================================
+  {
+    type: "photos",
+    service: "google-photos",
+    settingsFields: [
+      {
+        key: "oauth",
+        label: "Google Account",
+        type: "oauth" as const,
+        required: true,
+        description: "Connect your Google account to access photos",
+      },
+      {
+        key: "selectedAlbums",
+        label: "Albums to Display",
+        type: "multiselect" as const,
+        required: false,
+        description: "Select which albums to use for screensaver",
+      },
+    ],
+    capabilities: ["get_albums", "get_photos"],
+    icon: "https://www.gstatic.com/images/branding/product/1x/photos_2020q4_48dp.png",
+    files: [],
+    dialogFields: [],
+    syncInterval: 60,
+  },
   // ================================================
   // Meal integration configs can support the following list-level capabilities:
   // ================================================
@@ -198,6 +319,7 @@ const serviceFactoryMap = {
     const useUserColors = settings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
+  "calendar:google-calendar": (id: string) => createGoogleCalendarService(id),
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,
 } as const;
