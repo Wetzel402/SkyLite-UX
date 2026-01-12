@@ -35,11 +35,11 @@ View the [docs](https://wetzel402.github.io/SkyLite-UX/#installation) for detail
 
 ## Development
 
-Read our [development guide](https://wetzel402.github.io/SkyLite-UX/development.html) for more details.
+Read our [development guide](https://wetzel402.github.io/SkyLite-UX/development/) for more details.
 
 ## Contributing
 
-Check out the [contributor guide](https://wetzel402.github.io/SkyLite-UX/contributing.html) to get started.
+Check out the [contributor guide](https://wetzel402.github.io/SkyLite-UX/contributing/) to get started.
 
 ## License
 

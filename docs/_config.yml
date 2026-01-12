@@ -1,0 +1,66 @@
+# Site settings
+title: SkyLite UX
+description: The open-source family manager
+url: https://wetzel402.github.io
+baseurl: /SkyLite-UX
+
+# Site favicon
+favicon_ico: /assets/images/favicon.ico
+
+# GitHub Pages settings
+github:
+  repository_url: https://github.com/wetzel402/SkyLite-UX
+
+# Theme configuration
+remote_theme: just-the-docs/just-the-docs
+
+# Plugins
+plugins:
+  - jekyll-remote-theme
+
+# Exclude files from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .git
+  - .gitignore
+  - README.md
+  - .nuxt
+  - .output
+  - .devcontainer
+
+# Navigation structure
+nav_order: 1
+nav_external: false
+
+# Heading anchor links
+heading_anchors: true
+
+# Search
+search_enabled: true
+
+# Color scheme
+color_scheme: dark
+
+# Auxiliary links (optional)
+aux_links:
+  GitHub: //github.com/wetzel402/SkyLite-UX
+
+# GitHub edit links
+gh_edit_link: true
+gh_edit_repository: https://github.com/wetzel402/SkyLite-UX
+gh_edit_branch: main
+gh_edit_view_mode: tree
+
+# Markdown processor
+markdown: kramdown
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: highlight
+    span:
+      line_numbers: false
+    block:
+      line_numbers: true

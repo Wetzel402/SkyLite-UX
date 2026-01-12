@@ -50,7 +50,6 @@ export type IntegrationConfig = {
   settingsFields: IntegrationSettingsField[];
   capabilities: string[];
   icon: string;
-  files: string[];
   dialogFields: DialogField[];
   syncInterval: number;
   customSaveHandler?: (

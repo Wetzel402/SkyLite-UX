@@ -56,7 +56,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["get_events"],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
-    files: [],
     dialogFields: [],
     syncInterval: 10,
   },
@@ -84,7 +83,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["get_events", "edit_events", "add_events", "delete_events", "oauth", "select_calendars"],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
-    files: [],
     dialogFields: [],
     syncInterval: 10,
     customSaveHandler: handleGoogleCalendarSave,
@@ -124,11 +122,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["add_items", "edit_items"],
     icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/tandoor-recipes.svg",
-    files: [
-      "/integrations/tandoor/tandoorShoppingLists.ts",
-      "/server/api/integrations/tandoor/[...path].ts",
-      "/server/integrations/tandoor/",
-    ],
     dialogFields: [
       {
         key: "name",
@@ -178,11 +171,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["add_items", "clear_items", "edit_items"],
     icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/mealie.svg",
-    files: [
-      "/integrations/mealie/mealieShoppingLists.ts",
-      "/server/api/integrations/mealie/[...path].ts",
-      "/server/integrations/mealie/",
-    ],
     dialogFields: [
       {
         key: "quantity",
