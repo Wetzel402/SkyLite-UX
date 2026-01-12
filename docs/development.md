@@ -394,27 +394,18 @@ Using the authenticated base image ensures consistency between local development
 
 The documentation site for SkyLite UX is built with Jekyll and hosted on GitHub Pages. This section covers how to test and work with the documentation locally using the devcontainer.
 
-### Prerequisites
-
-Ruby and Bundler are pre-installed in the devcontainer, and Jekyll dependencies are automatically installed when the container is created via the `postCreateCommand`. No manual installation is required.
-
-### Installing Dependencies
-
-Jekyll dependencies are automatically installed when the devcontainer is created. If you need to reinstall them (for example, after updating the `Gemfile`), navigate to the `docs` directory and run:
-
-```bash
-cd docs
-bundle install
-```
-
-This will install Jekyll and all required dependencies as specified in the `Gemfile` to `vendor/bundle` (no sudo required).
-
 ### Running the Local Server
 
-Start the Jekyll development server:
+Start the Jekyll development server using the npm script:
 
 ```bash
-bundle exec jekyll serve --host 0.0.0.0
+npm run docs
+```
+
+Alternatively, you can run the command directly from the `docs/` directory:
+
+```bash
+cd docs && bundle exec jekyll serve --host 0.0.0.0
 ```
 
 The `--host 0.0.0.0` flag is important in the devcontainer so that the server is accessible from outside the container. The documentation site will be available at `http://localhost:4000/SkyLite-UX/` (port forwarding should be configured automatically). Jekyll will automatically regenerate the site when you make changes to Markdown files.
