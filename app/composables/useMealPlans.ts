@@ -51,7 +51,10 @@ export function useMealPlans() {
     try {
       const newPlan = await $fetch<MealPlanWithMeals>("/api/meal-plans", {
         method: "POST",
-        body: planData,
+        body: {
+          ...planData,
+          weekStart: planData.weekStart.toISOString(),
+        },
       });
 
       await refreshNuxtData("meal-plans");

@@ -11,8 +11,21 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const mealPlan = await prisma.mealPlan.findUnique({
-      where: { weekStart: new Date(weekStart) },
+    // Parse the date and normalize to start of day in UTC
+    const searchDate = new Date(weekStart);
+    searchDate.setUTCHours(0, 0, 0, 0);
+
+    // Find meal plan for the week by date range (handles timezone differences)
+    const endOfDay = new Date(searchDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const mealPlan = await prisma.mealPlan.findFirst({
+      where: {
+        weekStart: {
+          gte: searchDate,
+          lte: endOfDay,
+        },
+      },
       include: {
         meals: {
           orderBy: [
