@@ -27,6 +27,16 @@ const isDark = computed({
   },
 });
 
+const { showMealsOnCalendar, toggleMealsOnCalendar } = useCalendar();
+const showMeals = computed({
+  get() {
+    return showMealsOnCalendar.value;
+  },
+  set() {
+    toggleMealsOnCalendar();
+  },
+});
+
 onMounted(() => {
   if (!colorMode.value) {
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -655,6 +665,24 @@ function getIntegrationIconUrl(integration: Integration) {
                 unchecked-icon="i-lucide-sun"
                 size="xl"
                 aria-label="Toggle dark mode"
+              />
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Show Meals on Calendar
+                </p>
+                <p class="text-sm text-muted">
+                  Display meals from meal planner on the calendar view
+                </p>
+              </div>
+              <USwitch
+                v-model="showMeals"
+                color="primary"
+                checked-icon="i-lucide-utensils"
+                unchecked-icon="i-lucide-utensils-crossed"
+                size="xl"
+                aria-label="Toggle meal display on calendar"
               />
             </div>
             <div class="flex items-center justify-between">

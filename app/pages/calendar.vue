@@ -11,7 +11,7 @@ import { useIntegrations } from "~/composables/useIntegrations";
 import { useMealPlans } from "~/composables/useMealPlans";
 import { integrationRegistry } from "~/types/integrations";
 
-const { allEvents, getEventUserColors, showMealsOnCalendar, toggleMealsOnCalendar } = useCalendar();
+const { allEvents, getEventUserColors, showMealsOnCalendar } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
 const { getMealsForDateRange } = useMealPlans();
 const router = useRouter();
@@ -284,13 +284,10 @@ function getEventIntegrationCapabilities(event: CalendarEvent): { capabilities: 
       :events="combinedEvents as CalendarEvent[]"
       initial-view="week"
       class="h-[calc(100vh-2rem)]"
-      :show-meals-toggle="true"
-      :meals-visible="showMealsOnCalendar"
       :get-integration-capabilities="getEventIntegrationCapabilities"
       @event-add="handleEventAdd"
       @event-update="handleEventUpdate"
       @event-delete="handleEventDelete"
-      @toggle-meals="toggleMealsOnCalendar"
     />
   </div>
 </template>
