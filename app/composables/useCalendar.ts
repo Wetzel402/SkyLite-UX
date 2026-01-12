@@ -20,6 +20,16 @@ export function useCalendar() {
 
   const { getStableDate, parseStableDate } = useStableDate();
 
+  // Meal display toggle state
+  const showMealsOnCalendar = useCookie<boolean>("calendar-show-meals", {
+    default: () => false,
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+  });
+
+  const toggleMealsOnCalendar = () => {
+    showMealsOnCalendar.value = !showMealsOnCalendar.value;
+  };
+
   function getSafeTimezone(): string {
     if (isTimezoneRegistered()) {
       const registeredTimezone = getBrowserTimezone();
@@ -818,5 +828,8 @@ export function useCalendar() {
     getLocalWeekDays,
     getLocalMonthWeeks,
     getLocalAgendaDays,
+
+    showMealsOnCalendar,
+    toggleMealsOnCalendar,
   };
 }

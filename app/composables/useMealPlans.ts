@@ -4,6 +4,7 @@ import type {
   CreateMealPlanInput,
   Meal,
   MealPlanWithMeals,
+  MealWithDate,
   UpdateMealInput,
 } from "~/types/database";
 
@@ -143,6 +144,26 @@ export function useMealPlans() {
     }
   };
 
+  const getMealsForDateRange = async (startDate: Date, endDate: Date) => {
+    try {
+      const meals = await $fetch<MealWithDate[]>(
+        "/api/meals/by-date-range",
+        {
+          params: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
+      );
+      return meals;
+    }
+    catch (err) {
+      error.value = "Failed to fetch meals for date range";
+      consola.error("Use Meal Plans: Error fetching meals by date range:", err);
+      throw err;
+    }
+  };
+
   return {
     mealPlans: readonly(currentMealPlans),
     loading: readonly(loading),
@@ -155,5 +176,6 @@ export function useMealPlans() {
     updateMeal,
     deleteMeal,
     getUpcomingPrepMeals,
+    getMealsForDateRange,
   };
 }

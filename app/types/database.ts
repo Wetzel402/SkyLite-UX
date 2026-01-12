@@ -210,5 +210,10 @@ export type CreateMealInput = {
 
 export type UpdateMealInput = Partial<Omit<CreateMealInput, "mealPlanId">>;
 
+export type MealWithDate = Meal & {
+  calculatedDate: Date;
+  mealPlanWeekStart: Date;
+};
+
 export type { Priority };
 export type { MealType } from "@prisma/client";

@@ -10,6 +10,8 @@ import { useStableDate } from "~/composables/useStableDate";
 const props = defineProps<{
   showNavigation?: boolean;
   showViewSelector?: boolean;
+  showMealsToggle?: boolean;
+  mealsVisible?: boolean;
   currentDate?: Date;
   view?: CalendarView;
   className?: string;
@@ -21,6 +23,7 @@ const emit = defineEmits<{
   (e: "today"): void;
   (e: "viewChange", view: CalendarView): void;
   (e: "dateChange", date: Date): void;
+  (e: "toggleMeals"): void;
 }>();
 
 const { getStableDate } = useStableDate();
@@ -220,8 +223,17 @@ function handleToday() {
           Today
         </UButton>
       </div>
-      <div v-if="showViewSelector" class="flex items-center justify-between gap-2">
-        <UDropdownMenu :items="items">
+      <div v-if="showViewSelector || showMealsToggle" class="flex items-center justify-between gap-2">
+        <UButton
+          v-if="showMealsToggle"
+          :icon="mealsVisible ? 'i-lucide-utensils' : 'i-lucide-utensils-crossed'"
+          :color="mealsVisible ? 'primary' : 'neutral'"
+          variant="ghost"
+          size="xl"
+          aria-label="Toggle meal display"
+          @click="$emit('toggleMeals')"
+        />
+        <UDropdownMenu v-if="showViewSelector" :items="items">
           <UButton
             color="neutral"
             variant="outline"

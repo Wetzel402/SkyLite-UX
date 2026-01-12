@@ -13,6 +13,8 @@ const props = defineProps<{
   className?: string;
   initialView?: CalendarView;
   class?: string;
+  showMealsToggle?: boolean;
+  mealsVisible?: boolean;
   getIntegrationCapabilities?: (event: CalendarEvent) => { capabilities: string[]; serviceName?: string } | undefined;
 }>();
 
@@ -20,12 +22,13 @@ const _emit = defineEmits<{
   (e: "eventAdd", event: CalendarEvent): void;
   (e: "eventUpdate", event: CalendarEvent): void;
   (e: "eventDelete", eventId: string): void;
+  (e: "toggleMeals"): void;
 }>();
 
 const { getStableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
-const view = ref<CalendarView>(props.initialView || "week");
+const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "week");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
 
@@ -210,6 +213,8 @@ function getDaysForAgenda(date: Date) {
       <GlobalDateHeader
         :show-navigation="true"
         :show-view-selector="true"
+        :show-meals-toggle="showMealsToggle"
+        :meals-visible="mealsVisible"
         :current-date="currentDate"
         :view="view"
         @previous="handlePrevious"
@@ -217,6 +222,7 @@ function getDaysForAgenda(date: Date) {
         @today="handleToday"
         @view-change="(newView) => view = newView"
         @date-change="(newDate) => currentDate = newDate"
+        @toggle-meals="$emit('toggleMeals')"
       />
     </div>
     <div class="flex flex-1 flex-col min-h-0">
