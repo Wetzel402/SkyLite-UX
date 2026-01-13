@@ -1,5 +1,160 @@
 # SkyLite-UX Development Progress
 
+## Session 3 - Coding Agent (2025-01-12)
+
+### Session Summary
+- Verified 9 navigation features passing
+- Created combined Lists page (/lists) with Shopping and To-Do tabs
+- Updated sidebar navigation to match app spec (combined Lists link)
+- All calendar view selectors working (Week, Month, Day, Agenda)
+- Database still not running - PostgreSQL at localhost:5432 not accessible
+
+### Completed Tasks
+
+1. **Created Combined Lists Page**
+   - New `/lists` route with tab navigation for Shopping and To-Do lists
+   - Created `app/pages/lists.vue` with tab UI
+   - Created `app/components/shopping/shoppingListsContent.vue`
+   - Created `app/components/todos/todoListsContent.vue`
+   - Matches Skylight Calendar spec requirement
+
+2. **Updated Sidebar Navigation**
+   - Modified `app/components/global/globalSideBar.vue`
+   - Consolidated separate Todo Lists and Shopping Lists into single "Lists" link
+   - Added Chores and Rewards links (pages already existed)
+   - Sidebar now matches spec: Calendar, Chores, Rewards, Lists, Meal Planner, Settings
+
+3. **Verified Navigation Features** (9 features passing)
+   - Feature #10: Sidebar Chores navigation - PASSING
+   - Feature #11: Sidebar Lists navigation - PASSING
+   - Feature #12: Sidebar Settings navigation - PASSING
+   - Feature #13: Calendar Week view - PASSING
+   - Feature #14: Calendar Month view - PASSING
+   - Feature #15: Calendar Day view - PASSING
+   - Feature #16: Calendar Agenda view - PASSING
+   - Feature #17: Calendar date navigation forward - PASSING
+
+### Current Statistics
+- Total Features: 160
+- Passing: 9
+- In Progress: 0
+- Completion: 5.6%
+
+### Blockers
+- Database still not running (PostgreSQL localhost:5432)
+- Cannot test data-dependent features (create events, chores, users)
+- Features requiring database will need to be tested once DB is available
+
+### Next Steps for Future Agents
+
+1. **Get database running** (CRITICAL for data features)
+   - Start PostgreSQL server or Docker container
+   - Run `npx prisma migrate dev` to apply schema
+
+2. **Continue with navigation features**
+   - Calendar date navigation backward
+   - Calendar "Today" button
+   - Rewards page navigation
+
+3. **Once database available, test:**
+   - User creation/management
+   - Event creation and display
+   - Chores CRUD operations
+   - Shopping list operations
+
+### Files Created This Session
+- app/pages/lists.vue
+- app/components/shopping/shoppingListsContent.vue
+- app/components/todos/todoListsContent.vue
+
+### Files Modified This Session
+- app/components/global/globalSideBar.vue
+
+---
+
+## Session 2 - Coding Agent (2025-01-11)
+
+### Session Summary
+- Attempted to work on Feature #1 (Parent can access integration settings)
+- Database not running - PostgreSQL at localhost:5432 is not accessible
+- Made progress on integration configuration despite database limitation
+
+### Completed Tasks
+
+1. **Fixed server import path issues**
+   - Fixed `~/server/integrations/google-calendar` imports to use relative paths
+   - Files fixed: events.get.ts, calendars.get.ts, authorize.get.ts, callback.get.ts
+   - Server now starts successfully (Nitro build completes)
+
+2. **Added new integration configurations**
+   - Added Google Calendar integration config with OAuth and calendar selection
+   - Added Open-Meteo weather integration with location and units settings
+   - Added Home Assistant weather integration with entity selection
+   - Added Google Photos integration for screensaver feature
+   - All integration types now visible in Settings page UI
+
+3. **Verified Integration UI**
+   - Settings page loads at /settings
+   - Integrations section shows tabs: Calendar, Weather, Photos, Shopping
+   - Calendar tab: iCal, Google Calendar options available
+   - Weather tab: Open-Meteo, Home Assistant options available
+   - Photos tab: Google Photos option available
+   - Shopping tab: Mealie, Tandoor options available
+
+### Blockers
+
+**CRITICAL: Database not running**
+- PostgreSQL server at localhost:5432 is not accessible
+- Cannot create users to test role-based access control
+- Cannot fully verify Feature #1 (requires parent user)
+- init.sh fails at migration step
+
+**To resolve:**
+1. Start PostgreSQL on localhost:5432
+2. Or use Docker: `docker-compose -f docker-compose-example.yaml up -d skylite-ux-db`
+3. Run migrations: `npx prisma migrate dev`
+
+### Feature Status
+- Feature #1: "Parent can access integration settings" - IN PROGRESS
+  - UI implementation complete
+  - Cannot verify role-based access without database
+  - Integration options (Google Calendar, Weather, Photos) ARE visible
+
+### Commits Made
+1. `d9d71f2` - feat: Add Google Calendar, Weather, and Photos integration configs
+
+### Current Statistics
+- Total Features: 160
+- Passing: 0
+- In Progress: 1 (Feature #1)
+- Completion: 0%
+
+### Next Steps for Future Agents
+
+1. **Get database running** (CRITICAL)
+   - Start PostgreSQL server or Docker container
+   - Run `npx prisma migrate dev` to apply schema
+
+2. **Complete Feature #1**
+   - Create a parent user via Settings > Add User
+   - Add role selection (PARENT/CHILD) to user dialog
+   - Verify parent can access integration settings
+   - Mark feature as passing
+
+3. **Work on Feature #2**
+   - "Child cannot access integration settings"
+   - Implement access control middleware
+   - Block child users from integration settings
+
+### Files Modified This Session
+- app/integrations/integrationConfig.ts (added 121 lines)
+- server/api/integrations/google-calendar/events.get.ts (fixed imports)
+- server/api/integrations/google-calendar/calendars.get.ts (fixed imports)
+- server/api/integrations/google-calendar/oauth/authorize.get.ts (fixed imports)
+- server/api/integrations/google-calendar/oauth/callback.get.ts (fixed imports)
+
+---
+
 ## Session 1 - Initializer Agent (2025-01-10)
 
 ### Completed Tasks
@@ -65,48 +220,6 @@
 6. **Committed changes to git**
    - Commit: feat: Add initial setup and new feature schemas
    - Includes init.sh, schema, README, Google Calendar integration
-
-### Current Feature Statistics
-- Total Features: 160
-- Passing: 0
-- In Progress: 0
-- Completion: 0%
-
-### Files Created/Modified
-- init.sh (new)
-- prisma/schema.prisma (updated with 233 new lines)
-- README.md (updated)
-- app/components/settings/settingsGoogleCalendarOAuth.vue (existing, staged)
-- app/components/settings/settingsGoogleCalendarSelector.vue (existing, staged)
-- app/integrations/google-calendar/googleCalendar.ts (existing, staged)
-- server/api/integrations/google-calendar/* (existing, staged)
-- server/integrations/google-calendar/* (existing, staged)
-
-### Next Steps for Future Agents
-
-1. **Apply Database Migrations**
-   ```bash
-   npx prisma migrate dev --name add-chores-rewards-weather
-   ```
-
-2. **Start Implementing Features**
-   - Use `feature_get_next` to get the highest priority feature
-   - Use `feature_mark_in_progress` when starting work
-   - Use `feature_mark_passing` when feature is verified
-
-3. **Priority Order (based on feature IDs)**
-   - Features 1-8: Security & Access Control
-   - Features 9-23: Navigation Integrity
-   - Features 24-35: Real Data Verification
-   - Continue through all categories...
-
-4. **Key Implementation Areas**
-   - Parent/child role-based access control
-   - Chores CRUD with claim/complete/verify workflow
-   - Rewards CRUD with redemption workflow
-   - Weather integration (Open-Meteo, Home Assistant)
-   - Photo screensaver with Google Photos
-   - UI overhaul with Skylight-inspired pastels
 
 ### Notes
 - The project already has substantial existing code

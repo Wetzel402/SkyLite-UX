@@ -3,6 +3,9 @@ const route = useRoute();
 function isActivePath(path: string) {
   return route.path === path;
 };
+function isListsActive() {
+  return route.path === "/lists" || route.path === "/toDoLists" || route.path === "/shoppingLists";
+}
 </script>
 
 <template>
@@ -16,20 +19,28 @@ function isActivePath(path: string) {
       aria-label="Calendar"
     />
     <UButton
-      :class="isActivePath('/toDoLists') ? 'text-primary' : 'text-default'"
-      to="/toDoLists"
+      :class="isActivePath('/chores') ? 'text-primary' : 'text-default'"
+      to="/chores"
       variant="ghost"
-      icon="i-lucide-list-todo"
+      icon="i-lucide-clipboard-list"
       size="xl"
-      aria-label="Todo Lists"
+      aria-label="Chores"
     />
     <UButton
-      :class="isActivePath('/shoppingLists') ? 'text-primary' : 'text-default'"
-      to="/shoppingLists"
+      :class="isActivePath('/rewards') ? 'text-primary' : 'text-default'"
+      to="/rewards"
       variant="ghost"
-      icon="i-lucide-shopping-cart"
+      icon="i-lucide-gift"
       size="xl"
-      aria-label="Shopping Lists"
+      aria-label="Rewards"
+    />
+    <UButton
+      :class="isListsActive() ? 'text-primary' : 'text-default'"
+      to="/lists"
+      variant="ghost"
+      icon="i-lucide-list"
+      size="xl"
+      aria-label="Lists"
     />
     <UButton
       :class="isActivePath('/mealplanner') ? 'text-primary' : 'text-default'"
