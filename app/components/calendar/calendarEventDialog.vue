@@ -747,6 +747,11 @@ function handleSave() {
     return;
   }
 
+  if (!title.value.trim()) {
+    error.value = "Title is required";
+    return;
+  }
+
   if (!startDate.value || !endDate.value) {
     error.value = "Invalid date selection";
     return;
@@ -834,7 +839,7 @@ function handleSave() {
       return;
     }
 
-    const eventTitle = title.value.trim() ? title.value : "(no title)";
+    const eventTitle = title.value.trim();
 
     const selectedUserObjects = users.value
       .filter(user => selectedUsers.value.includes(user.id))
