@@ -32,8 +32,10 @@ const showMeals = computed({
   get() {
     return settings.value?.showMealsOnCalendar ?? false;
   },
-  async set(value: boolean) {
-    await updateSettings({ showMealsOnCalendar: value });
+  set(value: boolean) {
+    updateSettings({ showMealsOnCalendar: value }).catch((error) => {
+      consola.error("Settings: Failed to update meal calendar setting:", error);
+    });
   },
 });
 
