@@ -298,7 +298,7 @@ function handleKeydown(e: KeyboardEvent) {
     <div v-show="view === 'display'">
       <div class="flex items-center gap-1.5 min-h-[32px]">
         <!-- Time -->
-        <span class="text-xs opacity-60 flex-shrink-0 w-12">
+        <span class="text-xs opacity-60 flex-shrink-0 w-16">
           <template v-if="!isAllDay">
             <NuxtTime
               :datetime="displayStart"
