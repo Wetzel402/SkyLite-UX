@@ -161,6 +161,7 @@ function handleDelete() {
           <div class="flex items-center gap-4">
             <img
               :src="avatar || getDefaultAvatarUrl()"
+              :alt="name ? `${name}'s avatar preview` : 'Avatar preview'"
               class="w-12 h-12 rounded-full border border-default"
             >
             <UInput
