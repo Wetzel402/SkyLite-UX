@@ -120,13 +120,13 @@ function handleKeydown(e: KeyboardEvent) {
   >
     <div v-show="view === 'month'">
       <div class="flex items-center justify-between">
-        <span class="truncate flex-1">
+        <span class="truncate flex-1" :title="event.title">
           {{ event.title }}
         </span>
       </div>
     </div>
     <div v-show="view === 'week'">
-      <div class="font-medium text-sm truncate">
+      <div class="font-medium text-sm truncate" :title="event.title">
         {{ event.title }}
       </div>
       <div class="flex items-center justify-between gap-2 mt-1 min-h-[1.25rem]">
@@ -176,7 +176,7 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
     </div>
     <div v-show="view === 'day'">
-      <div class="text-sm font-medium">
+      <div class="text-sm font-medium truncate" :title="event.title">
         {{ event.title }}
       </div>
       <div class="flex items-end justify-between mt-1">
@@ -236,7 +236,7 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
     </div>
     <div v-show="view === 'agenda'">
-      <div class="text-sm font-medium">
+      <div class="text-sm font-medium truncate" :title="event.title">
         {{ event.title }}
       </div>
       <div class="flex items-end justify-between mt-1">
