@@ -210,6 +210,7 @@ function getDaysForAgenda(date: Date) {
       <GlobalDateHeader
         :show-navigation="true"
         :show-view-selector="true"
+        :show-export="true"
         :current-date="currentDate"
         :view="view"
         @previous="handlePrevious"

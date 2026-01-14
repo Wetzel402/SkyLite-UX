@@ -10,6 +10,7 @@ import { useStableDate } from "~/composables/useStableDate";
 const props = defineProps<{
   showNavigation?: boolean;
   showViewSelector?: boolean;
+  showExport?: boolean;
   currentDate?: Date;
   view?: CalendarView;
   className?: string;
@@ -21,7 +22,27 @@ const emit = defineEmits<{
   (e: "today"): void;
   (e: "viewChange", view: CalendarView): void;
   (e: "dateChange", date: Date): void;
+  (e: "export"): void;
 }>();
+
+const isExporting = ref(false);
+
+async function handleExport() {
+  isExporting.value = true;
+  try {
+    // Trigger file download by navigating to the export endpoint
+    const link = document.createElement("a");
+    link.href = "/api/calendar-events/export";
+    link.download = "skylite-calendar.ics";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    emit("export");
+  }
+  finally {
+    isExporting.value = false;
+  }
+}
 
 const { getStableDate } = useStableDate();
 
@@ -231,6 +252,17 @@ function handleToday() {
             <span class="capitalize">{{ view }}</span>
           </UButton>
         </UDropdownMenu>
+      </div>
+      <div v-if="showExport" class="flex items-center">
+        <UButton
+          icon="i-lucide-download"
+          color="neutral"
+          variant="ghost"
+          size="xl"
+          aria-label="Export calendar to ICS"
+          :loading="isExporting"
+          @click="handleExport"
+        />
       </div>
     </div>
   </div>
