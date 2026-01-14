@@ -20,14 +20,14 @@ export function useCalendar() {
 
   const { getStableDate, parseStableDate } = useStableDate();
 
-  // Meal display toggle state
-  const showMealsOnCalendar = useCookie<boolean>("calendar-show-meals", {
-    default: () => false,
-    maxAge: 60 * 60 * 24 * 365, // 1 year
-  });
+  // Meal display toggle state - read from database settings
+  const { settings, updateSettings } = useAppSettings();
 
-  const toggleMealsOnCalendar = () => {
-    showMealsOnCalendar.value = !showMealsOnCalendar.value;
+  const showMealsOnCalendar = computed(() => settings.value?.showMealsOnCalendar ?? false);
+
+  const toggleMealsOnCalendar = async () => {
+    const newValue = !showMealsOnCalendar.value;
+    await updateSettings({ showMealsOnCalendar: newValue });
   };
 
   function getSafeTimezone(): string {

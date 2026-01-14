@@ -22,7 +22,7 @@ const _emit = defineEmits<{
   (e: "eventDelete", eventId: string): void;
 }>();
 
-const { getStableDate } = useStableDate();
+const { getStableDate, parseStableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
 const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "week");
@@ -150,7 +150,6 @@ const filteredEvents = computed(() => {
   const now = currentDate.value;
   let start: Date;
   let end: Date;
-  let events: CalendarEvent[];
 
   switch (view.value) {
     case "month": {
@@ -158,7 +157,6 @@ const filteredEvents = computed(() => {
       start.setDate(start.getDate() - 7);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       end.setDate(end.getDate() + 7);
-      events = getEventsForDateRange(start, end);
       break;
     }
     case "week": {
@@ -169,28 +167,28 @@ const filteredEvents = computed(() => {
       saturday.setDate(saturday.getDate() + 7);
       start = sunday;
       end = saturday;
-      events = getEventsForDateRange(start, end);
       break;
     }
     case "day": {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      events = getEventsForDateRange(start, end);
       break;
     }
     case "agenda": {
       start = addDays(now, -15);
       end = addDays(now, 15);
-      events = getEventsForDateRange(start, end);
       break;
     }
     default:
-      events = props.events;
-      start = new Date();
-      end = new Date();
+      return props.events;
   }
 
-  return events;
+  // Filter props.events by date range instead of calling getEventsForDateRange
+  return props.events.filter((event) => {
+    const eventStart = parseStableDate(event.start);
+    const eventEnd = parseStableDate(event.end);
+    return eventStart <= end && eventEnd >= start;
+  });
 });
 
 function getWeeksForMonth(date: Date) {

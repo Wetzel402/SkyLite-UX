@@ -215,5 +215,7 @@ export type MealWithDate = Meal & {
   mealPlanWeekStart: Date;
 };
 
+export type AppSettings = Prisma.AppSettingsGetPayload<Record<string, never>>;
+
 export type { Priority };
 export type { MealType } from "@prisma/client";

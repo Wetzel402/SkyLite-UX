@@ -2,7 +2,7 @@ import { consola } from "consola";
 import ical from "ical.js";
 
 import type { CalendarEvent } from "~/types/calendar";
-import type { Integration, MealPlanWithMeals, ShoppingListWithItemsAndCount, TodoColumn, TodoWithUser, User } from "~/types/database";
+import type { AppSettings, Integration, MealPlanWithMeals, ShoppingListWithItemsAndCount, TodoColumn, TodoWithUser, User } from "~/types/database";
 import type { CalendarIntegrationService, IntegrationService, ShoppingIntegrationService, TodoIntegrationService } from "~/types/integrations";
 
 import { integrationConfigs } from "~/integrations/integrationConfig";
@@ -56,7 +56,7 @@ export default defineNuxtPlugin(async () => {
   consola.debug(`AppInit: Registered ${integrationConfigs.length} integrations`);
 
   try {
-    const [_usersResult, _currentUserResult, integrationsResult] = await Promise.all([
+    const [_usersResult, _currentUserResult, integrationsResult, _appSettingsResult] = await Promise.all([
       useAsyncData("users", () => $fetch<User[]>("/api/users"), {
         server: true,
         lazy: false,
@@ -68,6 +68,11 @@ export default defineNuxtPlugin(async () => {
       }),
 
       useAsyncData("integrations", () => $fetch<Integration[]>("/api/integrations"), {
+        server: true,
+        lazy: false,
+      }),
+
+      useAsyncData("app-settings", () => $fetch<AppSettings>("/api/app-settings"), {
         server: true,
         lazy: false,
       }),

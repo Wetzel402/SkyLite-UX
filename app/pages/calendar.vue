@@ -14,14 +14,37 @@ import { integrationRegistry } from "~/types/integrations";
 const { allEvents, getEventUserColors, showMealsOnCalendar } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
 const { getMealsForDateRange } = useMealPlans();
+const { settings } = useAppSettings();
 const router = useRouter();
 
 // Get current calendar date and view state (shared with CalendarMainView)
 const currentDate = useState<Date>("calendar-current-date", () => new Date());
 const currentView = useState<"month" | "week" | "day" | "agenda">("calendar-current-view", () => "week");
 
-// Meal events state
-const mealEvents = ref<CalendarEvent[]>([]);
+// Fetch meals using useAsyncData to ensure SSR compatibility
+const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
+  'calendar-meals',
+  async () => {
+    const shouldShow = settings.value?.showMealsOnCalendar ?? false;
+    if (!shouldShow) return [];
+
+    const { start, end } = getDateRangeForView(currentDate.value, currentView.value);
+    const meals = await getMealsForDateRange(start, end);
+    return meals.map(mealToCalendarEvent);
+  },
+  {
+    server: true,
+    lazy: false,
+  }
+);
+
+// Watch for changes and refresh meals
+watch([settings, currentDate, currentView], () => {
+  refreshMeals();
+});
+
+// Meal events computed from useAsyncData
+const mealEvents = computed(() => mealsData.value || []);
 
 // Convert meal to calendar event
 function mealToCalendarEvent(meal: MealWithDate): CalendarEvent {
@@ -84,23 +107,7 @@ function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" |
   }
 }
 
-// Fetch meals when date range or toggle changes
-watch([currentDate, currentView, showMealsOnCalendar], async () => {
-  if (!showMealsOnCalendar.value) {
-    mealEvents.value = [];
-    return;
-  }
-
-  try {
-    const { start, end } = getDateRangeForView(currentDate.value, currentView.value);
-    const meals = await getMealsForDateRange(start, end);
-    mealEvents.value = meals.map(mealToCalendarEvent);
-  }
-  catch (error) {
-    // Silently fail - meal display is optional
-    mealEvents.value = [];
-  }
-}, { immediate: true });
+// Note: Meals are now fetched using useAsyncData above for proper SSR support
 
 // Combine calendar events with meal events
 const combinedEvents = computed(() => {

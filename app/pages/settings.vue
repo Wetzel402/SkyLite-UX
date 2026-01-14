@@ -27,13 +27,13 @@ const isDark = computed({
   },
 });
 
-const { showMealsOnCalendar, toggleMealsOnCalendar } = useCalendar();
+const { settings, updateSettings } = useAppSettings();
 const showMeals = computed({
   get() {
-    return showMealsOnCalendar.value;
+    return settings.value?.showMealsOnCalendar ?? false;
   },
-  set() {
-    toggleMealsOnCalendar();
+  async set(value: boolean) {
+    await updateSettings({ showMealsOnCalendar: value });
   },
 });
 
@@ -680,7 +680,7 @@ function getIntegrationIconUrl(integration: Integration) {
                 v-model="showMeals"
                 color="primary"
                 checked-icon="i-lucide-utensils"
-                unchecked-icon="i-lucide-utensils-crossed"
+                unchecked-icon="i-lucide-x"
                 size="xl"
                 aria-label="Toggle meal display on calendar"
               />
