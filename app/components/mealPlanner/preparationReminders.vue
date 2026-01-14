@@ -54,7 +54,7 @@ function getFormattedMealInfo(meal: Meal & { weekStart?: Date }): string {
       >
         <UCheckbox
           :model-value="meal.completed"
-          @update:model-value="emit('toggleComplete', meal.id, $event)"
+          @update:model-value="(value) => emit('toggleComplete', meal.id, Boolean(value))"
         />
 
         <div class="flex-1">

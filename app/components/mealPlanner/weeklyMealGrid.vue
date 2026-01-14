@@ -33,8 +33,8 @@ const mealGrid = computed(() => {
   }
 
   props.meals.forEach((meal) => {
-    if (grid[meal.dayOfWeek] && grid[meal.dayOfWeek][meal.mealType]) {
-      grid[meal.dayOfWeek][meal.mealType].push(meal);
+    if (grid[meal.dayOfWeek]?.[meal.mealType]) {
+      grid[meal.dayOfWeek]![meal.mealType]!.push(meal);
     }
   });
 
@@ -93,7 +93,7 @@ function getDayDate(dayOfWeek: number): string {
           >
             <div class="space-y-1">
               <div
-                v-for="meal in mealGrid[dayOfWeek - 1][mealType]"
+                v-for="meal in mealGrid[dayOfWeek - 1]?.[mealType] || []"
                 :key="meal.id"
                 class="text-sm bg-primary/10 hover:bg-primary/20 rounded px-2 py-1 transition-colors cursor-pointer"
                 @click.stop="emit('editMeal', meal)"
@@ -106,7 +106,7 @@ function getDayDate(dayOfWeek: number): string {
                 </div>
               </div>
 
-              <div v-if="mealGrid[dayOfWeek - 1][mealType].length === 0" class="text-xs text-muted text-center py-2">
+              <div v-if="(mealGrid[dayOfWeek - 1]?.[mealType]?.length || 0) === 0" class="text-xs text-muted text-center py-2">
                 + Add meal
               </div>
             </div>

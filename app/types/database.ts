@@ -1,4 +1,4 @@
-import type { Priority, Prisma } from "@prisma/client";
+import type { MealType, Priority, Prisma } from "@prisma/client";
 import type { JsonObject } from "type-fest";
 
 export type User = Prisma.UserGetPayload<Record<string, never>> & {
