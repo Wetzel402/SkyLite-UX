@@ -21,7 +21,7 @@ const router = useRouter();
 
 // Get current calendar date and view state (shared with CalendarMainView)
 const currentDate = useState<Date>("calendar-current-date", () => new Date());
-const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("calendar-current-view");
+const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("calendar-current-view", () => "display");
 
 // Fetch meals using useAsyncData to ensure SSR compatibility
 const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
