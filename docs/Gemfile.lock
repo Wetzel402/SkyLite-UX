@@ -280,9 +280,6 @@ PLATFORMS
 
 DEPENDENCIES
   github-pages
-  jekyll-include-cache
-  jekyll-remote-theme
-  jekyll-seo-tag
   tzinfo-data
 
 BUNDLED WITH
