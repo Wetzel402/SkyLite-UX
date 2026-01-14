@@ -280,7 +280,6 @@ PLATFORMS
 
 DEPENDENCIES
   github-pages
-  tzinfo-data
 
 BUNDLED WITH
    2.6.9
