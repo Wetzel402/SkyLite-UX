@@ -74,7 +74,7 @@ function handleDelete() {
       </div>
 
       <div class="p-4 space-y-6">
-        <div v-if="columnError" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
+        <div v-if="columnError" role="alert" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
           {{ columnError }}
         </div>
 
