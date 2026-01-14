@@ -69,7 +69,7 @@ function mealToCalendarEvent(meal: MealWithDate): CalendarEvent {
     start,
     end,
     allDay: false,
-    color: "amber",
+    color: "#f59e0b", // Amber color
     integrationId: "meal-planner",
   };
 }
