@@ -1,5 +1,6 @@
 import { consola } from "consola";
 
+import type { CalendarEvent } from "~/types/calendar";
 import type { Integration } from "~/types/database";
 import type { IntegrationSyncData, SyncConnectionStatus, SyncStatus } from "~/types/sync";
 
@@ -183,6 +184,34 @@ export function useSyncManager() {
     }
   };
 
+  const purgeCalendarEvents = (integrationId: string, calendarIds: string[]) => {
+    const cacheKey = `calendar-events-${integrationId}`;
+    const cachedData = nuxtApp.payload.data[cacheKey];
+
+    if (!cachedData || !Array.isArray(cachedData)) {
+      consola.debug(`Use Sync Manager: No cache found for calendar integration ${integrationId}`);
+      return;
+    }
+
+    const calendarIdSet = new Set(calendarIds);
+    const filteredEvents = cachedData.filter((event: CalendarEvent) => {
+      return !event.calendarId || !calendarIdSet.has(event.calendarId);
+    });
+
+    const removedCount = cachedData.length - filteredEvents.length;
+
+    if (removedCount > 0) {
+      nuxtApp.payload.data[cacheKey] = filteredEvents;
+      const { data: integrationEventsData } = useNuxtData<CalendarEvent[]>(cacheKey);
+      if (integrationEventsData) {
+        integrationEventsData.value = filteredEvents;
+      }
+      consola.debug(
+        `Use Sync Manager: Purged ${removedCount} events from ${calendarIds.length} disabled calendar(s) in integration ${integrationId}`,
+      );
+    }
+  };
+
   const triggerImmediateSync = async (integrationType: string, integrationId: string) => {
     try {
       consola.debug(`Use Sync Manager: Triggering immediate sync for ${integrationType} integration ${integrationId}`);
@@ -226,6 +255,7 @@ export function useSyncManager() {
     getConnectionHealth,
     checkIntegrationCache,
     purgeIntegrationCache,
+    purgeCalendarEvents,
     triggerImmediateSync,
   };
 }

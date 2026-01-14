@@ -3,6 +3,7 @@ import consola from "consola";
 import type { CalendarEvent } from "~/types/calendar";
 import type { CalendarIntegrationService, IntegrationStatus, UserWithColor } from "~/types/integrations";
 
+import { DEFAULT_LOCAL_EVENT_COLOR } from "~/types/global";
 import { integrationRegistry } from "~/types/integrations";
 
 import type { ICalEvent } from "../../../server/integrations/iCal/types";
@@ -26,7 +27,7 @@ export class ICalService implements CalendarIntegrationService {
   constructor(
     integrationId: string,
     baseUrl: string,
-    eventColor: string = "sky",
+    eventColor: string = DEFAULT_LOCAL_EVENT_COLOR,
     user?: string[],
     useUserColors: boolean = false,
   ) {
@@ -139,18 +140,18 @@ export class ICalService implements CalendarIntegrationService {
 
       const isAllDay = isDateOnly || isMidnightToMidnight;
 
-      let color: string | string[] | undefined = this.eventColor || "sky";
+      let color: string | string[] | undefined = this.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
       if (this.useUserColors && users.length > 0) {
         const userColors = users.map((user: UserWithColor) => user.color).filter((color): color is string => color !== null);
         if (userColors.length > 0) {
           color = userColors.length === 1 ? userColors[0] : userColors;
         }
         else {
-          color = this.eventColor || "sky";
+          color = this.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
         }
       }
       else {
-        color = this.eventColor || "sky";
+        color = this.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
       }
 
       return {
@@ -173,7 +174,7 @@ export class ICalService implements CalendarIntegrationService {
 export function createICalService(
   integrationId: string,
   baseUrl: string,
-  eventColor: string = "sky",
+  eventColor: string = DEFAULT_LOCAL_EVENT_COLOR,
   user?: string | string[],
   useUserColors: boolean = false,
 ): ICalService {
