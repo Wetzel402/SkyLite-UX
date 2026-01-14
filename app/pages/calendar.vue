@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { addDays, addMonths, subWeeks } from "date-fns";
+import { addDays } from "date-fns";
 
 import type { CalendarEvent } from "~/types/calendar";
 import type { Integration, MealType, MealWithDate } from "~/types/database";
@@ -9,24 +9,27 @@ import { useCalendar } from "~/composables/useCalendar";
 import { useCalendarEvents } from "~/composables/useCalendarEvents";
 import { useIntegrations } from "~/composables/useIntegrations";
 import { useMealPlans } from "~/composables/useMealPlans";
+import { useWeekDates } from "~/composables/useWeekDates";
 import { integrationRegistry } from "~/types/integrations";
 
-const { allEvents, getEventUserColors, showMealsOnCalendar } = useCalendar();
+const { allEvents, getEventUserColors } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
 const { getMealsForDateRange } = useMealPlans();
 const { settings } = useAppSettings();
+const { getWeekRange } = useWeekDates();
 const router = useRouter();
 
 // Get current calendar date and view state (shared with CalendarMainView)
 const currentDate = useState<Date>("calendar-current-date", () => new Date());
-const currentView = useState<"month" | "week" | "day" | "agenda">("calendar-current-view", () => "week");
+const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("calendar-current-view", () => "display");
 
 // Fetch meals using useAsyncData to ensure SSR compatibility
 const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
-  'calendar-meals',
+  "calendar-meals",
   async () => {
     const shouldShow = settings.value?.showMealsOnCalendar ?? false;
-    if (!shouldShow) return [];
+    if (!shouldShow)
+      return [];
 
     const { start, end } = getDateRangeForView(currentDate.value, currentView.value);
     const meals = await getMealsForDateRange(start, end);
@@ -35,7 +38,7 @@ const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
   {
     server: true,
     lazy: false,
-  }
+  },
 );
 
 // Watch for changes and refresh meals
@@ -54,7 +57,7 @@ function mealToCalendarEvent(meal: MealWithDate): CalendarEvent {
     LUNCH: { hour: 12, minute: 0 },
     DINNER: { hour: 18, minute: 0 },
   };
-  const time = timeMap[meal.mealType];
+  const time = timeMap[meal.mealType] || { hour: 12, minute: 0 };
 
   const start = new Date(mealDate);
   start.setHours(time.hour, time.minute, 0, 0);
@@ -75,7 +78,7 @@ function mealToCalendarEvent(meal: MealWithDate): CalendarEvent {
 }
 
 // Get date range for current view
-function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" | "agenda"): { start: Date; end: Date } {
+function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" | "agenda" | "display"): { start: Date; end: Date } {
   switch (currentView) {
     case "month": {
       const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -101,6 +104,9 @@ function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" |
       const start = addDays(date, -15);
       const end = addDays(date, 15);
       return { start, end };
+    }
+    case "display": {
+      return getWeekRange(date);
     }
     default:
       return { start: date, end: date };

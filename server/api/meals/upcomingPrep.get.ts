@@ -1,4 +1,5 @@
 import { startOfDay } from "date-fns";
+
 import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (_event) => {

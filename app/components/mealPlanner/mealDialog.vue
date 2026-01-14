@@ -29,7 +29,7 @@ const mealTypeLabels: Record<MealType, string> = {
 watch(() => [props.isOpen, props.meal], ([isOpen, meal]) => {
   if (isOpen) {
     resetForm();
-    if (meal) {
+    if (meal && typeof meal === "object") {
       name.value = meal.name || "";
       description.value = meal.description || "";
       daysInAdvance.value = meal.daysInAdvance || 0;

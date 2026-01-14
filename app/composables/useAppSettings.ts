@@ -1,4 +1,5 @@
 import { consola } from "consola";
+
 import type { AppSettings } from "~/types/database";
 
 export function useAppSettings() {

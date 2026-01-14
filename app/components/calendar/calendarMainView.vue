@@ -4,6 +4,7 @@ import { addDays, addMonths, addWeeks, isSameMonth, subMonths, subWeeks } from "
 import type { CalendarEvent, CalendarView } from "~/types/calendar";
 
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
+import GlobalDisplayView from "~/components/global/globalDisplayView.vue";
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import { useCalendar } from "~/composables/useCalendar";
 import { useStableDate } from "~/composables/useStableDate";
@@ -23,9 +24,9 @@ const _emit = defineEmits<{
 }>();
 
 const { getStableDate, parseStableDate } = useStableDate();
-const { getEventsForDateRange, scrollToDate } = useCalendar();
+const { scrollToDate } = useCalendar();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
-const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "week");
+const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "display");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
 
@@ -53,6 +54,9 @@ onMounted(() => {
       case "a":
         view.value = "agenda";
         break;
+      case "v":
+        view.value = "display";
+        break;
     }
   };
 
@@ -75,6 +79,9 @@ function handlePrevious() {
   else if (view.value === "agenda") {
     currentDate.value = addDays(currentDate.value, -30);
   }
+  else if (view.value === "display") {
+    currentDate.value = subWeeks(currentDate.value, 1);
+  }
 }
 
 function handleNext() {
@@ -89,6 +96,9 @@ function handleNext() {
   }
   else if (view.value === "agenda") {
     currentDate.value = addDays(currentDate.value, 30);
+  }
+  else if (view.value === "display") {
+    currentDate.value = addWeeks(currentDate.value, 1);
   }
 }
 
@@ -179,6 +189,18 @@ const filteredEvents = computed(() => {
       end = addDays(now, 15);
       break;
     }
+    case "display": {
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dayOfWeek = monday.getDay();
+      // Adjust to Monday: if Sunday (0), go back 6; else go back (dayOfWeek - 1)
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      monday.setDate(monday.getDate() - daysToMonday);
+      const sunday = new Date(monday.getTime());
+      sunday.setDate(sunday.getDate() + 7);
+      start = monday;
+      end = sunday;
+      break;
+    }
     default:
       return props.events;
   }
@@ -249,9 +271,16 @@ function getDaysForAgenda(date: Date) {
         :events="filteredEvents"
         @event-click="handleEventSelect"
       />
+      <GlobalDisplayView
+        v-if="view === 'display'"
+        :start-date="currentDate"
+        :events="filteredEvents"
+        @event-click="handleEventSelect"
+      />
     </div>
   </div>
   <GlobalFloatingActionButton
+    v-if="view !== 'display'"
     icon="i-lucide-plus"
     label="Add new event"
     color="primary"

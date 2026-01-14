@@ -658,7 +658,7 @@ export function useCalendar() {
     emit("eventClick", calendarEvent, e);
   }
 
-  function scrollToDate(date: Date, view: "month" | "week" | "day" | "agenda") {
+  function scrollToDate(date: Date, view: "month" | "week" | "day" | "agenda" | "display") {
     if (view === "month") {
       const dateElement = document.querySelector(`[data-date="${format(date, "yyyy-MM-dd")}"]`);
       if (dateElement) {
