@@ -19,7 +19,7 @@ const router = useRouter();
 
 // Get current calendar date and view state (shared with CalendarMainView)
 const currentDate = useState<Date>("calendar-current-date", () => new Date());
-const currentView = useState<"month" | "week" | "day" | "agenda">("calendar-current-view", () => "week");
+const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("calendar-current-view", () => "week");
 
 // Fetch meals using useAsyncData to ensure SSR compatibility
 const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
@@ -75,7 +75,7 @@ function mealToCalendarEvent(meal: MealWithDate): CalendarEvent {
 }
 
 // Get date range for current view
-function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" | "agenda"): { start: Date; end: Date } {
+function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" | "agenda" | "display"): { start: Date; end: Date } {
   switch (currentView) {
     case "month": {
       const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -101,6 +101,15 @@ function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" |
       const start = addDays(date, -15);
       const end = addDays(date, 15);
       return { start, end };
+    }
+    case "display": {
+      const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dayOfWeek = monday.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      monday.setDate(monday.getDate() - daysToMonday);
+      const sunday = new Date(monday.getTime());
+      sunday.setDate(sunday.getDate() + 7);
+      return { start: monday, end: sunday };
     }
     default:
       return { start: date, end: date };

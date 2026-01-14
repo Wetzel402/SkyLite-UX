@@ -295,5 +295,49 @@ function handleKeydown(e: KeyboardEvent) {
         </UAvatarGroup>
       </div>
     </div>
+    <div v-show="view === 'display'">
+      <div class="flex items-center gap-1.5 min-h-[32px]">
+        <!-- Time -->
+        <span class="text-xs opacity-60 flex-shrink-0 w-12">
+          <template v-if="!isAllDay">
+            <NuxtTime
+              :datetime="displayStart"
+              hour="numeric"
+              minute="2-digit"
+              :hour12="true"
+            />
+          </template>
+          <template v-else>
+            <span class="text-[10px]">All day</span>
+          </template>
+        </span>
+        <!-- Title -->
+        <span class="text-xs font-medium truncate flex-1">
+          {{ event.title }}
+        </span>
+        <!-- Avatars -->
+        <UAvatarGroup
+          v-if="eventUsers.length > 0"
+          size="2xs"
+          :max="2"
+          class="flex-shrink-0"
+          :ui="{
+            base: 'relative ring-0 border-0 shadow-none outline-none first:me-0',
+          }"
+        >
+          <UAvatar
+            v-for="user in eventUsers"
+            :key="user.id"
+            :src="user.avatar || undefined"
+            :alt="user.name"
+            :ui="{
+              root: 'relative ring-0 border-0 shadow-none outline-none w-4 h-4',
+              image: 'object-cover ring-0 border-0 shadow-none',
+              fallback: 'ring-0 border-0 shadow-none text-[8px]',
+            }"
+          />
+        </UAvatarGroup>
+      </div>
+    </div>
   </div>
 </template>

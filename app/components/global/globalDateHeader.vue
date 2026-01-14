@@ -67,6 +67,22 @@ const viewTitle = computed(() => {
       return "agenda-different-months";
     }
   }
+  else if (view.value === "display") {
+    // Calculate Monday to Sunday range
+    const monday = new Date(currentDate.value.getTime());
+    const dayOfWeek = monday.getDay();
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    monday.setDate(monday.getDate() - daysToMonday);
+    const sunday = new Date(monday.getTime());
+    sunday.setDate(sunday.getDate() + 6);
+
+    if (isSameMonth(monday, sunday)) {
+      return "display-same-month";
+    }
+    else {
+      return "display-different-months";
+    }
+  }
   return "month";
 });
 
@@ -95,6 +111,11 @@ const items: DropdownMenuItem[][] = [
       icon: "i-lucide-list",
       onSelect: () => emit("viewChange", "agenda"),
     },
+    {
+      label: "Display",
+      icon: "i-lucide-tv",
+      onSelect: () => emit("viewChange", "display"),
+    },
   ],
 ];
 
@@ -108,6 +129,21 @@ function handleNext() {
 
 function handleToday() {
   emit("today");
+}
+
+function getMondayOfWeek(date: Date): Date {
+  const monday = new Date(date.getTime());
+  const dayOfWeek = monday.getDay();
+  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  monday.setDate(monday.getDate() - daysToMonday);
+  return monday;
+}
+
+function getSundayOfWeek(date: Date): Date {
+  const monday = getMondayOfWeek(date);
+  const sunday = new Date(monday.getTime());
+  sunday.setDate(sunday.getDate() + 6);
+  return sunday;
 }
 </script>
 
@@ -179,6 +215,23 @@ function handleToday() {
           /> -
           <NuxtTime
             :datetime="addDays(currentDate, 30 - 1)"
+            month="short"
+            year="numeric"
+          />
+        </span>
+        <NuxtTime
+          v-else-if="viewTitle === 'display-same-month'"
+          :datetime="getMondayOfWeek(currentDate)"
+          month="long"
+          year="numeric"
+        />
+        <span v-else-if="viewTitle === 'display-different-months'">
+          <NuxtTime
+            :datetime="getMondayOfWeek(currentDate)"
+            month="short"
+          /> -
+          <NuxtTime
+            :datetime="getSundayOfWeek(currentDate)"
             month="short"
             year="numeric"
           />
