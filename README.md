@@ -26,7 +26,6 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 
 ## Features
 
-- Docker Deployment
 - Family Calendar
 - Todo Lists
 - Shopping Lists

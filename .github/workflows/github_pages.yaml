@@ -3,7 +3,7 @@ name: Deploy GitHub Pages site
 on:
   push:
     branches:
-      - google_calendar
+      - main
 
 permissions:
   contents: read
