@@ -26,7 +26,7 @@ const _emit = defineEmits<{
 const { getStableDate, parseStableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
-const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "week");
+const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "display");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
 

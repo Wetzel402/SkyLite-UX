@@ -14,26 +14,12 @@ const emit = defineEmits<{
 
 const { getStableDate } = useStableDate();
 const { isToday, getAllEventsForDay, handleEventClick: _handleEventClick } = useCalendar();
+const { getWeekDays } = useWeekDates();
 
 // Get Monday-Sunday week days
 const weekDays = computed(() => {
   const start = props.startDate || getStableDate();
-  const monday = new Date(start.getTime());
-  const dayOfWeek = monday.getDay();
-
-  // Adjust to Monday (0=Sunday, 1=Monday, etc.)
-  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  monday.setDate(monday.getDate() - daysToMonday);
-
-  // Generate 7 days starting from Monday
-  const days: Date[] = [];
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(monday.getTime());
-    day.setDate(monday.getDate() + i);
-    days.push(day);
-  }
-
-  return days;
+  return getWeekDays(start);
 });
 
 // Transform meal titles: "BREAKFAST: ..." → "B: ..."
@@ -92,8 +78,7 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
 
         <!-- Events List -->
         <div
-          class="overflow-y-auto px-2 py-2 space-y-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          style="height: calc(100vh - 200px);"
+          class="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-0"
         >
           <div
             v-for="event in getAllEventsForDay(displayEvents, day)"

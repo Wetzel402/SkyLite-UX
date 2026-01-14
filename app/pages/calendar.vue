@@ -9,17 +9,19 @@ import { useCalendar } from "~/composables/useCalendar";
 import { useCalendarEvents } from "~/composables/useCalendarEvents";
 import { useIntegrations } from "~/composables/useIntegrations";
 import { useMealPlans } from "~/composables/useMealPlans";
+import { useWeekDates } from "~/composables/useWeekDates";
 import { integrationRegistry } from "~/types/integrations";
 
 const { allEvents, getEventUserColors, showMealsOnCalendar } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
 const { getMealsForDateRange } = useMealPlans();
 const { settings } = useAppSettings();
+const { getWeekRange } = useWeekDates();
 const router = useRouter();
 
 // Get current calendar date and view state (shared with CalendarMainView)
 const currentDate = useState<Date>("calendar-current-date", () => new Date());
-const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("calendar-current-view", () => "display");
+const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("calendar-current-view");
 
 // Fetch meals using useAsyncData to ensure SSR compatibility
 const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
@@ -103,13 +105,7 @@ function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" |
       return { start, end };
     }
     case "display": {
-      const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const dayOfWeek = monday.getDay();
-      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      monday.setDate(monday.getDate() - daysToMonday);
-      const sunday = new Date(monday.getTime());
-      sunday.setDate(sunday.getDate() + 7);
-      return { start: monday, end: sunday };
+      return getWeekRange(date);
     }
     default:
       return { start: date, end: date };

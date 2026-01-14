@@ -24,6 +24,7 @@ const emit = defineEmits<{
 }>();
 
 const { getStableDate } = useStableDate();
+const { getMondayOfWeek, getSundayOfWeek } = useWeekDates();
 
 const currentDate = computed(() => props.currentDate || getStableDate());
 const view = computed(() => props.view || "week");
@@ -68,13 +69,8 @@ const viewTitle = computed(() => {
     }
   }
   else if (view.value === "display") {
-    // Calculate Monday to Sunday range
-    const monday = new Date(currentDate.value.getTime());
-    const dayOfWeek = monday.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    monday.setDate(monday.getDate() - daysToMonday);
-    const sunday = new Date(monday.getTime());
-    sunday.setDate(sunday.getDate() + 6);
+    const monday = getMondayOfWeek(currentDate.value);
+    const sunday = getSundayOfWeek(currentDate.value);
 
     if (isSameMonth(monday, sunday)) {
       return "display-same-month";
@@ -129,21 +125,6 @@ function handleNext() {
 
 function handleToday() {
   emit("today");
-}
-
-function getMondayOfWeek(date: Date): Date {
-  const monday = new Date(date.getTime());
-  const dayOfWeek = monday.getDay();
-  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  monday.setDate(monday.getDate() - daysToMonday);
-  return monday;
-}
-
-function getSundayOfWeek(date: Date): Date {
-  const monday = getMondayOfWeek(date);
-  const sunday = new Date(monday.getTime());
-  sunday.setDate(sunday.getDate() + 6);
-  return sunday;
 }
 </script>
 
