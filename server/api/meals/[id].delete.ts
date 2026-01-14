@@ -1,3 +1,5 @@
+import { consola } from "consola";
+import { Prisma } from "@prisma/client";
 import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
@@ -18,9 +20,20 @@ export default defineEventHandler(async (event) => {
     return { success: true };
   }
   catch (error) {
+    // Handle Prisma not found error as 404
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      consola.error("Meal not found:", error.message);
+      throw createError({
+        statusCode: 404,
+        message: "Meal not found",
+      });
+    }
+
+    // Log server error and return generic message
+    consola.error("Failed to delete meal:", error);
     throw createError({
       statusCode: 500,
-      message: `Failed to delete meal: ${error}`,
+      message: "Failed to delete meal",
     });
   }
 });
