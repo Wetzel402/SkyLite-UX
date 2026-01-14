@@ -27,6 +27,8 @@ const isDark = computed({
   },
 });
 
+const { showError } = useAlertToast();
+
 const { settings, updateSettings } = useAppSettings();
 const showMeals = computed({
   get() {
@@ -35,6 +37,7 @@ const showMeals = computed({
   set(value: boolean) {
     updateSettings({ showMealsOnCalendar: value }).catch((error) => {
       consola.error("Settings: Failed to update meal calendar setting:", error);
+      showError("Settings Update Failed", "Failed to update meal calendar visibility setting.");
     });
   },
 });

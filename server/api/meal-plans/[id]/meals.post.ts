@@ -72,6 +72,11 @@ export default defineEventHandler(async (event) => {
     return meal;
   }
   catch (error) {
+    // Re-throw validation errors (H3 errors with statusCode)
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
+
     // Handle Prisma foreign key constraint error
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       consola.error("Meal plan not found:", error.message);

@@ -37,6 +37,7 @@ export default defineEventHandler(async (event) => {
           message: "Day of week must be a number between 0 and 6",
         });
       }
+      body.dayOfWeek = dayOfWeek;
     }
 
     if (body.daysInAdvance !== undefined) {
@@ -47,6 +48,7 @@ export default defineEventHandler(async (event) => {
           message: "Days in advance must be a non-negative number",
         });
       }
+      body.daysInAdvance = daysInAdvance;
     }
 
     const meal = await prisma.meal.update({
@@ -64,6 +66,11 @@ export default defineEventHandler(async (event) => {
     return meal;
   }
   catch (error) {
+    // Re-throw validation errors (H3 errors with statusCode)
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
+
     // Handle Prisma not found error as 404
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       consola.error("Meal not found:", error.message);

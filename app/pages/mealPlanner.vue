@@ -190,8 +190,11 @@ async function handleTogglePreparation(mealId: string, completed: boolean) {
     await loadUpcomingPrepMeals();
   }
   catch (error) {
-    // Roll back optimistic update on failure
-    meal.completed = previousCompleted;
+    // Re-find meal in case array was mutated, then roll back optimistic update
+    const mealToRollback = upcomingPrepMeals.value.find(m => m.id === mealId);
+    if (mealToRollback) {
+      mealToRollback.completed = previousCompleted;
+    }
 
     consola.error("Failed to toggle preparation:", error);
     showError("Update Failed", "Failed to update preparation status.");

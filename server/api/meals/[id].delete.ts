@@ -20,6 +20,11 @@ export default defineEventHandler(async (event) => {
     return { success: true };
   }
   catch (error) {
+    // Re-throw validation errors (H3 errors with statusCode)
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
+
     // Handle Prisma not found error as 404
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       consola.error("Meal not found:", error.message);

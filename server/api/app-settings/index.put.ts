@@ -37,6 +37,11 @@ export default defineEventHandler(async (event) => {
     return settings;
   }
   catch (error) {
+    // Re-throw validation errors (H3 errors with statusCode)
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
+
     // Log server error and return generic message
     consola.error("Failed to update app settings:", error);
     throw createError({
