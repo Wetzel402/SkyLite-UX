@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { addWeeks, format, startOfWeek, subWeeks } from "date-fns";
 import { consola } from "consola";
+import { addWeeks, format, startOfWeek, subWeeks } from "date-fns";
 
 import type { CreateMealInput, Meal, MealType } from "~/types/database";
 
@@ -221,7 +221,11 @@ watch(currentWeekStart, () => {
           <h2 class="text-xl font-bold">
             {{ weekRange }}
           </h2>
-          <UBadge v-if="isCurrentWeek" color="primary" variant="soft">
+          <UBadge
+            v-if="isCurrentWeek"
+            color="primary"
+            variant="soft"
+          >
             Current Week
           </UBadge>
         </div>

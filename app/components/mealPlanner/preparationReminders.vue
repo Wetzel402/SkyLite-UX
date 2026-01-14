@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { format } from "date-fns";
+
 import type { Meal } from "~/types/database";
 
 const props = defineProps<{

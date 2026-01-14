@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CalendarEvent } from "~/types/calendar";
+
 import { useCalendar } from "~/composables/useCalendar";
 import { useStableDate } from "~/composables/useStableDate";
 
@@ -26,9 +27,12 @@ const weekDays = computed(() => {
 function formatEventTitle(event: CalendarEvent): string {
   if (event.integrationId === "meal-planner") {
     const title = event.title;
-    if (title.startsWith("BREAKFAST: ")) return "B: " + title.substring(11);
-    if (title.startsWith("LUNCH: ")) return "L: " + title.substring(7);
-    if (title.startsWith("DINNER: ")) return "D: " + title.substring(8);
+    if (title.startsWith("BREAKFAST: "))
+      return `B: ${title.substring(11)}`;
+    if (title.startsWith("LUNCH: "))
+      return `L: ${title.substring(7)}`;
+    if (title.startsWith("DINNER: "))
+      return `D: ${title.substring(8)}`;
   }
   return event.title;
 }
@@ -52,7 +56,7 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
   <div class="w-full h-full">
     <div class="grid grid-cols-7 border border-default h-full">
       <div
-        v-for="(day, index) in weekDays"
+        v-for="day in weekDays"
         :key="day.toISOString()"
         class="flex flex-col border-r border-default last:border-r-0"
         :class="{

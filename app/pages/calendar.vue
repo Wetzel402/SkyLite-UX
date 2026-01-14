@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { addDays, addMonths, subWeeks } from "date-fns";
+import { addDays } from "date-fns";
 
 import type { CalendarEvent } from "~/types/calendar";
 import type { Integration, MealType, MealWithDate } from "~/types/database";
@@ -12,7 +12,7 @@ import { useMealPlans } from "~/composables/useMealPlans";
 import { useWeekDates } from "~/composables/useWeekDates";
 import { integrationRegistry } from "~/types/integrations";
 
-const { allEvents, getEventUserColors, showMealsOnCalendar } = useCalendar();
+const { allEvents, getEventUserColors } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
 const { getMealsForDateRange } = useMealPlans();
 const { settings } = useAppSettings();
@@ -25,10 +25,11 @@ const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("c
 
 // Fetch meals using useAsyncData to ensure SSR compatibility
 const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
-  'calendar-meals',
+  "calendar-meals",
   async () => {
     const shouldShow = settings.value?.showMealsOnCalendar ?? false;
-    if (!shouldShow) return [];
+    if (!shouldShow)
+      return [];
 
     const { start, end } = getDateRangeForView(currentDate.value, currentView.value);
     const meals = await getMealsForDateRange(start, end);
@@ -37,7 +38,7 @@ const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
   {
     server: true,
     lazy: false,
-  }
+  },
 );
 
 // Watch for changes and refresh meals

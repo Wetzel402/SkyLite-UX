@@ -4,8 +4,8 @@ import { addDays, addMonths, addWeeks, isSameMonth, subMonths, subWeeks } from "
 import type { CalendarEvent, CalendarView } from "~/types/calendar";
 
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
-import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import GlobalDisplayView from "~/components/global/globalDisplayView.vue";
+import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import { useCalendar } from "~/composables/useCalendar";
 import { useStableDate } from "~/composables/useStableDate";
 
@@ -24,7 +24,7 @@ const _emit = defineEmits<{
 }>();
 
 const { getStableDate, parseStableDate } = useStableDate();
-const { getEventsForDateRange, scrollToDate } = useCalendar();
+const { scrollToDate } = useCalendar();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
 const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "display");
 const isEventDialogOpen = ref(false);

@@ -1,4 +1,5 @@
 import { consola } from "consola";
+
 import type {
   CreateMealInput,
   CreateMealPlanInput,

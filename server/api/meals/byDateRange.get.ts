@@ -1,6 +1,8 @@
 import { addDays } from "date-fns";
-import prisma from "~/lib/prisma";
+
 import type { MealWithDate } from "~/types/database";
+
+import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
   try {
