@@ -171,7 +171,7 @@ function handleToday() {
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2" :class="className">
     <div class="flex sm:flex-col max-sm:items-center justify-between gap-1.5">
       <div class="flex items-center gap-1.5">
-        <h1 class="font-semibold text-xl text-highlighted">
+        <h1 class="font-bold text-5xl text-highlighted">
           <NuxtTime
             :datetime="now"
             hour="numeric"
@@ -180,7 +180,7 @@ function handleToday() {
           />
         </h1>
       </div>
-      <div class="text-sm text-muted">
+      <div class="text-base text-muted">
         <NuxtTime
           :datetime="now"
           weekday="long"
@@ -191,7 +191,7 @@ function handleToday() {
     </div>
 
     <div v-if="showNavigation" class="flex items-center justify-center flex-1">
-      <h2 class="font-semibold text-lg text-highlighted">
+      <h2 class="font-semibold text-2xl text-highlighted">
         <NuxtTime
           v-if="viewTitle === 'month'"
           :datetime="currentDate"
