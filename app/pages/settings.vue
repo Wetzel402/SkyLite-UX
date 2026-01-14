@@ -244,11 +244,10 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
     const { refreshIntegrations } = useIntegrations();
     await refreshIntegrations();
 
-    setTimeout(() => {
-      isIntegrationDialogOpen.value = false;
-      selectedIntegration.value = null;
-      connectionTestResult.value = null;
-    }, 1500);
+    // Close dialog immediately after successful operation
+    isIntegrationDialogOpen.value = false;
+    selectedIntegration.value = null;
+    connectionTestResult.value = null;
   }
   catch (error) {
     consola.error("Settings: Failed to save integration:", error);

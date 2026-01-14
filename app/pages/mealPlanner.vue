@@ -172,21 +172,27 @@ async function handleMealDelete() {
 }
 
 async function handleTogglePreparation(mealId: string, completed: boolean) {
+  // Find the meal and store previous state for rollback
+  const meal = upcomingPrepMeals.value.find(m => m.id === mealId);
+  if (!meal) {
+    return;
+  }
+
+  const previousCompleted = meal.completed;
+
+  // Update local state optimistically (before API call)
+  meal.completed = completed;
+
   try {
     await updateMeal(mealId, { completed });
 
-    // Update local state optimistically
-    const meal = upcomingPrepMeals.value.find(m => m.id === mealId);
-    if (meal) {
-      meal.completed = completed;
-    }
-
-    // Reload after a short delay to allow the change to persist
-    setTimeout(() => {
-      loadUpcomingPrepMeals();
-    }, 500);
+    // Reload to ensure consistency with server state
+    await loadUpcomingPrepMeals();
   }
   catch (error) {
+    // Roll back optimistic update on failure
+    meal.completed = previousCompleted;
+
     consola.error("Failed to toggle preparation:", error);
     showError("Update Failed", "Failed to update preparation status.");
   }
