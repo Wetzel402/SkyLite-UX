@@ -6,14 +6,17 @@ import { addDays, endOfWeek, isSameMonth, startOfWeek } from "date-fns";
 import type { CalendarView } from "~/types/calendar";
 
 import { useStableDate } from "~/composables/useStableDate";
+import { useUsers } from "~/composables/useUsers";
 
 const props = defineProps<{
   showNavigation?: boolean;
   showViewSelector?: boolean;
   showExport?: boolean;
+  showUserFilter?: boolean;
   currentDate?: Date;
   view?: CalendarView;
   className?: string;
+  selectedUserIds?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -23,6 +26,7 @@ const emit = defineEmits<{
   (e: "viewChange", view: CalendarView): void;
   (e: "dateChange", date: Date): void;
   (e: "export"): void;
+  (e: "userFilterChange", userIds: string[]): void;
 }>();
 
 const isExporting = ref(false);
@@ -45,6 +49,37 @@ async function handleExport() {
 }
 
 const { getStableDate } = useStableDate();
+const { users, fetchUsers } = useUsers();
+
+// Fetch users on mount
+onMounted(() => {
+  fetchUsers();
+});
+
+const selectedUsers = computed(() => props.selectedUserIds || []);
+
+function isUserSelected(userId: string) {
+  return selectedUsers.value.length === 0 || selectedUsers.value.includes(userId);
+}
+
+function toggleUserFilter(userId: string) {
+  const currentSelection = [...selectedUsers.value];
+  const index = currentSelection.indexOf(userId);
+
+  if (index === -1) {
+    // Add user to filter
+    currentSelection.push(userId);
+  } else {
+    // Remove user from filter
+    currentSelection.splice(index, 1);
+  }
+
+  emit("userFilterChange", currentSelection);
+}
+
+function clearUserFilter() {
+  emit("userFilterChange", []);
+}
 
 const currentDate = computed(() => props.currentDate || getStableDate());
 const view = computed(() => props.view || "week");
@@ -263,6 +298,46 @@ function handleToday() {
           :loading="isExporting"
           @click="handleExport"
         />
+      </div>
+    </div>
+
+    <!-- User Filter Badges -->
+    <div v-if="showUserFilter && users && users.length > 0" class="flex items-center gap-2 mt-2 sm:mt-0">
+      <div class="flex items-center gap-1 flex-wrap">
+        <button
+          v-for="user in users"
+          :key="user.id"
+          type="button"
+          class="flex items-center gap-1.5 px-2 py-1 rounded-full text-sm font-medium transition-all border-2"
+          :class="isUserSelected(user.id)
+            ? 'opacity-100 shadow-sm'
+            : 'opacity-40 hover:opacity-70'"
+          :style="{
+            backgroundColor: isUserSelected(user.id) ? (user.color || '#22d3ee') + '20' : 'transparent',
+            borderColor: user.color || '#22d3ee',
+            color: user.color || '#22d3ee',
+          }"
+          :aria-label="`Filter by ${user.name}`"
+          :aria-pressed="isUserSelected(user.id)"
+          @click="toggleUserFilter(user.id)"
+        >
+          <UAvatar
+            :src="user.avatar || undefined"
+            :alt="user.name"
+            size="xs"
+            :style="{ backgroundColor: user.color || '#22d3ee' }"
+          />
+          <span>{{ user.name }}</span>
+        </button>
+        <button
+          v-if="selectedUsers.length > 0"
+          type="button"
+          class="text-xs text-muted hover:text-highlighted underline ml-1"
+          aria-label="Clear user filter"
+          @click="clearUserFilter"
+        >
+          Clear
+        </button>
       </div>
     </div>
   </div>

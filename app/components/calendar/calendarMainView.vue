@@ -211,6 +211,7 @@ function getDaysForAgenda(date: Date) {
         :show-navigation="true"
         :show-view-selector="true"
         :show-export="true"
+        :show-user-filter="true"
         :current-date="currentDate"
         :view="view"
         @previous="handlePrevious"
