@@ -3,6 +3,7 @@ import type { CalendarEvent } from "~/types/calendar";
 
 import { useCalendar } from "~/composables/useCalendar";
 import { useStableDate } from "~/composables/useStableDate";
+import { useWeekDates } from "~/composables/useWeekDates";
 
 const props = defineProps<{
   events: CalendarEvent[];

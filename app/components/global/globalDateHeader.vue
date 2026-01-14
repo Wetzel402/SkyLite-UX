@@ -6,6 +6,7 @@ import { addDays, endOfWeek, isSameMonth, startOfWeek } from "date-fns";
 import type { CalendarView } from "~/types/calendar";
 
 import { useStableDate } from "~/composables/useStableDate";
+import { useWeekDates } from "~/composables/useWeekDates";
 
 const props = defineProps<{
   showNavigation?: boolean;

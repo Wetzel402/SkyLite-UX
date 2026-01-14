@@ -57,7 +57,7 @@ function mealToCalendarEvent(meal: MealWithDate): CalendarEvent {
     LUNCH: { hour: 12, minute: 0 },
     DINNER: { hour: 18, minute: 0 },
   };
-  const time = timeMap[meal.mealType];
+  const time = timeMap[meal.mealType] || { hour: 12, minute: 0 };
 
   const start = new Date(mealDate);
   start.setHours(time.hour, time.minute, 0, 0);
