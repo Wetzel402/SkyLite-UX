@@ -125,7 +125,7 @@ function handleDelete() {
             Days in Advance to Prepare
           </label>
           <UInput
-            v-model="daysInAdvance"
+            v-model.number="daysInAdvance"
             type="number"
             :min="0"
             :max="7"

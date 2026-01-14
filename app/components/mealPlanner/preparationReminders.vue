@@ -23,15 +23,19 @@ const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satur
 function getMealDate(meal: Meal & { weekStart?: Date }): Date {
   const weekStartDate = meal.weekStart || props.weekStart;
   const date = new Date(weekStartDate);
-  date.setDate(date.getDate() + meal.dayOfWeek);
+  // Ensure dayOfWeek is within valid range (0-6)
+  const validDayOfWeek = Math.max(0, Math.min(6, meal.dayOfWeek));
+  date.setDate(date.getDate() + validDayOfWeek);
   return date;
 }
 
 function getFormattedMealInfo(meal: Meal & { weekStart?: Date }): string {
   const mealDate = getMealDate(meal);
-  const dayName = dayNames[meal.dayOfWeek];
+  // Ensure dayOfWeek is within valid range (0-6)
+  const validDayOfWeek = Math.max(0, Math.min(6, meal.dayOfWeek));
+  const dayName = dayNames[validDayOfWeek] || "Unknown";
   const dateStr = format(mealDate, "MMM d");
-  const mealTypeLabel = mealTypeLabels[meal.mealType];
+  const mealTypeLabel = mealTypeLabels[meal.mealType] || "Unknown";
 
   return `${dayName}, ${dateStr} - ${mealTypeLabel}`;
 }

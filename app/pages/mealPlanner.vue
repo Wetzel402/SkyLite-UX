@@ -2,7 +2,7 @@
 import { consola } from "consola";
 import { addWeeks, format, startOfWeek, subWeeks } from "date-fns";
 
-import type { CreateMealInput, Meal, MealType } from "~/types/database";
+import type { CreateMealInput, Meal, MealPlanWithMeals, MealType } from "~/types/database";
 
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
 import MealDialog from "~/components/mealPlanner/mealDialog.vue";
@@ -29,7 +29,7 @@ const currentWeekStart = ref<Date>(
 );
 
 // Meal plan data
-const currentPlan = ref<any>(null);
+const currentPlan = ref<MealPlanWithMeals | null>(null);
 const upcomingPrepMeals = ref<Meal[]>([]);
 const loading = ref(false);
 
@@ -94,17 +94,14 @@ async function loadUpcomingPrepMeals() {
 // Navigation
 function handlePreviousWeek() {
   currentWeekStart.value = subWeeks(currentWeekStart.value, 1);
-  loadWeekMealPlan();
 }
 
 function handleNextWeek() {
   currentWeekStart.value = addWeeks(currentWeekStart.value, 1);
-  loadWeekMealPlan();
 }
 
 function handleToday() {
   currentWeekStart.value = startOfWeek(getStableDate(), { weekStartsOn: 1 });
-  loadWeekMealPlan();
 }
 
 // Meal operations
