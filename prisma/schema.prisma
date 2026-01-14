@@ -181,6 +181,7 @@ enum MealType {
 
 model AppSettings {
   id                    String   @id @default(cuid())
+  singletonId           Int      @unique @default(1) // Ensures only one settings row exists
   showMealsOnCalendar   Boolean  @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
