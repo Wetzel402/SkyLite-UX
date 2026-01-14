@@ -56,7 +56,7 @@ function handleDelete() {
     @click="emit('close')"
   >
     <div
-      class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
+      class="w-full max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
       <div class="flex items-center justify-between p-4 border-b border-default">
