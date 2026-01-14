@@ -106,7 +106,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 <template>
   <div
-    class="focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90 cursor-pointer"
+    class="focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90 cursor-pointer shadow-sm hover:shadow-md"
     :class="typeof eventColorClasses === 'string' ? eventColorClasses : className"
     v-bind="typeof eventColorClasses === 'object' && eventColorClasses !== null ? eventColorClasses : undefined"
     :data-past-event="isEventPast(event) || undefined"
