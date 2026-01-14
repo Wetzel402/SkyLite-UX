@@ -5,11 +5,21 @@ nav_order: 1
 permalink: /
 ---
 
-![SkyLite-UX Logo](https://github.com/user-attachments/assets/cf4b4b9f-c8db-4303-8fd0-58126a42382f){: width="400" }
-
-# Skylite UX
+![Skylite UX Logo](https://github.com/user-attachments/assets/cf4b4b9f-c8db-4303-8fd0-58126a42382f){: width="400" }
 
 **Life, Organized.**
+
+<div class="badges">
+  <a href="https://github.com/wetzel402/SkyLite-UX/releases">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/wetzel402/SkyLite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release">
+  </a>
+  <a href="https://github.com/wetzel402/SkyLite-UX">
+    <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/wetzel402/SkyLite-UX?style=for-the-badge">
+  </a>
+  <a href="https://hub.docker.com/r/wetzel402/skylite-ux">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/wetzel402/skylite-ux?style=for-the-badge">
+  </a>
+</div>
 
 <div class="badges">
   <a href="https://discord.gg/KJn3YfWxn7">
@@ -37,7 +47,7 @@ permalink: /
 
 ## About
 
-Skylite UX was conceived as an open source, self-hosted alternative to commercial family managers. Most commercial offerings require expensive hardware and include subscriptions. Our goal was to create an offering that allows you to bring your own hardware, avoid subscriptions, and subscription associated feature creep while playing nicely with other self-hosted offerings.
+Skylite UX was conceived as an open source, self-hosted alternative to commercial family managers. Most commercial offerings require expensive hardware and include subscriptions. Our goal was to create an offering that allows you to bring your own hardware, avoid subscriptions, and subscription-associated feature creep while playing nicely with other self-hosted offerings.
 
 ## Features
 
@@ -49,12 +59,12 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 - Add, edit, or delete events
 - Family-friendly event management
 
-### To-do Lists
+### Todo Lists
 
 ![Todo List]({{ '/assets/images/screenshots/todo.png' | relative_url }})
 
-- Track to-do lists for family members
-- Add, edit, or check items on your to-do lists
+- Track todo lists for family members
+- Add, edit, or check items on your todo lists
 - Collaborative list management
 
 ### Shopping Lists
@@ -66,7 +76,7 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 
 ### Meals (Not yet implemented)
 
-- View upcoming and past meals for your family in the month, week, day or agenda views
+- View upcoming and past meals for your family in the month, week, day, or agenda views
 - Add breakfast, lunch, dinner, and sides to your meal plan
 - Edit or delete meals from your meal plan
 
@@ -78,142 +88,7 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 - Assign family members a specific profile color
 - Personalized family management
 
-### Docker Deployment
-
-Easy deployment with Docker
-
-View all screenshots in our [Gallery]({{ '/gallery/' | relative_url }}) page.
-
-## Installation
-
-### Docker CLI
-
-```bash
-# Create a network
-docker network create skylite-network
-
-# Create a volume for PostgreSQL data
-docker volume create postgres-data
-
-# Run PostgreSQL
-docker run -d \
-  --name skylite-ux-db \
-  --network skylite-network \
-  -e POSTGRES_USER=skylite \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=skylite \
-  -v postgres-data:/var/lib/postgresql/data \
-  postgres:16
-
-# Run Skylite UX
-docker run -d \
-  --name skylite-ux \
-  --network skylite-network \
-  -e DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite \
-  -e NUXT_PUBLIC_TZ=America/Chicago \
-  -e NUXT_PUBLIC_LOG_LEVEL=warn \
-  -p 3000:3000 \
-  wetzel402/skylite-ux:latest
-```
-
-### Docker Compose
-
-```yaml
-services:
-  skylite-ux:
-    image: wetzel402/skylite-ux:latest
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite
-      - NUXT_PUBLIC_TZ=America/Chicago
-      - NUXT_PUBLIC_LOG_LEVEL=warn
-    depends_on:
-      skylite-ux-db:
-        condition: service_healthy
-    ports:
-      - 3000:3000
-    networks:
-      - skylite-network
-
-  skylite-ux-db:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=skylite
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=skylite
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [CMD-SHELL, pg_isready -U skylite]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - skylite-network
-
-networks:
-  skylite-network:
-    driver: bridge
-
-volumes:
-  postgres-data:
-    driver: local
-```
-
-### Configuration
-
-Make sure to update the following environment variables in your `docker-compose.yml`:
-
-- `DATABASE_URL` - PostgreSQL connection string
-- `NUXT_PUBLIC_TZ` - Your timezone (e.g., America/Chicago, Europe/London)
-- `NUXT_PUBLIC_LOG_LEVEL` - Logging level (debug, info, warn, error)
-- `POSTGRES_PASSWORD` - Choose a strong password for your database
-
-## Development
-
-For detailed development setup, environment configuration, and workflow guidelines, see our [Development Guide]({{ '/development/' | relative_url }}).
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-started/get-docker/)
-- [Visual Studio Code](https://code.visualstudio.com/)
-
-### Quick Development Commands
-
-```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Run type checking
-npm run type-check
-
-# Lint code
-npm run lint
-```
-
-## Contributing
-
-We welcome contributions from the community! For detailed information on how to contribute, including our code of conduct, development process, and guidelines, see our [Contributing Guide]({{ '/contributing/' | relative_url }}).
-
-### Quick Start for Contributors
-
-1. **Fork the repository**
-2. **Create your feature branch** from `dev`
-3. **Make your changes** following our style guidelines
-4. **Test your changes** thoroughly
-5. **Submit a Pull Request**
-
-### Ways to Contribute
-
-- **Bug Reports** - Help us identify and fix issues
-- **Feature Requests** - Suggest new features and improvements
-- **Code Contributions** - Fix bugs and implement features
-- **Documentation** - Improve docs and write tutorials
-- **Testing** - Write tests and help with quality assurance
+**View all screenshots in our [Gallery]({{ '/gallery/' | relative_url }}) page.**
 
 ## License
 

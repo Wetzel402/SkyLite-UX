@@ -1,8 +1,8 @@
 # Site settings
-title: SkyLite UX
-description: The open-source family manager
+title: Skylite UX
+description: Life, Organized.
 url: https://wetzel402.github.io
-baseurl: /SkyLite-UX
+baseurl: /Skylite-UX
 
 # Site favicon
 favicon_ico: /assets/images/favicon.ico
