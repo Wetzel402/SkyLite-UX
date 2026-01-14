@@ -1,0 +1,21 @@
+{
+  "sandbox": {
+    "enabled": false
+  },
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Read(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "WebFetch",
+      "WebSearch",
+      "mcp__features__feature_get_stats",
+      "mcp__features__feature_get_next",
+      "mcp__features__feature_get_for_regression",
+      "mcp__features__feature_create",
+      "mcp__features__feature_create_bulk",
+      "mcp__features__feature_skip"
+    ]
+  }
+}

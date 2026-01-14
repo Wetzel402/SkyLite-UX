@@ -81,6 +81,10 @@ const nextWeekEventCount = computed(() => {
 function isLastDay(day: Date) {
   return day.toISOString() === nextWeekDays.value[0]?.toISOString();
 }
+
+function handleAddEvent(day: Date) {
+  emit("eventCreate", day);
+}
 </script>
 
 <template>
@@ -137,6 +141,18 @@ function isLastDay(day: Date) {
             </span>
           </div>
         </div>
+        <div class="p-2 border-t border-default flex-shrink-0">
+          <UButton
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-plus"
+            class="w-full text-muted hover:text-primary hover:bg-primary/10"
+            :aria-label="`Add event on ${day.toDateString()}`"
+            @click="handleAddEvent(day)"
+          >
+            Add Event
+          </UButton>
+        </div>
       </div>
       <div
         v-for="day in secondRow"
@@ -190,6 +206,18 @@ function isLastDay(day: Date) {
                 {{ isToday(day) ? 'No events today' : 'No events' }}
               </span>
             </div>
+          </div>
+          <div class="p-2 border-t border-default flex-shrink-0">
+            <UButton
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-plus"
+              class="w-full text-muted hover:text-primary hover:bg-primary/10"
+              :aria-label="`Add event on ${day.toDateString()}`"
+              @click="handleAddEvent(day)"
+            >
+              Add Event
+            </UButton>
           </div>
         </template>
 

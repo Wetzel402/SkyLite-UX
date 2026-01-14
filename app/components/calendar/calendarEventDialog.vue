@@ -280,7 +280,89 @@ function handleAllDayToggle() {
 }
 
 watch(() => props.event, async (newEvent) => {
-  if (newEvent && newEvent.id) {
+  if (newEvent) {
+    // Handle new events (empty id) - set dates from the event but reset other fields
+    if (newEvent.id === "") {
+      title.value = "";
+      description.value = "";
+      location.value = "";
+      selectedUsers.value = [];
+      error.value = null;
+      resetRecurrenceFields();
+
+      // Use the start date from the event (set when clicking "+ Add Event" on a specific day)
+      const start = newEvent.start instanceof Date ? newEvent.start : new Date(newEvent.start);
+      const startDateStr = start.toISOString().split("T")[0];
+      if (startDateStr) {
+        startDate.value = parseDate(startDateStr);
+        endDate.value = parseDate(startDateStr);
+      }
+
+      // Set default time to current time rounded to nearest 5 minutes
+      const now = new Date();
+      const currentMinutes = now.getMinutes();
+      const roundedMinutes = Math.round(currentMinutes / 5) * 5;
+      let currentHour = now.getHours();
+      let adjustedMinutes = roundedMinutes;
+
+      if (adjustedMinutes === 60) {
+        adjustedMinutes = 0;
+        currentHour += 1;
+      }
+
+      let startHourValue = currentHour;
+      let startAmPmValue = "AM";
+
+      if (startHourValue === 0) {
+        startHourValue = 12;
+      }
+      else if (startHourValue > 12) {
+        startHourValue -= 12;
+        startAmPmValue = "PM";
+      }
+      else if (startHourValue === 12) {
+        startAmPmValue = "PM";
+      }
+
+      startHour.value = startHourValue;
+      startMinute.value = adjustedMinutes;
+      startAmPm.value = startAmPmValue;
+
+      // End time is 30 minutes after start
+      let endHourValue = currentHour;
+      let endMinuteValue = adjustedMinutes + 30;
+      let endAmPmValue = startAmPmValue;
+
+      if (endMinuteValue >= 60) {
+        endMinuteValue -= 60;
+        endHourValue += 1;
+      }
+
+      if (endHourValue >= 24) {
+        endHourValue -= 24;
+      }
+
+      if (endHourValue === 0) {
+        endHourValue = 12;
+        endAmPmValue = "AM";
+      }
+      else if (endHourValue > 12) {
+        endHourValue -= 12;
+        endAmPmValue = "PM";
+      }
+      else if (endHourValue === 12) {
+        endAmPmValue = "PM";
+      }
+
+      endHour.value = endHourValue;
+      endMinute.value = endMinuteValue;
+      endAmPm.value = endAmPmValue;
+
+      allDay.value = newEvent.allDay || false;
+      return;
+    }
+
+    // Handle existing events
     const isExpandedEvent = newEvent.id.includes("-");
     let originalEvent = newEvent;
 

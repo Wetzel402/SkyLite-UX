@@ -1,0 +1,527 @@
+<project_specification>
+  <project_name>SkyLite-UX</project_name>
+
+  <overview>
+    SkyLite-UX is an open-source, self-hosted alternative to Skylight Calendar - a family-friendly calendar and organization application designed for wall-mounted tablets and touch interfaces. This specification covers major enhancements including full Google Calendar two-way sync, weather integration with Home Assistant support, a photo screensaver system, a chores and rewards system for kids, and a complete UI overhaul inspired by the bright, colorful Skylight Calendar aesthetic.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>Nuxt 4 (Vue 3 SSR)</framework>
+      <styling>TailwindCSS with Nuxt UI component library</styling>
+      <state_management>Vue Composables pattern</state_management>
+      <language>TypeScript</language>
+    </frontend>
+    <backend>
+      <runtime>Node.js with Nitro (Nuxt server engine)</runtime>
+      <database>PostgreSQL with Prisma ORM</database>
+      <language>TypeScript</language>
+    </backend>
+    <communication>
+      <api>REST API with Server-Sent Events (SSE) for real-time sync</api>
+      <external_apis>Google Calendar API, Google Photos API, Weather APIs, Home Assistant API</external_apis>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 18+ installed
+      - PostgreSQL database running
+      - Google Cloud Console project with Calendar and Photos APIs enabled
+      - OAuth 2.0 credentials configured
+      - Environment variables: DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, OAUTH_ENCRYPTION_KEY
+      - Optional: Home Assistant instance for weather entity integration
+      - Optional: Weather API keys for Open-Meteo alternatives
+    </environment_setup>
+  </prerequisites>
+
+  <feature_count>160</feature_count>
+
+  <security_and_access_control>
+    <user_roles>
+      <role name="parent">
+        <permissions>
+          - Full access to all features
+          - Create, edit, delete calendar events
+          - Manage chores and set point values
+          - Create and manage rewards catalog
+          - Verify/approve chore completions
+          - Configure integrations (Google Calendar, Photos, Weather)
+          - Manage family members/users
+          - Access settings and system configuration
+        </permissions>
+        <protected_routes>
+          - /settings/integrations (parent only)
+          - /settings/users (parent only)
+          - /chores/manage (parent only for creating/editing chores)
+          - /rewards/manage (parent only for creating/editing rewards)
+        </protected_routes>
+      </role>
+      <role name="child">
+        <permissions>
+          - View calendar events
+          - Create personal calendar events (synced to assigned Google Calendar)
+          - View assigned chores
+          - Claim/complete chores (based on household settings)
+          - View earned points
+          - Redeem points for rewards
+          - View family photos on screensaver
+        </permissions>
+        <protected_routes>
+          - Cannot access /settings/integrations
+          - Cannot access /settings/users
+          - Cannot create/edit chores or rewards
+        </protected_routes>
+      </role>
+    </user_roles>
+    <authentication>
+      <method>Local user profiles (no login required for family use on dedicated device)</method>
+      <session_timeout>None (designed for always-on display)</session_timeout>
+      <parent_verification>PIN or password for parent-only actions</parent_verification>
+    </authentication>
+    <sensitive_operations>
+      - Deleting calendar events requires confirmation
+      - Modifying integration settings requires parent verification
+      - Redeeming high-value rewards may require parent approval
+    </sensitive_operations>
+  </security_and_access_control>
+
+  <core_features>
+    <google_calendar_sync>
+      - Two-way event synchronization with Google Calendar
+      - Create events in SkyLite → automatically push to Google Calendar
+      - Edit events in SkyLite → sync changes to Google Calendar
+      - Delete events in SkyLite → remove from Google Calendar
+      - Receive changes from Google Calendar → update SkyLite
+      - Conflict resolution for simultaneous edits (last-write-wins with notification)
+      - Support for recurring events (daily, weekly, monthly, yearly)
+      - Multi-calendar support (sync multiple Google Calendars)
+      - Calendar color mapping to family member colors
+      - Event-to-user assignment based on calendar source
+      - Background sync with configurable interval
+      - Manual sync trigger button
+      - Sync status indicator showing last sync time
+      - Error handling with user-friendly messages
+    </google_calendar_sync>
+
+    <weather_integration>
+      - Multiple weather data sources via integration system
+      - Open-Meteo integration (free, no API key required)
+      - OpenWeatherMap integration (API key required)
+      - Home Assistant entity integration (pull weather from HA instance)
+      - Current conditions display in header (temperature, icon, conditions)
+      - Attractive clock display alongside weather in top-left header
+      - Weather icon tap → detailed forecast popup
+      - Forecast popup shows: hourly forecast, 7-day outlook, humidity, wind, UV index
+      - Configurable units (Fahrenheit/Celsius, mph/km/h)
+      - Configurable location (auto-detect or manual entry)
+      - Weather refresh interval settings
+      - Graceful fallback if weather service unavailable
+    </weather_integration>
+
+    <photo_screensaver>
+      - Google Photos integration as initial photo source
+      - Pull photos from selected Google Photos albums
+      - OAuth flow for Google Photos access (leverage existing Google auth)
+      - Album selection UI for choosing which albums to display
+      - Slideshow display of family photos when screen is idle
+      - Configurable activation settings:
+        - Idle timeout (e.g., 5, 10, 15, 30 minutes of inactivity)
+        - Scheduled times (e.g., 10pm-7am)
+        - Manual trigger button
+      - Photo transition effects (fade, slide, etc.)
+      - Configurable photo display duration (5-60 seconds)
+      - Clock overlay on screensaver
+      - Touch anywhere to exit screensaver and return to calendar
+      - Extensible architecture for future photo sources (OneDrive, Immich)
+    </photo_screensaver>
+
+    <chores_system>
+      - Parent creates chores with:
+        - Name and description
+        - Point value (set by parent)
+        - Recurrence: one-time, daily, weekly, monthly
+        - Assignment: specific child or open for anyone to claim
+        - Optional due date/time for one-off chores
+        - Optional icon or category
+      - Chore visibility on dedicated Chores page
+      - Chore cards showing name, points, assignee, due date
+      - Two completion modes (configurable per household):
+        - Self-claim: child marks chore complete, points awarded automatically
+        - Parent verification: child marks complete, parent must approve
+      - Chore status tracking: available, in-progress, pending-approval, completed
+      - Recurring chores auto-reset based on schedule
+      - Chore history/log for tracking completed chores
+      - Visual indicators for overdue chores
+      - Touch-friendly large buttons for claiming/completing
+    </chores_system>
+
+    <rewards_system>
+      - Parent creates rewards catalog:
+        - Reward name and description
+        - Point cost to redeem
+        - Optional quantity limit
+        - Optional expiration date
+        - Optional image/icon
+      - Kids view available rewards with point costs
+      - Kids see their current point balance
+      - Redeem points for rewards with confirmation
+      - Optional parent approval for redemptions above threshold
+      - Redemption history tracking
+      - Point balance updates in real-time
+      - Visual celebration/animation on successful redemption
+    </rewards_system>
+
+    <ui_overhaul>
+      - Skylight-inspired bright pastel color palette:
+        - Mint green (#A8E6CF)
+        - Coral/salmon (#FF8B94)
+        - Golden yellow (#FFD93D)
+        - Soft pink (#FFB6C1)
+        - Teal (#6BCBCB)
+        - Lavender (#B39CD0)
+      - Clean white background (#FFFFFF) with subtle shadows
+      - Large touch-friendly buttons (minimum 44px tap targets)
+      - Column-based week view as primary calendar display
+      - Day columns showing date, event count, "+ Add Event" button
+      - Event cards with pastel background, title, time, and user badge
+      - Family member color-coded badges in header
+      - Floating action button (FAB) for quick event creation
+      - Simplified left sidebar with icon navigation:
+        - Calendar
+        - Chores
+        - Lists (shopping/to-do)
+        - Settings
+      - Header with:
+        - Family name
+        - Clock (large, attractive digital display)
+        - Weather (current temp + icon)
+        - Family member filter badges
+        - View selector (Week/Month/Day/Agenda)
+        - Date navigation arrows
+      - "Next Week" preview card in week view
+      - Smooth animations and transitions
+      - Responsive design optimized for tablet (1024px-1366px primary)
+      - Dark mode support with muted pastel variants
+    </ui_overhaul>
+
+    <existing_feature_enhancements>
+      - Enhanced event creation dialog with Google Calendar sync option
+      - Improved to-do list UI matching Skylight aesthetic
+      - Enhanced shopping list UI with touch-friendly interactions
+      - Better user profile management with color selection
+      - Improved settings organization and navigation
+    </existing_feature_enhancements>
+  </core_features>
+
+  <database_schema>
+    <tables>
+      <existing_tables>
+        - User: id, name, color, isParent, createdAt, updatedAt
+        - CalendarEvent: id, title, description, location, startTime, endTime, allDay, color, createdAt, updatedAt
+        - CalendarEventUser: id, eventId, userId
+        - CalendarEventMapping: id, localEventId, externalEventId, integrationId, syncDirection, lastSynced
+        - Integration: id, name, type, enabled, url, apiKey, accessToken, refreshToken, tokenExpiry, tokenType, settings, lastSync, createdAt, updatedAt
+        - Todo, TodoColumn, ShoppingList, ShoppingListItem (existing)
+      </existing_tables>
+      <new_tables>
+        <Chore>
+          - id, name, description, pointValue, recurrence (NONE, DAILY, WEEKLY, MONTHLY)
+          - assignedUserId (nullable - null means open to anyone)
+          - dueDate (nullable), icon, createdAt, updatedAt
+        </Chore>
+        <ChoreCompletion>
+          - id, choreId, userId, completedAt, verifiedAt, verifiedByUserId
+          - status (PENDING_APPROVAL, APPROVED, REJECTED)
+          - pointsAwarded
+        </ChoreCompletion>
+        <Reward>
+          - id, name, description, pointCost, quantityAvailable (nullable)
+          - expiresAt (nullable), icon, createdAt, updatedAt
+        </Reward>
+        <RewardRedemption>
+          - id, rewardId, userId, redeemedAt, pointsSpent
+          - approvedByUserId (nullable), status (PENDING, APPROVED, REJECTED)
+        </RewardRedemption>
+        <UserPoints>
+          - id, userId, currentBalance, totalEarned, totalSpent
+        </UserPoints>
+        <WeatherCache>
+          - id, integrationId, location, data (JSON), fetchedAt, expiresAt
+        </WeatherCache>
+        <ScreensaverSettings>
+          - id, enabled, activationMode (IDLE, SCHEDULED, MANUAL)
+          - idleTimeoutMinutes, scheduleStart, scheduleEnd
+          - photoDisplaySeconds, transitionEffect
+        </ScreensaverSettings>
+        <PhotoAlbum>
+          - id, integrationId, externalAlbumId, name, enabled, lastSync
+        </PhotoAlbum>
+        <HouseholdSettings>
+          - id, choreCompletionMode (SELF_CLAIM, PARENT_VERIFY)
+          - rewardApprovalThreshold (nullable)
+          - parentPin (encrypted)
+        </HouseholdSettings>
+      </new_tables>
+    </tables>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <google_calendar>
+      - GET /api/integrations/google-calendar/oauth/authorize (existing)
+      - GET /api/integrations/google-calendar/oauth/callback (existing)
+      - GET /api/integrations/google-calendar/calendars (existing)
+      - GET /api/integrations/google-calendar/events (existing)
+      - POST /api/integrations/google-calendar/events (NEW - create event)
+      - PUT /api/integrations/google-calendar/events/:id (NEW - update event)
+      - DELETE /api/integrations/google-calendar/events/:id (NEW - delete event)
+      - POST /api/integrations/google-calendar/sync (NEW - trigger manual sync)
+    </google_calendar>
+    <weather>
+      - GET /api/weather/current
+      - GET /api/weather/forecast
+      - GET /api/integrations/weather/configure
+      - POST /api/integrations/weather/configure
+      - GET /api/integrations/home-assistant/entities (for weather entity selection)
+    </weather>
+    <photos>
+      - GET /api/integrations/google-photos/oauth/authorize
+      - GET /api/integrations/google-photos/oauth/callback
+      - GET /api/integrations/google-photos/albums
+      - PUT /api/integrations/google-photos/albums/:id/toggle
+      - GET /api/screensaver/photos (returns next batch of photos)
+      - GET /api/screensaver/settings
+      - PUT /api/screensaver/settings
+    </photos>
+    <chores>
+      - GET /api/chores
+      - POST /api/chores
+      - PUT /api/chores/:id
+      - DELETE /api/chores/:id
+      - POST /api/chores/:id/claim (child claims a chore)
+      - POST /api/chores/:id/complete (mark chore as done)
+      - POST /api/chores/:id/verify (parent approves completion)
+      - GET /api/chores/history
+    </chores>
+    <rewards>
+      - GET /api/rewards
+      - POST /api/rewards
+      - PUT /api/rewards/:id
+      - DELETE /api/rewards/:id
+      - POST /api/rewards/:id/redeem
+      - POST /api/rewards/redemptions/:id/approve
+      - GET /api/rewards/redemptions
+    </rewards>
+    <points>
+      - GET /api/users/:id/points
+      - GET /api/users/:id/points/history
+    </points>
+    <household>
+      - GET /api/household/settings
+      - PUT /api/household/settings
+      - POST /api/household/verify-pin
+    </household>
+  </api_endpoints_summary>
+
+  <ui_layout>
+    <main_structure>
+      - Left sidebar (60-80px wide): Icon-based navigation with labels below icons
+      - Header bar (60-80px tall): Family name, clock, weather, user filters, view controls
+      - Main content area: Calendar views, chores grid, lists, etc.
+      - Floating action button: Bottom-right corner for quick actions
+    </main_structure>
+    <calendar_week_view>
+      - 7 day columns (or configurable number visible)
+      - Each column: Day name, date number, event count, "+ Add Event" button
+      - Event cards stacked vertically within each day
+      - Scrollable if many events in a day
+      - "Next Week" preview panel on right side
+    </calendar_week_view>
+    <chores_page>
+      - Grid or list of chore cards
+      - Filter by: All, My Chores, Available to Claim
+      - Each card: Chore name, points badge, assignee avatar, due indicator
+      - Large "Complete" or "Claim" button on each card
+      - Points balance display in header
+    </chores_page>
+    <rewards_page>
+      - Grid of reward cards
+      - Each card: Reward image/icon, name, point cost
+      - "Redeem" button with confirmation
+      - Current point balance prominently displayed
+      - Redemption history accessible
+    </rewards_page>
+    <screensaver>
+      - Full-screen photo display
+      - Clock overlay (configurable position)
+      - Subtle photo info (optional)
+      - Touch anywhere to dismiss
+    </screensaver>
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      <primary_colors>
+        - Background: #FFFFFF (white)
+        - Text Primary: #2D3748 (dark gray)
+        - Text Secondary: #718096 (medium gray)
+        - Accent: #7C3AED (purple - for FAB and highlights)
+      </primary_colors>
+      <event_colors>
+        - Mint: #A8E6CF
+        - Coral: #FF8B94
+        - Yellow: #FFD93D
+        - Pink: #FFB6C1
+        - Teal: #6BCBCB
+        - Lavender: #B39CD0
+        - Sky Blue: #87CEEB
+        - Peach: #FFDAB9
+      </event_colors>
+      <dark_mode>
+        - Background: #1A202C
+        - Surface: #2D3748
+        - Muted pastels for events
+      </dark_mode>
+    </color_palette>
+    <typography>
+      <font_family>Inter, system-ui, sans-serif</font_family>
+      <sizes>
+        - Clock: 48-64px bold
+        - Header: 24-32px semibold
+        - Subheader: 18-20px medium
+        - Body: 16px regular
+        - Caption: 14px regular
+      </sizes>
+    </typography>
+    <spacing>
+      - Base unit: 4px
+      - Card padding: 16px
+      - Section gaps: 24px
+      - Touch target minimum: 44px
+    </spacing>
+    <shadows>
+      - Card shadow: 0 2px 8px rgba(0,0,0,0.08)
+      - Elevated: 0 4px 16px rgba(0,0,0,0.12)
+    </shadows>
+  </design_system>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Complete Google Calendar Two-Way Sync</title>
+      <tasks>
+        - Implement event creation API endpoint (POST to Google)
+        - Implement event update API endpoint (PUT to Google)
+        - Implement event delete API endpoint (DELETE from Google)
+        - Add conflict detection and resolution logic
+        - Implement bidirectional sync polling
+        - Add sync status UI indicators
+        - Test with recurring events
+      </tasks>
+    </step>
+    <step number="2">
+      <title>UI Overhaul - Core Theme</title>
+      <tasks>
+        - Define Tailwind color palette with pastel colors
+        - Update global styles and CSS variables
+        - Redesign header with clock and weather placeholder
+        - Redesign sidebar with new icon navigation
+        - Implement column-based week view
+        - Create new event card component with pastel styling
+        - Add floating action button component
+        - Ensure touch-friendly tap targets throughout
+      </tasks>
+    </step>
+    <step number="3">
+      <title>Weather Integration</title>
+      <tasks>
+        - Create weather integration framework
+        - Implement Open-Meteo service
+        - Implement Home Assistant weather entity service
+        - Create weather display component for header
+        - Create forecast popup component
+        - Add weather settings UI
+        - Implement weather caching
+      </tasks>
+    </step>
+    <step number="4">
+      <title>Chores System</title>
+      <tasks>
+        - Create Prisma schema for chores tables
+        - Implement chores CRUD API endpoints
+        - Create chores management UI (parent)
+        - Create chores display UI (all users)
+        - Implement claim/complete/verify flow
+        - Add recurring chore logic
+        - Create points tracking system
+      </tasks>
+    </step>
+    <step number="5">
+      <title>Rewards System</title>
+      <tasks>
+        - Create Prisma schema for rewards tables
+        - Implement rewards CRUD API endpoints
+        - Create rewards management UI (parent)
+        - Create rewards catalog UI (kids)
+        - Implement redemption flow
+        - Add point balance displays
+        - Create redemption history view
+      </tasks>
+    </step>
+    <step number="6">
+      <title>Photo Screensaver</title>
+      <tasks>
+        - Implement Google Photos OAuth flow
+        - Create album selection API and UI
+        - Implement photo fetching and caching
+        - Create screensaver display component
+        - Implement activation logic (idle detection, scheduling)
+        - Add screensaver settings UI
+        - Create smooth transitions between photos
+      </tasks>
+    </step>
+    <step number="7">
+      <title>Polish and Integration</title>
+      <tasks>
+        - Ensure all features work together seamlessly
+        - Add animations and transitions throughout
+        - Implement dark mode with muted pastels
+        - Performance optimization
+        - Accessibility review and fixes
+        - Comprehensive testing
+        - Documentation updates
+      </tasks>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      - Google Calendar events sync bidirectionally within 1 minute
+      - Weather displays current conditions and forecast accurately
+      - Photo screensaver activates based on configured triggers
+      - Chores can be created, assigned, completed, and verified
+      - Rewards can be created and redeemed with point tracking
+      - All existing features continue to work correctly
+    </functionality>
+    <user_experience>
+      - UI matches Skylight Calendar aesthetic (bright, cheerful, touch-friendly)
+      - All touch targets are at least 44px
+      - Screensaver photos display smoothly without lag
+      - App feels responsive and snappy on tablet devices
+      - Family members can easily identify their events by color
+    </user_experience>
+    <technical_quality>
+      - No console errors during normal operation
+      - API responses under 200ms for standard operations
+      - Graceful error handling with user-friendly messages
+      - Data persists correctly across sessions
+      - Real-time sync works reliably via SSE
+    </technical_quality>
+    <design_polish>
+      - Consistent color palette throughout
+      - Smooth animations and transitions
+      - Proper spacing and visual hierarchy
+      - Readable typography at arm's length (tablet on wall)
+      - Dark mode fully functional with appropriate contrast
+    </design_polish>
+  </success_criteria>
+</project_specification>
