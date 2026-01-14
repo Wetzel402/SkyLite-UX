@@ -219,6 +219,50 @@ function clearAllSyncIntervals() {
   consola.debug("Sync Manager: Cleared all sync intervals");
 }
 
+export async function sendCachedSyncData(event: H3Event, integrationId: string, syncInterval: SyncInterval) {
+  const prisma = await import("../../app/lib/prisma").then(m => m.default);
+  const integration = await prisma.integration.findUnique({ where: { id: integrationId } });
+  const service = integrationServices.get(integrationId);
+
+  if (!integration || !service) {
+    return;
+  }
+
+  try {
+    let data: CalendarEvent[] | ShoppingListWithItemsAndCount[] | TodoWithUser[] | null = null;
+
+    switch (integration.type) {
+      case "calendar":
+        data = await (service as ServerCalendarIntegrationService).getEvents();
+        break;
+      case "shopping":
+        data = await (service as ServerShoppingIntegrationService).getShoppingLists();
+        break;
+      case "todo":
+        data = await (service as ServerTodoIntegrationService).getTodos();
+        break;
+    }
+
+    if (data) {
+      const syncEvent: ServerSyncEvent = {
+        type: "integration_sync",
+        integrationId: integration.id,
+        integrationType: integration.type,
+        service: integration.service,
+        data,
+        timestamp: syncInterval.lastSync,
+        success: true,
+      };
+
+      event.node.res.write(`data: ${JSON.stringify(syncEvent)}\n\n`);
+      consola.debug(`Sync Manager: Sent cached data for integration ${integration.name} (${integration.id}) to reconnecting client`);
+    }
+  }
+  catch (error) {
+    consola.error(`Sync Manager: Failed to send cached data for ${integrationId}:`, error);
+  }
+}
+
 export function registerClient(event: H3Event) {
   const client: ConnectedClient = {
     event,
@@ -246,4 +290,9 @@ export const syncManager = {
   unregisterClient,
   getConnectedClientsCount: () => connectedClients.size,
   getActiveSyncIntervals: () => Array.from(syncIntervals.keys()),
+  getSyncIntervals: () => syncIntervals,
+  getIntegrationById: async (id: string) => {
+    const prisma = await import("../../app/lib/prisma").then(m => m.default);
+    return prisma.integration.findUnique({ where: { id } });
+  },
 };

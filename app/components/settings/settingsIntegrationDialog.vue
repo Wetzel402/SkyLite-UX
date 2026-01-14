@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { JsonValue } from "type-fest";
+
 import type { CreateIntegrationInput, Integration } from "~/types/database";
 import type { ConnectionTestResult, IntegrationSettingsField } from "~/types/ui";
 
@@ -16,7 +18,8 @@ const emit = defineEmits<{
   (e: "close"): void;
   (e: "save", integration: CreateIntegrationInput): void;
   (e: "delete", integrationId: string): void;
-  (e: "test-connection", integration: CreateIntegrationInput): void;
+  (e: "testConnection", integration: CreateIntegrationInput): void;
+  (e: "selectCalendars", integrationId: string): void;
 }>();
 
 const show = ref(false);
@@ -34,6 +37,11 @@ const isTestingConnection = computed(() => {
   return props.connectionTestResult?.isLoading || (isSaving.value && !props.connectionTestResult);
 });
 
+const integrationNeedsReauth = computed(() => {
+  const settings = props.integration?.settings as { needsReauth?: boolean } | undefined;
+  return Boolean(settings?.needsReauth);
+});
+
 const currentIntegrationConfig = computed(() => {
   if (!type.value || !service.value)
     return null;
@@ -41,7 +49,19 @@ const currentIntegrationConfig = computed(() => {
 });
 
 const settingsFields = computed((): IntegrationSettingsField[] => {
-  return currentIntegrationConfig.value?.settingsFields || [];
+  const config = currentIntegrationConfig.value;
+  if (!config)
+    return [];
+
+  const hasCalendarSelect = config.capabilities.includes("select_calendars");
+
+  if (hasCalendarSelect) {
+    return config.settingsFields.filter(field =>
+      !["user", "eventColor", "useUserColors"].includes(field.key),
+    );
+  }
+
+  return config.settingsFields;
 });
 
 const availableTypes = computed(() => {
@@ -93,7 +113,7 @@ function initializeSettingsData() {
     }
     else if (field.type === "boolean") {
       if (field.key === "useUserColors") {
-        initialData[field.key] = true;
+        initialData[field.key] = false;
       }
       else {
         initialData[field.key] = false;
@@ -163,12 +183,28 @@ watch(() => props.integration, (newIntegration) => {
       if (newIntegration.settings && typeof newIntegration.settings.useUserColors === "boolean") {
         settingsData.value.useUserColors = newIntegration.settings.useUserColors as boolean;
       }
+      if (newIntegration.settings && newIntegration.settings.clientId) {
+        settingsData.value.clientId = newIntegration.settings.clientId as string;
+      }
+      if (newIntegration.settings && newIntegration.settings.clientSecret) {
+        settingsData.value.clientSecret = newIntegration.settings.clientSecret as string;
+      }
     });
   }
   else {
     resetForm();
   }
 }, { immediate: true });
+
+watch(() => settingsData.value.user, (userSelection) => {
+  const hasUsers = Array.isArray(userSelection) && userSelection.length > 0;
+  if (hasUsers) {
+    settingsData.value.useUserColors = true;
+  }
+  else {
+    settingsData.value.useUserColors = false;
+  }
+}, { deep: true });
 
 function resetForm() {
   name.value = "";
@@ -240,7 +276,11 @@ async function handleSave() {
   try {
     const integrationName = name.value.trim() || generateUniqueName(service.value, props.existingIntegrations);
 
-    const integrationData = {
+    const userSelection = settingsData.value.user || [];
+    const hasUsers = Array.isArray(userSelection) && userSelection.length > 0;
+    const useUserColors = hasUsers ? Boolean(settingsData.value.useUserColors) : false;
+
+    const integrationData: CreateIntegrationInput = {
       name: integrationName,
       type: type.value,
       service: service.value,
@@ -249,13 +289,35 @@ async function handleSave() {
       icon: null,
       enabled: enabled.value,
       settings: {
-        user: settingsData.value.user || [],
+        user: userSelection,
         eventColor: settingsData.value.eventColor || "#06b6d4",
-        useUserColors: Boolean(settingsData.value.useUserColors),
+        useUserColors,
+        clientId: settingsData.value.clientId || "",
+        clientSecret: settingsData.value.clientSecret || "",
+        ...(
+          props.integration?.id
+          && currentIntegrationConfig.value?.capabilities.includes("select_calendars")
+          && !settingsData.value.clientSecret
+            ? { calendars: (props.integration.settings as { calendars?: unknown })?.calendars as JsonValue || [] }
+            : {}
+        ),
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
+
+    const config = currentIntegrationConfig.value;
+
+    if (config?.customSaveHandler) {
+      const handled = await config.customSaveHandler(
+        { ...integrationData, id: props.integration?.id },
+        settingsData.value,
+        !!props.integration?.id,
+        props.integration,
+      );
+
+      if (handled) {
+        return;
+      }
+    }
 
     if (!props.integration?.id) {
       integrationData.apiKey = settingsData.value.apiKey?.toString().trim() || "";
@@ -335,6 +397,23 @@ function handleDelete() {
           </div>
         </div>
 
+        <div
+          v-if="integration?.id && integrationNeedsReauth"
+          class="bg-warning/10 text-warning rounded-md px-3 py-2 text-sm"
+        >
+          <div class="flex items-start gap-2">
+            <UIcon name="i-lucide-alert-triangle" class="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p class="font-medium">
+                Re-authorization Required
+              </p>
+              <p class="text-xs mt-1">
+                Your {{ integration.name || service }} access has expired or been revoked. Click Save to re-authorize.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div v-if="integration?.id" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm">
           <div class="flex items-start gap-2">
             <UIcon name="i-lucide-info" class="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -343,7 +422,7 @@ function handleDelete() {
                 Editing existing integration
               </p>
               <p class="text-xs mt-1">
-                For security reasons, API keys and URLs are not displayed. Leave these fields empty to keep current values, or enter new values to update them.
+                For security reasons, API keys, client secrets, etc. are not displayed. Leave these fields empty to keep current values, or enter new values to update them.
               </p>
             </div>
           </div>
@@ -450,6 +529,17 @@ function handleDelete() {
             </p>
           </div>
         </template>
+
+        <UButton
+          v-if="integration?.id && currentIntegrationConfig?.capabilities.includes('select_calendars')"
+          color="primary"
+          variant="outline"
+          icon="i-lucide-calendar"
+          class="w-full"
+          @click="emit('selectCalendars', integration.id); emit('close')"
+        >
+          Select Calendars
+        </UButton>
 
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
