@@ -135,7 +135,7 @@ export function useMealPlans() {
 
   const getUpcomingPrepMeals = async () => {
     try {
-      const meals = await $fetch<Meal[]>("/api/meals/upcoming-prep");
+      const meals = await $fetch<Meal[]>("/api/meals/upcomingPrep");
       return meals;
     }
     catch (err) {
@@ -148,7 +148,7 @@ export function useMealPlans() {
   const getMealsForDateRange = async (startDate: Date, endDate: Date) => {
     try {
       const meals = await $fetch<MealWithDate[]>(
-        "/api/meals/by-date-range",
+        "/api/meals/byDateRange",
         {
           params: {
             startDate: startDate.toISOString(),
