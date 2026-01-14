@@ -1,15 +1,19 @@
-import { startOfDay } from "date-fns";
+import { consola } from "consola";
+import { startOfDay, subDays } from "date-fns";
 
 import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (_event) => {
   try {
     const today = startOfDay(new Date());
+    // Only look back 30 days to avoid fetching excessive historical data
+    const lookbackDate = subDays(today, 30);
 
-    // Get all meal plans with meals that need preparation
+    // Get meal plans with meals that need preparation (limited to last 30 days)
     const mealPlans = await prisma.mealPlan.findMany({
       where: {
         weekStart: {
+          gte: lookbackDate,
           lte: today,
         },
       },
@@ -43,9 +47,11 @@ export default defineEventHandler(async (_event) => {
     return upcomingMeals;
   }
   catch (error) {
+    // Log server error and return generic message
+    consola.error("Failed to fetch upcoming preparation meals:", error);
     throw createError({
       statusCode: 500,
-      message: `Failed to fetch upcoming preparation meals: ${error}`,
+      message: "Failed to fetch upcoming preparation meals",
     });
   }
 });
