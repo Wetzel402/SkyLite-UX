@@ -55,7 +55,9 @@ The Google Calendar integration provides full two-way synchronization with your 
 
 ### Setup Instructions
 
-#### 1. Create Google OAuth Credentials
+#### Administrator Setup (One-Time)
+
+Before users can connect their Google Calendar, an administrator must configure OAuth credentials:
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
@@ -69,14 +71,33 @@ The Google Calendar integration provides full two-way synchronization with your 
    - If prompted, configure the OAuth consent screen first
    - Select **Web application** as the application type
    - Add authorized redirect URIs:
-     - `http://localhost:3000/api/integrations/google_calendar/callback`
-     - `http://myowndomain.com/api/integrations/google_calendar/callback`
+     - For local development: `http://localhost:3000/api/integrations/google_calendar/callback`
+     - For production: `https://your-domain.com/api/integrations/google_calendar/callback`
    - Click **Create**
 5. Copy the **Client ID** and **Client Secret**
-6. Follow the [general setup instructions](#general-setup) above.
-7. You will be redirected to Google to authorize the application
-8. After authorization, you will be redirected back to Skylite UX. Configure:
-   - Select which calendars to sync
+6. Add the credentials to your environment:
+   - Create or update your `.env` file:
+     ```env
+     GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+     GOOGLE_CLIENT_SECRET=your-client-secret
+     ```
+   - For Docker deployments, pass as environment variables:
+     ```bash
+     docker run -e GOOGLE_CLIENT_ID=xxx -e GOOGLE_CLIENT_SECRET=xxx ...
+     ```
+
+#### User Setup
+
+Once the administrator has configured the OAuth credentials:
+
+1. In Skylite UX, go to **Settings > Integrations > Add Integration**
+2. Select **Calendar** as the type and **Google** as the service
+3. Give the integration a name (optional)
+4. Click **Save** - you will be redirected to Google to sign in
+5. Sign in with your Google account and grant calendar access
+6. After authorization, you will be redirected back to Skylite UX
+7. Click **Select Calendars** to choose which calendars to sync
+8. Configure calendar settings:
    - Choose user(s) to link events to
    - Set calendar event color
    - Enable/disable user profile colors
@@ -85,6 +106,8 @@ The Google Calendar integration provides full two-way synchronization with your 
 
 ### Troubleshooting
 
-- **OAuth errors**: Ensure your redirect URI is correctly configured in Google Cloud Console
+- **"Google Calendar integration is not configured"**: The administrator needs to set the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables
+- **OAuth errors**: Ensure the redirect URI is correctly configured in Google Cloud Console to match your deployment URL
 - **Calendar not appearing**: Verify the Google Calendar API is enabled in your Google Cloud project
 - **Permission denied**: Check that you've granted the necessary permissions during OAuth authorization
+- **"Authentication expired"**: Click on the integration in Settings and save again to re-authorize

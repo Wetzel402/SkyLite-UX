@@ -7,6 +7,11 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Server-only config (not exposed to client)
+    // Can be overridden by NUXT_GOOGLE_CLIENT_ID and NUXT_GOOGLE_CLIENT_SECRET env vars
+    // Also supports GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET for backwards compatibility
+    googleClientId: "",
+    googleClientSecret: "",
     public: {
       skyliteVersion: pkg.version,
       nuxtVersion: pkg.devDependencies.nuxt,

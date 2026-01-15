@@ -4,6 +4,8 @@ import { createError, defineEventHandler, getQuery, sendRedirect } from "h3";
 
 import prisma from "~/lib/prisma";
 
+import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const code = query.code as string;
@@ -66,8 +68,16 @@ export default defineEventHandler(async (event) => {
 
     const isReAuth = !!integrationId;
 
-    let clientId: string;
-    let clientSecret: string;
+    // Get OAuth credentials from runtime config or environment variables
+    const oauthConfig = getGoogleOAuthConfig();
+    if (!oauthConfig) {
+      throw createError({
+        statusCode: 500,
+        message: "Google Calendar integration is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.",
+      });
+    }
+    const { clientId, clientSecret } = oauthConfig;
+
     let existingIntegration;
 
     if (isReAuth && integrationId) {
@@ -83,42 +93,6 @@ export default defineEventHandler(async (event) => {
         throw createError({
           statusCode: 404,
           message: "Integration not found",
-        });
-      }
-
-      const dbSettings = existingIntegration.settings as Record<string, unknown> || {};
-      clientId = dbSettings.clientId as string;
-      clientSecret = dbSettings.clientSecret as string;
-
-      if (!clientId) {
-        throw createError({
-          statusCode: 400,
-          message: "Client ID not found in integration settings",
-        });
-      }
-
-      if (!clientSecret) {
-        throw createError({
-          statusCode: 400,
-          message: "Client Secret not found in integration settings",
-        });
-      }
-    }
-    else {
-      clientId = settings?.clientId as string;
-      clientSecret = settings?.clientSecret as string;
-
-      if (!clientId) {
-        throw createError({
-          statusCode: 400,
-          message: "Client ID not found in integration data",
-        });
-      }
-
-      if (!clientSecret) {
-        throw createError({
-          statusCode: 400,
-          message: "Client Secret not found in integration data",
         });
       }
     }
@@ -158,6 +132,9 @@ export default defineEventHandler(async (event) => {
       consola.success(`Google Calendar integration ${integration.id} re-authenticated successfully`);
     }
     else {
+      // Extract only non-sensitive settings (exclude clientId/clientSecret as they're now in env vars)
+      const { clientId: _cid, clientSecret: _cs, ...safeSettings } = settings || {};
+
       integration = await prisma.integration.create({
         data: {
           name,
@@ -168,10 +145,9 @@ export default defineEventHandler(async (event) => {
           icon: null,
           enabled,
           settings: {
-            ...settings,
+            ...safeSettings,
             accessToken: tokens.access_token,
             tokenExpiry: tokens.expiry_date,
-            needsReauth: undefined,
           },
         },
       });

@@ -1,4 +1,5 @@
 import { consola } from "consola";
+
 import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
