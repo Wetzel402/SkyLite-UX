@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { consola } from "consola";
 
-import type { CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
+import type { AppSettings, CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
 import type { ConnectionTestResult } from "~/types/ui";
 
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
@@ -29,16 +29,40 @@ const isDark = computed({
 
 const { showError } = useAlertToast();
 
-const { settings, updateSettings } = useAppSettings();
+const { settings, updateSettings, getSettings } = useAppSettings();
 const showMeals = computed({
   get() {
     return settings.value?.showMealsOnCalendar ?? false;
   },
   set(value: boolean) {
-    updateSettings({ showMealsOnCalendar: value }).catch((error) => {
-      consola.error("Settings: Failed to update meal calendar setting:", error);
-      showError("Settings Update Failed", "Failed to update meal calendar visibility setting.");
-    });
+    // Get mutable cached settings for optimistic update
+    const { data: cachedSettings } = useNuxtData<AppSettings>("app-settings");
+
+    // Capture previous state for rollback
+    const previousValue = cachedSettings.value?.showMealsOnCalendar ?? false;
+
+    // Optimistic update - apply immediately to cached data
+    if (cachedSettings.value) {
+      cachedSettings.value.showMealsOnCalendar = value;
+    }
+
+    // Update server and handle errors with rollback
+    (async () => {
+      try {
+        await updateSettings({ showMealsOnCalendar: value });
+      }
+      catch (error) {
+        // Rollback optimistic update on failure
+        if (cachedSettings.value) {
+          cachedSettings.value.showMealsOnCalendar = previousValue;
+        }
+        // Refresh from server to ensure consistency
+        await getSettings();
+
+        consola.error("Settings: Failed to update meal calendar setting:", error);
+        showError("Settings Update Failed", "Failed to update meal calendar visibility setting.");
+      }
+    })();
   },
 });
 
