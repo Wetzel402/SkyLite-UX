@@ -201,7 +201,7 @@ const serviceFactoryMap = {
     const useUserColors = iCalSettings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
-  "calendar:google": (_id: string) => {
+  "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, _settings?: ICalSettings | GoogleCalendarSettings) => {
     return createGoogleCalendarService(_id);
   },
   "shopping:mealie": createMealieService,
