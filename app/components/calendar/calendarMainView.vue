@@ -2,12 +2,15 @@
 import { addDays, addMonths, addWeeks, isSameMonth, subMonths, subWeeks } from "date-fns";
 
 import type { CalendarEvent, CalendarView } from "~/types/calendar";
+import type { Integration } from "~/types/database";
 
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
 import GlobalDisplayView from "~/components/global/globalDisplayView.vue";
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import { useCalendar } from "~/composables/useCalendar";
+import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
 import { useStableDate } from "~/composables/useStableDate";
+import { DEFAULT_LOCAL_EVENT_COLOR } from "~/types/global";
 
 const props = defineProps<{
   events?: CalendarEvent[];
@@ -23,8 +26,9 @@ const _emit = defineEmits<{
   (e: "eventDelete", eventId: string): void;
 }>();
 
-const { getStableDate, parseStableDate } = useStableDate();
-const { scrollToDate } = useCalendar();
+const { getStableDate, stableDate } = useStableDate();
+const { getEventsForDateRange, scrollToDate } = useCalendar();
+const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
 const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "display");
 const isEventDialogOpen = ref(false);
@@ -110,6 +114,35 @@ function handleToday() {
   });
 }
 
+function getDayString(date: Date): string {
+  return date.toISOString().split("T")[0] || date.toISOString().substring(0, 10);
+}
+
+const lastDay = ref(getDayString(getStableDate()));
+let dayChangeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(stableDate, (newDate) => {
+  const newDay = getDayString(newDate);
+  if (newDay !== lastDay.value) {
+    lastDay.value = newDay;
+
+    if (dayChangeTimeout) {
+      clearTimeout(dayChangeTimeout);
+    }
+
+    dayChangeTimeout = setTimeout(() => {
+      handleToday();
+      dayChangeTimeout = null;
+    }, 1000);
+  }
+});
+
+onUnmounted(() => {
+  if (dayChangeTimeout) {
+    clearTimeout(dayChangeTimeout);
+  }
+});
+
 function handleEventSelect(event: CalendarEvent) {
   selectedEvent.value = event;
   isEventDialogOpen.value = true;
@@ -123,7 +156,7 @@ function handleEventCreate(date: Date) {
     start: date,
     end: addDays(date, 1),
     allDay: false,
-    color: "sky",
+    color: DEFAULT_LOCAL_EVENT_COLOR,
   };
   isEventDialogOpen.value = true;
 }
@@ -291,6 +324,7 @@ function getDaysForAgenda(date: Date) {
   <CalendarEventDialog
     :event="selectedEvent"
     :is-open="isEventDialogOpen"
+    :integrations="calendarIntegrations && calendarIntegrations.length > 0 ? calendarIntegrations as Integration[] : undefined"
     :integration-capabilities="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.capabilities : undefined"
     :integration-service-name="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.serviceName : undefined"
     @close="isEventDialogOpen = false"

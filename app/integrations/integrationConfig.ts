@@ -1,19 +1,23 @@
-import type { ICalSettings, IntegrationConfig } from "~/types/integrations";
-// Shared integrations configuration
-// This file contains all integration configurations that are used by both client and server
+import type { GoogleCalendarSettings, ICalSettings, IntegrationConfig } from "~/types/integrations";
 import type { DialogField } from "~/types/ui";
 
+import { createGoogleCalendarService, handleGoogleCalendarSave } from "./google_calendar/googleCalendar";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
 
 export const integrationConfigs: IntegrationConfig[] = [
   // ================================================
-  // Calendar integration configs can support the following list-level capabilities:
+  // Calendar integration configs can support the following capabilities:
   // - get_events: Can get events from the calendar
   // - add_events: Can add events to the calendar
   // - edit_events: Can edit events in the calendar
   // - delete_events: Can delete events from the calendar
+  // - oauth: Can authenticate using OAuth
+  // - select_calendars: Can select calendars from the user's account
+  //   - individual calendars define access role: read or write
+  //   - if access role is read, add_events, edit_events, and delete_events permissions are stripped
+  // - select_users: Can select users to link to the calendar event (currently only enables the user selection in the event dialog if declared)
   // ================================================
   {
     type: "calendar",
@@ -52,9 +56,36 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["get_events"],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
-    files: [],
     dialogFields: [],
     syncInterval: 10,
+  },
+  {
+    type: "calendar",
+    service: "google",
+    settingsFields:
+    [
+      {
+        key: "clientId",
+        label: "Client ID",
+        type: "text" as const,
+        placeholder: "paste your client id here",
+        required: true,
+        description: "Your Google OAuth Client ID",
+      },
+      {
+        key: "clientSecret",
+        label: "Client Secret",
+        type: "password" as const,
+        placeholder: "paste your client secret here",
+        required: true,
+        description: "Your Google OAuth Client Secret (required for server-side token exchange)",
+      },
+    ],
+    capabilities: ["get_events", "edit_events", "add_events", "delete_events", "oauth", "select_calendars"],
+    icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
+    dialogFields: [],
+    syncInterval: 10,
+    customSaveHandler: handleGoogleCalendarSave,
   },
   // ================================================
   // Meal integration configs can support the following list-level capabilities:
@@ -91,11 +122,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["add_items", "edit_items"],
     icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/tandoor-recipes.svg",
-    files: [
-      "/integrations/tandoor/tandoorShoppingLists.ts",
-      "/server/api/integrations/tandoor/[...path].ts",
-      "/server/integrations/tandoor/",
-    ],
     dialogFields: [
       {
         key: "name",
@@ -145,11 +171,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["add_items", "clear_items", "edit_items"],
     icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/mealie.svg",
-    files: [
-      "/integrations/mealie/mealieShoppingLists.ts",
-      "/server/api/integrations/mealie/[...path].ts",
-      "/server/integrations/mealie/",
-    ],
     dialogFields: [
       {
         key: "quantity",
@@ -191,11 +212,20 @@ export const integrationConfigs: IntegrationConfig[] = [
 ];
 
 const serviceFactoryMap = {
-  "calendar:iCal": (_id: string, _apiKey: string, baseUrl: string, settings?: ICalSettings) => {
-    const eventColor = settings?.eventColor || "#06b6d4";
-    const user = settings?.user;
-    const useUserColors = settings?.useUserColors || false;
+  "calendar:iCal": (_id: string, _apiKey: string, baseUrl: string, settings?: ICalSettings | GoogleCalendarSettings) => {
+    const iCalSettings = settings as ICalSettings;
+    const eventColor = iCalSettings?.eventColor || "#06b6d4";
+    const user = iCalSettings?.user;
+    const useUserColors = iCalSettings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
+  },
+  "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, settings?: ICalSettings | GoogleCalendarSettings) => {
+    const googleSettings = settings as GoogleCalendarSettings;
+    return createGoogleCalendarService(
+      _id,
+      googleSettings?.clientId || "",
+      googleSettings?.clientSecret || "",
+    );
   },
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,

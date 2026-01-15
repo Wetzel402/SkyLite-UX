@@ -4,6 +4,7 @@ import { consola } from "consola";
 import type { AppSettings, CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
 import type { ConnectionTestResult } from "~/types/ui";
 
+import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
 import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
 import { integrationServices } from "~/plugins/02.appInit";
@@ -12,10 +13,9 @@ import { createIntegrationService, integrationRegistry } from "~/types/integrati
 
 const { users, loading, error, createUser, deleteUser, updateUser } = useUsers();
 
-// Logo loading state
 const logoLoaded = ref(true);
 const { integrations, loading: integrationsLoading, servicesInitializing, createIntegration, updateIntegration, deleteIntegration } = useIntegrations();
-const { checkIntegrationCache, purgeIntegrationCache, triggerImmediateSync } = useSyncManager();
+const { checkIntegrationCache, purgeIntegrationCache, triggerImmediateSync, purgeCalendarEvents } = useSyncManager();
 
 const colorMode = useColorMode();
 const isDark = computed({
@@ -77,8 +77,12 @@ const selectedUser = ref<User | null>(null);
 const isUserDialogOpen = ref(false);
 const selectedIntegration = ref<Integration | null>(null);
 const isIntegrationDialogOpen = ref(false);
+const isCalendarSelectDialogOpen = ref(false);
+const calendarSelectIntegration = ref<Integration | null>(null);
 
 const connectionTestResult = ref<ConnectionTestResult>(null);
+
+const route = useRoute();
 
 const activeIntegrationTab = ref<string>("");
 
@@ -88,11 +92,26 @@ const availableIntegrationTypes = computed(() => {
   return Array.from(types);
 });
 
-onMounted(() => {
+onMounted(async () => {
   if (availableIntegrationTypes.value.length > 0) {
     activeIntegrationTab.value = availableIntegrationTypes.value[0] || "";
   }
+
+  await refreshNuxtData("integrations");
 });
+
+watch(() => route.query, (query) => {
+  if (query.success === "google_calendar_added" && query.integrationId) {
+    nextTick(() => {
+      const allIntegrations = integrations.value as Integration[];
+      const integration = allIntegrations.find(i => i.id === query.integrationId);
+      if (integration) {
+        calendarSelectIntegration.value = integration;
+        isCalendarSelectDialogOpen.value = true;
+      }
+    });
+  }
+}, { immediate: true });
 
 const filteredIntegrations = computed(() => {
   return (integrations.value as Integration[]).filter(integration => integration.type === activeIntegrationTab.value);
@@ -286,6 +305,45 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
   }
 }
 
+function handleSelectCalendars(integrationId: string) {
+  const integration = (integrations.value as Integration[]).find(i => i.id === integrationId);
+  if (integration) {
+    calendarSelectIntegration.value = integration;
+    isCalendarSelectDialogOpen.value = true;
+  }
+}
+
+async function handleCalendarsSaved() {
+  if (calendarSelectIntegration.value) {
+    await triggerImmediateSync(
+      calendarSelectIntegration.value.type,
+      calendarSelectIntegration.value.id,
+    );
+
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    await refreshNuxtData("calendar-events");
+  }
+
+  isCalendarSelectDialogOpen.value = false;
+  calendarSelectIntegration.value = null;
+}
+
+function handleCalendarsDisabled(calendarIds: string[]) {
+  if (!calendarSelectIntegration.value?.id) {
+    return;
+  }
+
+  const integrationId = calendarSelectIntegration.value.id;
+
+  consola.debug(
+    `Settings: Purging events from ${calendarIds.length} disabled calendar(s) in integration ${integrationId}:`,
+    calendarIds,
+  );
+
+  purgeCalendarEvents(integrationId, calendarIds);
+}
+
 async function handleIntegrationDelete(integrationId: string) {
   try {
     const { data: cachedIntegrations } = useNuxtData("integrations");
@@ -456,6 +514,13 @@ function getIntegrationIconUrl(integration: Integration) {
 
   const config = integrationRegistry.get(`${integration.type}:${integration.service}`);
   return config?.icon || null;
+}
+
+function integrationNeedsReauth(integration?: Integration | null): boolean {
+  if (!integration)
+    return false;
+  const settings = integration.settings as { needsReauth?: boolean } | undefined;
+  return Boolean(settings?.needsReauth);
 }
 </script>
 
@@ -641,9 +706,20 @@ function getIntegrationIconUrl(integration: Integration) {
                     />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="font-medium text-highlighted">
-                      {{ integration.name }}
-                    </p>
+                    <div class="flex items-center gap-2">
+                      <p class="font-medium text-highlighted">
+                        {{ integration.name }}
+                      </p>
+                      <UBadge
+                        v-if="integrationNeedsReauth(integration)"
+                        color="warning"
+                        variant="soft"
+                        size="sm"
+                      >
+                        <UIcon name="i-lucide-alert-triangle" class="h-4 w-4 mr-1" />
+                        Re-auth Required!
+                      </UBadge>
+                    </div>
                     <p class="text-sm text-muted capitalize">
                       {{ integration.service }}
                     </p>
@@ -793,6 +869,15 @@ function getIntegrationIconUrl(integration: Integration) {
       @close="() => { isIntegrationDialogOpen = false; selectedIntegration = null; }"
       @save="handleIntegrationSave"
       @delete="handleIntegrationDelete"
+      @select-calendars="handleSelectCalendars"
+    />
+
+    <SettingsCalendarSelectDialog
+      :integration="calendarSelectIntegration"
+      :is-open="isCalendarSelectDialogOpen"
+      @close="isCalendarSelectDialogOpen = false; calendarSelectIntegration = null"
+      @save="handleCalendarsSaved"
+      @calendars-disabled="handleCalendarsDisabled"
     />
   </div>
 </template>

@@ -18,20 +18,31 @@ export function useStableDate() {
     return new Date(dateInput);
   };
 
-  const scheduleNextMidnightUpdate = () => {
+  const scheduleNextUpdate = () => {
     const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(24, 0, 0, 0);
-    const msUntilMidnight = midnight.getTime() - now.getTime();
+    const nextUpdate = new Date(now);
+
+    const minutes = now.getMinutes();
+    const nextMinutes = Math.ceil((minutes + 1) / 5) * 5;
+
+    if (nextMinutes >= 60) {
+      nextUpdate.setHours(nextUpdate.getHours() + 1);
+      nextUpdate.setMinutes(0, 0, 0);
+    }
+    else {
+      nextUpdate.setMinutes(nextMinutes, 0, 0);
+    }
+
+    const msUntilNextUpdate = nextUpdate.getTime() - now.getTime();
 
     setTimeout(() => {
       stableDate.value = new Date();
-      scheduleNextMidnightUpdate();
-    }, msUntilMidnight);
+      scheduleNextUpdate();
+    }, msUntilNextUpdate);
   };
 
   if (import.meta.client) {
-    scheduleNextMidnightUpdate();
+    scheduleNextUpdate();
   }
 
   return {

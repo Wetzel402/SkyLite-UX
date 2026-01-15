@@ -15,8 +15,29 @@ export default defineNuxtPlugin(() => {
   const eventSourceError = ref<Event | null>(null);
 
   function connectEventSource() {
+    if (eventSource && (eventSource.readyState === EventSource.OPEN || eventSource.readyState === EventSource.CONNECTING)) {
+      consola.debug("Sync Manager: Connection already exists, skipping");
+      return;
+    }
+
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+
     try {
-      eventSource = new EventSource("/api/sync/events");
+      const syncTimestamps: Record<string, string> = {};
+      Object.keys(syncData.value).forEach((integrationId) => {
+        const syncInfo = syncData.value[integrationId];
+        if (syncInfo?.lastSync) {
+          syncTimestamps[integrationId] = syncInfo.lastSync.toISOString();
+        }
+      });
+
+      const queryString = new URLSearchParams(syncTimestamps).toString();
+      const url = queryString ? `/api/sync/events?${queryString}` : "/api/sync/events";
+
+      eventSource = new EventSource(url);
 
       eventSource.onopen = () => {
         eventSourceStatus.value = "OPEN";
@@ -25,14 +46,45 @@ export default defineNuxtPlugin(() => {
       };
 
       eventSource.onmessage = (event) => {
-        eventSourceData.value = event.data;
+        if (!navigator.onLine) {
+          consola.debug("Sync Manager: Ignoring message - client is offline");
+          return;
+        }
+
+        if (eventSource && eventSource.readyState === EventSource.OPEN) {
+          eventSourceData.value = event.data;
+        }
+        else {
+          consola.debug("Sync Manager: Ignoring message - EventSource not open (readyState:", eventSource?.readyState, ")");
+        }
       };
 
       eventSource.onerror = (error) => {
-        eventSourceStatus.value = "CLOSED";
-        connectionStatus.value = "error";
+        if (!navigator.onLine) {
+          consola.debug("Sync Manager: EventSource error - client is offline");
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          eventSourceStatus.value = "CLOSED";
+          connectionStatus.value = "disconnected";
+          return;
+        }
+
+        if (eventSource) {
+          if (eventSource.readyState === EventSource.CLOSED) {
+            eventSourceStatus.value = "CLOSED";
+            connectionStatus.value = "disconnected";
+            eventSource.close();
+            eventSource = null;
+            attemptReconnect();
+          }
+          else if (eventSource.readyState === EventSource.CONNECTING) {
+            eventSourceStatus.value = "CONNECTING";
+          }
+        }
         eventSourceError.value = error;
-        consola.error("Sync Manager: EventSource error:", error);
+        consola.error("Sync Manager: EventSource error:", error, "readyState:", eventSource?.readyState);
       };
 
       eventSourceStatus.value = "CONNECTING";
@@ -44,123 +96,167 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-  connectEventSource();
-
   let reconnectAttempts = 0;
   const maxReconnectAttempts = 3;
   const reconnectDelay = 1000;
+  const maxBackoffDelay = 60000;
+  let reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   function attemptReconnect() {
-    if (reconnectAttempts >= maxReconnectAttempts) {
-      consola.error("Sync Manager: Failed to reconnect to sync stream after 3 attempts");
-      connectionStatus.value = "error";
-      return;
+    if (reconnectTimeoutId) {
+      clearTimeout(reconnectTimeoutId);
+      reconnectTimeoutId = null;
     }
 
-    setTimeout(() => {
-      consola.debug(`Sync Manager: Attempting to reconnect to sync stream (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+    let delay: number;
+
+    if (reconnectAttempts < maxReconnectAttempts) {
+      delay = reconnectDelay * reconnectAttempts;
+    }
+    else {
+      const backoffAttempt = reconnectAttempts - maxReconnectAttempts;
+      delay = Math.min(
+        reconnectDelay * (2 ** backoffAttempt),
+        maxBackoffDelay,
+      );
+    }
+
+    const attemptNumber = reconnectAttempts + 1;
+    const delaySeconds = Math.round(delay / 1000);
+
+    if (reconnectAttempts < maxReconnectAttempts) {
+      consola.debug(`Sync Manager: Attempting to reconnect to sync stream (attempt ${attemptNumber}/${maxReconnectAttempts})`);
+    }
+    else {
+      consola.warn(`Sync Manager: Attempting to reconnect to sync stream (attempt ${attemptNumber}, retrying in ${delaySeconds} seconds)`);
+    }
+
+    reconnectTimeoutId = setTimeout(() => {
       reconnectAttempts++;
+      reconnectTimeoutId = null;
       connectEventSource();
-    }, reconnectDelay * reconnectAttempts);
+    }, delay);
   }
 
-  watch(eventSourceStatus, (newStatus) => {
-    switch (newStatus) {
-      case "CONNECTING":
-        connectionStatus.value = "connecting";
-        break;
-      case "OPEN":
-        connectionStatus.value = "connected";
-        reconnectAttempts = 0;
-        break;
-      case "CLOSED":
-        connectionStatus.value = "disconnected";
-        if (reconnectAttempts < maxReconnectAttempts) {
-          attemptReconnect();
+  if (import.meta.client) {
+    setTimeout(() => {
+      watch(eventSourceStatus, (newStatus) => {
+        switch (newStatus) {
+          case "CONNECTING":
+            connectionStatus.value = "connecting";
+            break;
+          case "OPEN":
+            connectionStatus.value = "connected";
+            reconnectAttempts = 0;
+            break;
+          case "CLOSED":
+            connectionStatus.value = "disconnected";
+            attemptReconnect();
+            break;
         }
-        break;
-    }
-  });
+      });
 
-  watch(eventSourceData, (rawData) => {
-    if (!rawData)
-      return;
+      watch(eventSourceData, (rawData) => {
+        if (!rawData)
+          return;
 
-    try {
-      const event: SyncEvent = JSON.parse(rawData);
-      consola.debug("Sync Manager: Received sync event:", event.type, event);
+        try {
+          const event: SyncEvent = JSON.parse(rawData);
+          consola.debug("Sync Manager: Received sync event:", event.type, event);
 
-      switch (event.type) {
-        case "connection_established":
-          consola.debug("Sync Manager: Connected to sync stream:", event.message);
-          break;
+          switch (event.type) {
+            case "connection_established":
+              consola.debug("Sync Manager: Connected to sync stream:", event.message);
+              break;
 
-        case "sync_status":
-          consola.debug(`Sync Manager: Sync status: ${event.activeIntegrations?.length || 0} active integrations, ${event.connectedClients || 0} connected clients`);
-          break;
+            case "sync_status":
+              consola.debug(`Sync Manager: Sync status: ${event.activeIntegrations?.length || 0} active integrations, ${event.connectedClients || 0} connected clients`);
+              break;
 
-        case "heartbeat":
-          lastHeartbeat.value = new Date(event.timestamp);
-          break;
+            case "heartbeat":
+              lastHeartbeat.value = new Date(event.timestamp);
+              break;
 
-        case "integration_sync":
-          if (event.integrationId) {
-            syncData.value[event.integrationId] = {
-              data: event.data || [],
-              lastSync: new Date(event.timestamp),
-              success: event.success || false,
-              error: event.error,
-            };
+            case "integration_sync":
+              if (event.integrationId) {
+                syncData.value[event.integrationId] = {
+                  data: event.data || [],
+                  lastSync: new Date(event.timestamp),
+                  success: event.success || false,
+                  error: event.error,
+                };
 
-            if (event.integrationType && event.success) {
-              updateIntegrationCache(event.integrationType, event.integrationId, event.data || []);
-            }
+                if (event.integrationType && event.success) {
+                  updateIntegrationCache(event.integrationType, event.integrationId, event.data || []);
+                }
 
-            consola.debug(`Sync Manager: Updated sync data for integration ${event.integrationId}:`, {
-              success: event.success,
-              hasData: !!event.data,
-              error: event.error,
-            });
+                consola.debug(`Sync Manager: Updated sync data for integration ${event.integrationId}:`, {
+                  success: event.success,
+                  hasData: !!event.data,
+                  error: event.error,
+                });
+              }
+              break;
           }
-          break;
-      }
-    }
-    catch (error) {
-      consola.error("Sync Manager: Failed to parse sync event:", error, rawData);
-    }
-  });
+        }
+        catch (error) {
+          consola.error("Sync Manager: Failed to parse sync event:", error, rawData);
+        }
+      });
 
-  watch(eventSourceError, (error) => {
-    if (error) {
-      consola.error("Sync Manager: Sync stream error:", error);
-      connectionStatus.value = "error";
-    }
-  });
+      watch(eventSourceError, (error) => {
+        if (error) {
+          consola.error("Sync Manager: Sync stream error:", error);
+          connectionStatus.value = "error";
+        }
+      });
+
+      connectEventSource();
+    }, 0);
+  }
 
   function updateIntegrationCache(integrationType: string, integrationId: string, data: CalendarEvent[] | ShoppingListWithItemsAndCount[] | TodoWithUser[]) {
     const nuxtApp = useNuxtApp();
 
     switch (integrationType) {
-      case "calendar":
+      case "calendar": {
+        const cacheKey = `calendar-events-${integrationId}`;
         nuxtApp.payload.data = {
           ...nuxtApp.payload.data,
-          [`calendar-events-${integrationId}`]: data,
+          [cacheKey]: data,
         };
+        const { data: integrationEventsData } = useNuxtData<CalendarEvent[]>(cacheKey);
+        if (integrationEventsData) {
+          integrationEventsData.value = data as CalendarEvent[];
+        }
         break;
+      }
 
-      case "shopping":
+      case "shopping": {
+        const cacheKey = `shopping-lists-${integrationId}`;
         nuxtApp.payload.data = {
           ...nuxtApp.payload.data,
-          [`shopping-lists-${integrationId}`]: data,
+          [cacheKey]: data,
         };
+        const { data: integrationListsData } = useNuxtData<ShoppingListWithItemsAndCount[]>(cacheKey);
+        if (integrationListsData) {
+          integrationListsData.value = data as ShoppingListWithItemsAndCount[];
+        }
         break;
+      }
 
-      case "todo":
+      case "todo": {
+        const cacheKey = `todos-${integrationId}`;
         nuxtApp.payload.data = {
           ...nuxtApp.payload.data,
-          [`todos-${integrationId}`]: data,
+          [cacheKey]: data,
         };
+        const { data: integrationTodosData } = useNuxtData<TodoWithUser[]>(cacheKey);
+        if (integrationTodosData) {
+          integrationTodosData.value = data as TodoWithUser[];
+        }
         break;
+      }
     }
   }
 
@@ -173,6 +269,30 @@ export default defineNuxtPlugin(() => {
 
   if (import.meta.client) {
     window.addEventListener("beforeunload", cleanup);
+
+    window.addEventListener("online", () => {
+      consola.debug("Sync Manager: Network came online, attempting to reconnect");
+
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
+
+      if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+        reconnectAttempts = 0;
+        connectEventSource();
+      }
+    });
+
+    window.addEventListener("offline", () => {
+      consola.debug("Sync Manager: Network went offline");
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        eventSourceStatus.value = "CLOSED";
+        connectionStatus.value = "disconnected";
+      }
+    });
   }
 
   return {
