@@ -62,25 +62,7 @@ export const integrationConfigs: IntegrationConfig[] = [
   {
     type: "calendar",
     service: "google",
-    settingsFields:
-    [
-      {
-        key: "clientId",
-        label: "Client ID",
-        type: "text" as const,
-        placeholder: "paste your client id here",
-        required: true,
-        description: "Your Google OAuth Client ID",
-      },
-      {
-        key: "clientSecret",
-        label: "Client Secret",
-        type: "password" as const,
-        placeholder: "paste your client secret here",
-        required: true,
-        description: "Your Google OAuth Client Secret (required for server-side token exchange)",
-      },
-    ],
+    settingsFields: [],
     capabilities: ["get_events", "edit_events", "add_events", "delete_events", "oauth", "select_calendars"],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
     dialogFields: [],
@@ -219,13 +201,8 @@ const serviceFactoryMap = {
     const useUserColors = iCalSettings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
-  "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, settings?: ICalSettings | GoogleCalendarSettings) => {
-    const googleSettings = settings as GoogleCalendarSettings;
-    return createGoogleCalendarService(
-      _id,
-      googleSettings?.clientId || "",
-      googleSettings?.clientSecret || "",
-    );
+  "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, _settings?: ICalSettings | GoogleCalendarSettings) => {
+    return createGoogleCalendarService(_id);
   },
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,

@@ -13,8 +13,6 @@ import "./types";
 
 export class GoogleCalendarService implements CalendarIntegrationService {
   private integrationId: string;
-  private clientId: string;
-  private clientSecret: string;
 
   private status: IntegrationStatus = {
     isConnected: false,
@@ -23,15 +21,8 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
   private gisLoaded = false;
 
-  constructor(
-    integrationId: string,
-    clientId: string,
-    clientSecret: string,
-  ) {
+  constructor(integrationId: string) {
     this.integrationId = integrationId;
-    this.clientId = clientId;
-    this.clientSecret = clientSecret;
-
     this.status.lastChecked = new Date();
   }
 
@@ -78,6 +69,15 @@ export class GoogleCalendarService implements CalendarIntegrationService {
       throw new TypeError("Authentication requires browser environment");
     }
 
+    // Fetch OAuth configuration from server
+    const config = await $fetch<{ configured: boolean; clientId?: string }>("/api/config/googleCalendar");
+
+    if (!config.configured || !config.clientId) {
+      throw new Error("Google Calendar integration is not configured. Please contact your administrator.");
+    }
+
+    const clientId = config.clientId;
+
     await this.loadGoogleAPIs();
 
     const baseUrl = window.location.origin;
@@ -95,7 +95,7 @@ export class GoogleCalendarService implements CalendarIntegrationService {
       }
 
       const client = window.google.accounts.oauth2.initCodeClient({
-        client_id: this.clientId,
+        client_id: clientId,
         scope: "https://www.googleapis.com/auth/calendar",
         ux_mode: "redirect",
         redirect_uri: redirectUri,
@@ -326,21 +326,13 @@ export class GoogleCalendarService implements CalendarIntegrationService {
   }
 }
 
-export function createGoogleCalendarService(
-  integrationId: string,
-  clientId: string,
-  clientSecret: string,
-): GoogleCalendarService {
-  return new GoogleCalendarService(
-    integrationId,
-    clientId,
-    clientSecret,
-  );
+export function createGoogleCalendarService(integrationId: string): GoogleCalendarService {
+  return new GoogleCalendarService(integrationId);
 }
 
 export async function handleGoogleCalendarSave(
   integrationData: Record<string, unknown>,
-  settingsData: Record<string, unknown>,
+  _settingsData: Record<string, unknown>,
   isExisting: boolean,
   originalIntegration?: Integration | null,
 ): Promise<boolean> {
@@ -354,11 +346,7 @@ export async function handleGoogleCalendarSave(
     return false;
   }
 
-  const tempService = createGoogleCalendarService(
-    "temp",
-    settingsData.clientId?.toString() || "",
-    settingsData.clientSecret?.toString() || "",
-  );
+  const tempService = createGoogleCalendarService("temp");
 
   const authData = isExisting
     ? { ...integrationData, integrationId: (integrationData as { id?: string }).id }

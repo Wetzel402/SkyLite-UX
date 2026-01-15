@@ -77,8 +77,6 @@ export type CalendarConfig = {
 };
 
 export type GoogleCalendarSettings = {
-  clientId: string;
-  clientSecret: string;
   accessToken?: string;
   tokenExpiry?: number;
   needsReauth?: boolean;
