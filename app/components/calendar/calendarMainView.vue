@@ -27,7 +27,7 @@ const _emit = defineEmits<{
 }>();
 
 const { getStableDate, stableDate, parseStableDate } = useStableDate();
-const { getEventsForDateRange, scrollToDate } = useCalendar();
+const { scrollToDate } = useCalendar();
 const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
 const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "display");
