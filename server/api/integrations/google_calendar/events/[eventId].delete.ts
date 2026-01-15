@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, getQuery, getRouterParam } from "h3";
 
+import prisma from "~/lib/prisma";
 import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
-
-const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
   const eventId = getRouterParam(event, "eventId");
@@ -94,17 +92,18 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const baseEventId = eventId.includes("-") ? (eventId.split("-")[0] || eventId) : eventId;
+    // Use eventId directly - Google Calendar IDs should not be split on "-"
+    // For recurring event instances, use the event's recurringEventId and originalStartTime fields
 
     if (calendarId) {
-      await service.deleteEvent(calendarId, baseEventId);
+      await service.deleteEvent(calendarId, eventId);
       return { success: true };
     }
 
     try {
-      const primaryEvent = await service.fetchEvent("primary", baseEventId);
+      const primaryEvent = await service.fetchEvent("primary", eventId);
       const calId = primaryEvent.calendarId || "primary";
-      await service.deleteEvent(calId, baseEventId);
+      await service.deleteEvent(calId, eventId);
       return { success: true };
     }
     catch {}
@@ -112,8 +111,8 @@ export default defineEventHandler(async (event) => {
     const calendars = await service.listCalendars();
     for (const cal of calendars) {
       try {
-        await service.fetchEvent(cal.id, baseEventId);
-        await service.deleteEvent(cal.id, baseEventId);
+        await service.fetchEvent(cal.id, eventId);
+        await service.deleteEvent(cal.id, eventId);
         return { success: true };
       }
       catch {}

@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, getQuery } from "h3";
 
+import prisma from "~/lib/prisma";
 import { GoogleCalendarServerService } from "../../../integrations/google_calendar/client";
-
-const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
   const integrationId = getQuery(event).integrationId as string;
