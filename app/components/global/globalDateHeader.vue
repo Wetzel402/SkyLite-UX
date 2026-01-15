@@ -69,7 +69,8 @@ function toggleUserFilter(userId: string) {
   if (index === -1) {
     // Add user to filter
     currentSelection.push(userId);
-  } else {
+  }
+  else {
     // Remove user from filter
     currentSelection.splice(index, 1);
   }
@@ -170,7 +171,7 @@ function handleToday() {
 <template>
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2" :class="className">
     <div class="flex sm:flex-col max-sm:items-center justify-between gap-1.5">
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-3">
         <h1 class="font-bold text-5xl text-highlighted">
           <NuxtTime
             :datetime="now"
@@ -179,6 +180,8 @@ function handleToday() {
             :hour12="true"
           />
         </h1>
+        <!-- Weather Display -->
+        <WeatherDisplay />
       </div>
       <div class="text-base text-muted">
         <NuxtTime
@@ -313,7 +316,7 @@ function handleToday() {
             ? 'opacity-100 shadow-sm'
             : 'opacity-40 hover:opacity-70'"
           :style="{
-            backgroundColor: isUserSelected(user.id) ? (user.color || '#22d3ee') + '20' : 'transparent',
+            backgroundColor: isUserSelected(user.id) ? `${user.color || '#22d3ee'}20` : 'transparent',
             borderColor: user.color || '#22d3ee',
             color: user.color || '#22d3ee',
           }"
