@@ -26,7 +26,7 @@ const _emit = defineEmits<{
   (e: "eventDelete", eventId: string): void;
 }>();
 
-const { getStableDate, stableDate } = useStableDate();
+const { getStableDate, stableDate, parseStableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
 const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
