@@ -26,8 +26,8 @@ const _emit = defineEmits<{
   (e: "eventDelete", eventId: string): void;
 }>();
 
-const { getStableDate, stableDate } = useStableDate();
-const { getEventsForDateRange, scrollToDate } = useCalendar();
+const { getStableDate, stableDate, parseStableDate } = useStableDate();
+const { scrollToDate } = useCalendar();
 const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
 const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "display");

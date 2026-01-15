@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { google } from "googleapis";
 import { createError, defineEventHandler, getQuery, sendRedirect } from "h3";
 
-const prisma = new PrismaClient();
+import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -32,15 +31,40 @@ export default defineEventHandler(async (event) => {
 
   try {
     const integrationData = JSON.parse(decodeURIComponent(state));
-    const { name, type, service, enabled, settings, redirectUri, integrationId } = integrationData;
-    const isReAuth = !!integrationId;
 
-    if (!redirectUri) {
+    // Validate state object structure
+    if (!integrationData || typeof integrationData !== "object") {
       throw createError({
         statusCode: 400,
-        message: "Redirect URI not found in state data",
+        message: "Invalid state parameter format",
       });
     }
+
+    const { name, type, service, enabled, settings, redirectUri, integrationId } = integrationData;
+
+    // Validate required fields
+    if (typeof redirectUri !== "string" || !redirectUri) {
+      throw createError({
+        statusCode: 400,
+        message: "Invalid redirect URI in state data",
+      });
+    }
+
+    if (typeof enabled !== "boolean") {
+      throw createError({
+        statusCode: 400,
+        message: "Invalid enabled value in state data",
+      });
+    }
+
+    if (integrationId !== undefined && typeof integrationId !== "string") {
+      throw createError({
+        statusCode: 400,
+        message: "Invalid integration ID in state data",
+      });
+    }
+
+    const isReAuth = !!integrationId;
 
     let clientId: string;
     let clientSecret: string;

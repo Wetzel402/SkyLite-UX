@@ -161,12 +161,16 @@ export class GoogleCalendarService implements CalendarIntegrationService {
     try {
       await this.loadGoogleAPIs();
 
+      // Verify auth and API access by calling validate()
+      const isValid = await this.validate();
+
       this.status = {
-        isConnected: true,
+        isConnected: isValid,
         lastChecked: new Date(),
+        error: isValid ? undefined : "Validation failed",
       };
 
-      return true;
+      return isValid;
     }
     catch (error) {
       consola.error("GoogleCalendar: Connection test error:", error);
