@@ -1,8 +1,8 @@
 import type { OAuth2Client } from "google-auth-library";
 
-import crypto from "node:crypto";
 import { consola } from "consola";
 import { google } from "googleapis";
+import crypto from "node:crypto";
 
 import type { TokenInfo } from "./types";
 

@@ -91,6 +91,7 @@ Features are **test cases** that drive development. This is test-driven developm
 - "Missing functionality" is NOT a blocker - it's your job to create it
 
 **Example:** Feature says "User can filter flashcards by difficulty level"
+
 - WRONG: "Flashcard page doesn't exist yet" → skip feature
 - RIGHT: "Flashcard page doesn't exist yet" → build flashcard page → implement filter → test feature
 
@@ -121,14 +122,14 @@ It's ok if you only complete one feature in this session, as there will be more 
 
 **NEVER skip because:**
 
-| Situation | Wrong Action | Correct Action |
-|-----------|--------------|----------------|
-| "Page doesn't exist" | Skip | Create the page |
-| "API endpoint missing" | Skip | Implement the endpoint |
-| "Database table not ready" | Skip | Create the migration |
-| "Component not built" | Skip | Build the component |
-| "No data to test with" | Skip | Create test data or build data entry flow |
-| "Feature X needs to be done first" | Skip | Build feature X as part of this feature |
+| Situation                          | Wrong Action | Correct Action                            |
+| ---------------------------------- | ------------ | ----------------------------------------- |
+| "Page doesn't exist"               | Skip         | Create the page                           |
+| "API endpoint missing"             | Skip         | Implement the endpoint                    |
+| "Database table not ready"         | Skip         | Create the migration                      |
+| "Component not built"              | Skip         | Build the component                       |
+| "No data to test with"             | Skip         | Create test data or build data entry flow |
+| "Feature X needs to be done first" | Skip         | Build feature X as part of this feature   |
 
 If a feature requires building other functionality first, **build that functionality**. You are the coding agent - your job is to make the feature work, not to defer it.
 

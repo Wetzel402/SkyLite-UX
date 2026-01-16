@@ -44,18 +44,21 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 ### Development Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/wetzel402/SkyLite-UX.git
 cd SkyLite-UX
 ```
 
 2. Run the setup script:
+
 ```bash
 chmod +x init.sh
 ./init.sh
 ```
 
 Or manually:
+
 ```bash
 npm install
 cp .env.example .env  # Configure your settings

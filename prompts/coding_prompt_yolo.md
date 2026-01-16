@@ -88,14 +88,14 @@ It's ok if you only complete one feature in this session, as there will be more 
 
 **NEVER skip because:**
 
-| Situation | Wrong Action | Correct Action |
-|-----------|--------------|----------------|
-| "Page doesn't exist" | Skip | Create the page |
-| "API endpoint missing" | Skip | Implement the endpoint |
-| "Database table not ready" | Skip | Create the migration |
-| "Component not built" | Skip | Build the component |
-| "No data to test with" | Skip | Create test data or build data entry flow |
-| "Feature X needs to be done first" | Skip | Build feature X as part of this feature |
+| Situation                          | Wrong Action | Correct Action                            |
+| ---------------------------------- | ------------ | ----------------------------------------- |
+| "Page doesn't exist"               | Skip         | Create the page                           |
+| "API endpoint missing"             | Skip         | Implement the endpoint                    |
+| "Database table not ready"         | Skip         | Create the migration                      |
+| "Component not built"              | Skip         | Build the component                       |
+| "No data to test with"             | Skip         | Create test data or build data entry flow |
+| "Feature X needs to be done first" | Skip         | Build feature X as part of this feature   |
 
 If a feature requires building other functionality first, **build that functionality**. You are the coding agent - your job is to make the feature work, not to defer it.
 
@@ -122,12 +122,14 @@ Implement the chosen feature thoroughly:
 Run the appropriate lint and type-check commands for your project:
 
 **For TypeScript/JavaScript projects:**
+
 ```bash
 npm run lint
 npm run typecheck  # or: npx tsc --noEmit
 ```
 
 **For Python projects:**
+
 ```bash
 ruff check .
 mypy .

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import GlobalAppLoading from "~/components/global/globalAppLoading.vue";
 import GlobalDock from "~/components/global/globalDock.vue";
-import GlobalSideBar from "~/components/global/globalSideBar.vue";
 
 const dock = false;
 const { isLoading, loadingMessage, setLoading } = useGlobalLoading();
@@ -17,22 +16,17 @@ onNuxtReady(() => {
   <UApp>
     <GlobalAppLoading :is-loading="isLoading" :loading-message="loadingMessage || ''" />
 
-    <div v-if="!dock" class="flex min-h-screen">
-      <GlobalSideBar />
-      <div class="flex flex-col flex-1">
-        <div class="flex-1">
-          <NuxtPage />
+    <NuxtLayout>
+      <div v-if="dock" class="flex min-h-screen">
+        <div class="flex flex-col flex-1">
+          <div class="flex-1">
+            <NuxtPage />
+          </div>
+          <GlobalDock />
         </div>
       </div>
-    </div>
-    <div v-else class="flex min-h-screen">
-      <div class="flex flex-col flex-1">
-        <div class="flex-1">
-          <NuxtPage />
-        </div>
-        <GlobalDock />
-      </div>
-    </div>
+      <NuxtPage v-else />
+    </NuxtLayout>
   </UApp>
 </template>
 

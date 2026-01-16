@@ -54,6 +54,7 @@ Use the feature_create_bulk tool with features=[
 ```
 
 **Notes:**
+
 - IDs and priorities are assigned automatically based on order
 - All features start with `passes: false` by default
 - You can create features in batches if there are many (e.g., 50 at a time)
@@ -502,6 +503,7 @@ Use the feature_get_next tool
 ```
 
 Remember:
+
 - Work on ONE feature at a time
 - Test thoroughly before marking as passing
 - Commit your progress before session ends

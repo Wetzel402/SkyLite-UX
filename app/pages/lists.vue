@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { consola } from "consola";
-
 // Tab state
 const activeTab = ref("shopping");
 

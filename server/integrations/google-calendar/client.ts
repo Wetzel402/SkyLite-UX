@@ -6,8 +6,9 @@ import { google } from "googleapis";
 
 import type { CalendarEvent } from "~/types/calendar";
 
-import { createOAuth2Client, decryptToken, encryptToken, refreshAccessToken } from "./oauth";
 import type { GoogleCalendarInfo, GoogleCalendarSettings, GoogleEvent } from "./types";
+
+import { createOAuth2Client, decryptToken, encryptToken, refreshAccessToken } from "./oauth";
 
 /**
  * Google Calendar Server Service

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 
-interface ChoreUser {
+type ChoreUser = {
   id: string;
   name: string;
   avatar: string | null;
-}
+};
 
-interface Chore {
+type Chore = {
   id: string;
   name: string;
   description: string | null;
@@ -19,7 +19,7 @@ interface Chore {
   icon: string | null;
   status: "available" | "in-progress" | "pending-approval" | "completed";
   claimedBy: ChoreUser | null;
-}
+};
 
 const chores = ref<Chore[]>([]);
 const loading = ref(true);
@@ -181,7 +181,8 @@ function canClaim(chore: Chore): boolean {
 
 // Can the current user complete this chore?
 function canComplete(chore: Chore): boolean {
-  if (!selectedUserId.value) return false;
+  if (!selectedUserId.value)
+    return false;
   return (
     chore.status === "in-progress"
     && (chore.assignedUserId === selectedUserId.value || chore.claimedBy?.id === selectedUserId.value)
@@ -215,7 +216,11 @@ onMounted(() => {
                 v-model="selectedUserId"
                 class="border border-default rounded px-2 py-1 text-sm bg-default"
               >
-                <option v-for="user in users" :key="user.id" :value="user.id">
+                <option
+                  v-for="user in users"
+                  :key="user.id"
+                  :value="user.id"
+                >
                   {{ user.name }}
                 </option>
               </select>
@@ -295,7 +300,11 @@ onMounted(() => {
 
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <UBadge color="warning" variant="soft" size="sm">
+                <UBadge
+                  color="warning"
+                  variant="soft"
+                  size="sm"
+                >
                   <UIcon name="i-lucide-star" class="w-3 h-3 mr-1" />
                   {{ chore.pointValue }} pts
                 </UBadge>

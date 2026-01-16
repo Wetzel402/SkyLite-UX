@@ -1,8 +1,10 @@
 import { createError, defineEventHandler, getQuery } from "h3";
 
 import prisma from "~/lib/prisma";
-import { GoogleCalendarServerService } from "../../../integrations/google-calendar";
+
 import type { GoogleCalendarSettings } from "../../../integrations/google-calendar/types";
+
+import { GoogleCalendarServerService } from "../../../integrations/google-calendar";
 
 /**
  * Fetch events from Google Calendar for an integration
