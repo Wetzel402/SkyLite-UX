@@ -1,8 +1,25 @@
 import prisma from "~/lib/prisma";
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   try {
+    const query = getQuery(event);
+    const assignedUserId = query.assignedUserId as string | undefined;
+    const status = query.status as string | undefined;
+
+    const whereClause: Record<string, unknown> = {};
+
+    // Filter by assigned user
+    if (assignedUserId) {
+      whereClause.assignedUserId = assignedUserId;
+    }
+
+    // Filter by status - available means no assignment and no active completions
+    if (status === "available") {
+      whereClause.assignedUserId = null;
+    }
+
     const chores = await prisma.chore.findMany({
+      where: whereClause,
       include: {
         assignedUser: {
           select: {
