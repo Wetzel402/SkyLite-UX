@@ -1,5 +1,108 @@
 # SkyLite-UX Development Progress
 
+## Session 11 - Coding Agent (2026-01-15)
+
+### Session Summary
+- Implemented screensaver page with photo slideshow
+- Added touch/click dismissal functionality
+- Implemented Nuxt layouts for sidebar visibility control
+- Added user filter functionality for calendar events
+- Added role field to user update API
+- Verified multiple data persistence and workflow features
+- Completed 14 features, total now 71 passing (42.0%)
+
+### Completed Tasks
+
+1. **Feature #20: Screensaver touch dismisses and returns to calendar** - PASSING
+   - Created `app/pages/screensaver.vue` with photo slideshow
+   - Added placeholder photos from Unsplash
+   - Implemented clock overlay with date/time display
+   - Touch, click, or keyboard triggers dismissal
+   - Added `app/layouts/default.vue` (with sidebar)
+   - Added `app/layouts/screensaver.vue` (no sidebar)
+   - Updated `app/app.vue` to use NuxtLayout component
+
+2. **Feature #24: Created calendar event appears in list** - PASSING
+   - Verified event creation via POST /api/calendar-events
+   - Event immediately appears in GET /api/calendar-events response
+
+3. **Feature #25: Calendar event persists after refresh** - PASSING
+   - Created events persist in PostgreSQL database
+   - Re-fetching list returns same events
+
+4. **Feature #26: Deleted event is removed from all views** - PASSING
+   - DELETE endpoint removes events from database
+   - Event no longer appears in subsequent GET requests
+
+5. **Feature #27: Chore creation persists to database** - PASSING
+   - POST /api/chores creates and returns chore
+   - Chore persists and appears in GET /api/chores
+
+6. **Feature #28: Reward creation persists to database** - PASSING
+   - POST /api/rewards creates reward with point cost
+   - Reward persists and appears in GET /api/rewards
+
+7. **Feature #29: Point balance updates after chore completion** - PASSING
+   - User completes chore claim → complete workflow
+   - Points correctly added to user balance
+
+8. **Feature #30: Point balance decreases after reward redemption** - PASSING
+   - Tested reward redemption with parent approval
+   - Points correctly deducted after approval
+
+9. **Feature #31: User filter shows only that user's events** - PASSING
+   - Added selectedUserIds state tracking
+   - Implemented handleUserFilterChange in calendarMainView
+   - Filter by selected users in filteredEvents computed
+   - Connected to GlobalDateHeader component
+
+10. **Feature #32: Shopping list items persist** - PASSING
+    - Created shopping list and added items
+    - Items persist across API calls
+
+11. **Feature #33: Todo items persist** - PASSING
+    - Created todos with columns
+    - Todos persist in database
+
+12. **Feature #34: Event edit changes persist** - PASSING
+    - PUT /api/calendar-events/:id updates event
+    - Updated values persist
+
+13. **Feature #35: Complete calendar event CRUD workflow** - PASSING
+    - Full create, read, update, delete workflow verified
+
+14. **Feature #36: Complete chore workflow - self-claim mode** - PASSING
+    - Full workflow: create chore → claim → complete → points awarded
+
+### Code Changes Made
+- `app/pages/screensaver.vue` - New screensaver page
+- `app/layouts/default.vue` - Default layout with sidebar
+- `app/layouts/screensaver.vue` - Screensaver layout without sidebar
+- `app/app.vue` - Updated to use NuxtLayout component
+- `app/composables/useScreensaver.ts` - Existing composable for idle detection
+- `app/components/calendar/calendarMainView.vue` - Added user filter functionality
+- `server/api/users/[id].put.ts` - Added role field to update
+
+### Commits Made
+- `4a05286` - feat: Add screensaver page with photo slideshow and touch dismissal
+- `7899a93` - feat: Add role field to user update API
+- `20b756d` - feat: Implement user filter for calendar events
+- `33861a1` - chore: Update feature database - 71/169 features passing (42%)
+
+### Current Statistics
+- Total Features: 169
+- Passing: 71
+- In Progress: 0
+- Completion: 42.0%
+
+### Next Steps for Future Agents
+1. Continue with Workflow Completeness features (#37+)
+2. Work on remaining Real Data Verification features
+3. Consider UI-Backend Integration features
+4. Error Handling features
+
+---
+
 ## Session 10 - Coding Agent (2025-01-14)
 
 ### Session Summary
