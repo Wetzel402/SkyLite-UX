@@ -28,6 +28,11 @@ const currentDate = useState<Date>("calendar-current-date", () => getStableDate(
 const view = ref<CalendarView>(props.initialView || "week");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
+const selectedUserIds = ref<string[]>([]);
+
+function handleUserFilterChange(userIds: string[]) {
+  selectedUserIds.value = userIds;
+}
 
 onMounted(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -190,6 +195,18 @@ const filteredEvents = computed(() => {
       end = new Date();
   }
 
+  // Filter by selected users if any are selected
+  if (selectedUserIds.value.length > 0) {
+    events = events.filter((event) => {
+      // If event has no users, always show it
+      if (!event.users || event.users.length === 0) {
+        return true;
+      }
+      // Check if any of the event's users are in the selected filter
+      return event.users.some(user => selectedUserIds.value.includes(user.id));
+    });
+  }
+
   return events;
 });
 
@@ -214,11 +231,13 @@ function getDaysForAgenda(date: Date) {
         :show-user-filter="true"
         :current-date="currentDate"
         :view="view"
+        :selected-user-ids="selectedUserIds"
         @previous="handlePrevious"
         @next="handleNext"
         @today="handleToday"
         @view-change="(newView) => view = newView"
         @date-change="(newDate) => currentDate = newDate"
+        @user-filter-change="handleUserFilterChange"
       />
     </div>
     <div class="flex flex-1 flex-col min-h-0">
