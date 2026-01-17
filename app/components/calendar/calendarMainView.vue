@@ -5,6 +5,7 @@ import type { CalendarEvent, CalendarView } from "~/types/calendar";
 import type { Integration } from "~/types/database";
 
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
+import GlobalDisplayView from "~/components/global/globalDisplayView.vue";
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import { useCalendar } from "~/composables/useCalendar";
 import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
@@ -25,11 +26,11 @@ const _emit = defineEmits<{
   (e: "eventDelete", eventId: string): void;
 }>();
 
-const { getStableDate, stableDate } = useStableDate();
-const { getEventsForDateRange, scrollToDate } = useCalendar();
+const { getStableDate, stableDate, parseStableDate } = useStableDate();
+const { scrollToDate } = useCalendar();
 const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
-const view = ref<CalendarView>(props.initialView || "week");
+const view = useState<CalendarView>("calendar-current-view", () => props.initialView || "display");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
 
@@ -57,6 +58,9 @@ onMounted(() => {
       case "a":
         view.value = "agenda";
         break;
+      case "v":
+        view.value = "display";
+        break;
     }
   };
 
@@ -79,6 +83,9 @@ function handlePrevious() {
   else if (view.value === "agenda") {
     currentDate.value = addDays(currentDate.value, -30);
   }
+  else if (view.value === "display") {
+    currentDate.value = subWeeks(currentDate.value, 1);
+  }
 }
 
 function handleNext() {
@@ -93,6 +100,9 @@ function handleNext() {
   }
   else if (view.value === "agenda") {
     currentDate.value = addDays(currentDate.value, 30);
+  }
+  else if (view.value === "display") {
+    currentDate.value = addWeeks(currentDate.value, 1);
   }
 }
 
@@ -183,7 +193,6 @@ const filteredEvents = computed(() => {
   const now = currentDate.value;
   let start: Date;
   let end: Date;
-  let events: CalendarEvent[];
 
   switch (view.value) {
     case "month": {
@@ -191,7 +200,6 @@ const filteredEvents = computed(() => {
       start.setDate(start.getDate() - 7);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       end.setDate(end.getDate() + 7);
-      events = getEventsForDateRange(start, end);
       break;
     }
     case "week": {
@@ -202,28 +210,40 @@ const filteredEvents = computed(() => {
       saturday.setDate(saturday.getDate() + 7);
       start = sunday;
       end = saturday;
-      events = getEventsForDateRange(start, end);
       break;
     }
     case "day": {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      events = getEventsForDateRange(start, end);
       break;
     }
     case "agenda": {
       start = addDays(now, -15);
       end = addDays(now, 15);
-      events = getEventsForDateRange(start, end);
+      break;
+    }
+    case "display": {
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dayOfWeek = monday.getDay();
+      // Adjust to Monday: if Sunday (0), go back 6; else go back (dayOfWeek - 1)
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      monday.setDate(monday.getDate() - daysToMonday);
+      const sunday = new Date(monday.getTime());
+      sunday.setDate(sunday.getDate() + 7);
+      start = monday;
+      end = sunday;
       break;
     }
     default:
-      events = props.events;
-      start = new Date();
-      end = new Date();
+      return props.events;
   }
 
-  return events;
+  // Filter props.events by date range instead of calling getEventsForDateRange
+  return props.events.filter((event) => {
+    const eventStart = parseStableDate(event.start);
+    const eventEnd = parseStableDate(event.end);
+    return eventStart <= end && eventEnd >= start;
+  });
 });
 
 function getWeeksForMonth(date: Date) {
@@ -284,9 +304,16 @@ function getDaysForAgenda(date: Date) {
         :events="filteredEvents"
         @event-click="handleEventSelect"
       />
+      <GlobalDisplayView
+        v-if="view === 'display'"
+        :start-date="currentDate"
+        :events="filteredEvents"
+        @event-click="handleEventSelect"
+      />
     </div>
   </div>
   <GlobalFloatingActionButton
+    v-if="view !== 'display'"
     icon="i-lucide-plus"
     label="Add new event"
     color="primary"

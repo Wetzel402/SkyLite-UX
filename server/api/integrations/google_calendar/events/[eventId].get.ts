@@ -1,14 +1,14 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, getQuery, getRouterParam } from "h3";
 import ical from "ical.js";
 
+import prisma from "~/lib/prisma";
+
 import type { ICalEvent } from "../../../../integrations/iCal/types";
 
 import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
+import { getGoogleOAuthConfig } from "../../../../utils/googleOAuthConfig";
 import { parseRRuleString } from "../../../../utils/rrule";
-
-const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
   const eventId = getRouterParam(event, "eventId");
@@ -59,18 +59,19 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const settings = integration.settings as Record<string, unknown> || {};
-  const clientId = settings.clientId as string;
-  const clientSecret = settings.clientSecret as string || "";
-  const accessToken = settings.accessToken as string;
-  const tokenExpiry = settings.tokenExpiry as number;
-
-  if (!clientId) {
+  // Get OAuth credentials from runtime config or environment variables
+  const oauthConfig = getGoogleOAuthConfig();
+  if (!oauthConfig) {
     throw createError({
-      statusCode: 400,
-      message: "Client ID not found in integration settings",
+      statusCode: 500,
+      message: "Google Calendar integration is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.",
     });
   }
+  const { clientId, clientSecret } = oauthConfig;
+
+  const settings = integration.settings as Record<string, unknown> || {};
+  const accessToken = settings.accessToken as string;
+  const tokenExpiry = settings.tokenExpiry as number;
 
   const onTokenRefresh = async (id: string, newAccessToken: string, newExpiry: number) => {
     try {

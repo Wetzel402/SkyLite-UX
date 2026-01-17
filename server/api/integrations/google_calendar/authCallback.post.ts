@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { google } from "googleapis";
 import { createError, defineEventHandler, readBody } from "h3";
 
-const prisma = new PrismaClient();
+import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);

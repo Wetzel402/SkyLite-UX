@@ -1,10 +1,10 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, getQuery, getRouterParam } from "h3";
 
-import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
+import prisma from "~/lib/prisma";
 
-const prisma = new PrismaClient();
+import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
+import { getGoogleOAuthConfig } from "../../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async (event) => {
   const eventId = getRouterParam(event, "eventId");
@@ -47,18 +47,19 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const settings = integration.settings as Record<string, unknown> || {};
-  const clientId = settings.clientId as string;
-  const clientSecret = settings.clientSecret as string || "";
-  const accessToken = settings.accessToken as string;
-  const tokenExpiry = settings.tokenExpiry as number;
-
-  if (!clientId) {
+  // Get OAuth credentials from runtime config or environment variables
+  const oauthConfig = getGoogleOAuthConfig();
+  if (!oauthConfig) {
     throw createError({
-      statusCode: 400,
-      message: "Client ID not found in integration settings",
+      statusCode: 500,
+      message: "Google Calendar integration is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.",
     });
   }
+  const { clientId, clientSecret } = oauthConfig;
+
+  const settings = integration.settings as Record<string, unknown> || {};
+  const accessToken = settings.accessToken as string;
+  const tokenExpiry = settings.tokenExpiry as number;
 
   const onTokenRefresh = async (id: string, newAccessToken: string, newExpiry: number) => {
     try {
@@ -94,17 +95,18 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const baseEventId = eventId.includes("-") ? (eventId.split("-")[0] || eventId) : eventId;
+    // Use eventId directly - Google Calendar IDs should not be split on "-"
+    // For recurring event instances, use the event's recurringEventId and originalStartTime fields
 
     if (calendarId) {
-      await service.deleteEvent(calendarId, baseEventId);
+      await service.deleteEvent(calendarId, eventId);
       return { success: true };
     }
 
     try {
-      const primaryEvent = await service.fetchEvent("primary", baseEventId);
+      const primaryEvent = await service.fetchEvent("primary", eventId);
       const calId = primaryEvent.calendarId || "primary";
-      await service.deleteEvent(calId, baseEventId);
+      await service.deleteEvent(calId, eventId);
       return { success: true };
     }
     catch {}
@@ -112,8 +114,8 @@ export default defineEventHandler(async (event) => {
     const calendars = await service.listCalendars();
     for (const cal of calendars) {
       try {
-        await service.fetchEvent(cal.id, baseEventId);
-        await service.deleteEvent(cal.id, baseEventId);
+        await service.fetchEvent(cal.id, eventId);
+        await service.deleteEvent(cal.id, eventId);
         return { success: true };
       }
       catch {}

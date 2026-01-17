@@ -46,10 +46,15 @@ jobs:
         id: tags
         run: |
           TAGS="${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.event.release.tag_name }}"
-          if [[ "${{ github.event.release.prerelease }}" == "true" ]] || [[ "${{ github.event.release.tag_name }}" == *"b"* ]]; then
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          IS_BETA=false
+          if [[ "$TAG_NAME" == *"-beta"* ]] || [[ "$TAG_NAME" == *"beta"* ]] || [[ "$TAG_NAME" =~ -b\.[0-9] ]]; then
+            IS_BETA=true
+          fi
+          if [[ "${{ github.event.release.prerelease }}" == "true" ]] || [[ "$IS_BETA" == "true" ]]; then
             TAGS="${TAGS},${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:beta"
           fi
-          if [[ "${{ github.event.release.prerelease }}" != "true" ]] && [[ "${{ github.event.release.tag_name }}" != *"b"* ]]; then
+          if [[ "${{ github.event.release.prerelease }}" != "true" ]] && [[ "$IS_BETA" != "true" ]]; then
             TAGS="${TAGS},${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:latest"
           fi
           echo "tags=${TAGS}" >> $GITHUB_OUTPUT

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { consola } from "consola";
 
-import type { CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
+import type { AppSettings, CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
 import type { ConnectionTestResult } from "~/types/ui";
 
 import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
@@ -24,6 +24,45 @@ const isDark = computed({
   },
   set() {
     colorMode.value = colorMode.value === "dark" ? "light" : "dark";
+  },
+});
+
+const { showError } = useAlertToast();
+
+const { settings, updateSettings, getSettings } = useAppSettings();
+const showMeals = computed({
+  get() {
+    return settings.value?.showMealsOnCalendar ?? false;
+  },
+  set(value: boolean) {
+    // Get mutable cached settings for optimistic update
+    const { data: cachedSettings } = useNuxtData<AppSettings>("app-settings");
+
+    // Capture previous state for rollback
+    const previousValue = cachedSettings.value?.showMealsOnCalendar ?? false;
+
+    // Optimistic update - apply immediately to cached data
+    if (cachedSettings.value) {
+      cachedSettings.value.showMealsOnCalendar = value;
+    }
+
+    // Update server and handle errors with rollback
+    (async () => {
+      try {
+        await updateSettings({ showMealsOnCalendar: value });
+      }
+      catch (error) {
+        // Rollback optimistic update on failure
+        if (cachedSettings.value) {
+          cachedSettings.value.showMealsOnCalendar = previousValue;
+        }
+        // Refresh from server to ensure consistency
+        await getSettings();
+
+        consola.error("Settings: Failed to update meal calendar setting:", error);
+        showError("Settings Update Failed", "Failed to update meal calendar visibility setting.");
+      }
+    })();
   },
 });
 
@@ -251,11 +290,10 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
     const { refreshIntegrations } = useIntegrations();
     await refreshIntegrations();
 
-    setTimeout(() => {
-      isIntegrationDialogOpen.value = false;
-      selectedIntegration.value = null;
-      connectionTestResult.value = null;
-    }, 1500);
+    // Close dialog immediately after successful operation
+    isIntegrationDialogOpen.value = false;
+    selectedIntegration.value = null;
+    connectionTestResult.value = null;
   }
   catch (error) {
     consola.error("Settings: Failed to save integration:", error);
@@ -731,6 +769,24 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                 unchecked-icon="i-lucide-sun"
                 size="xl"
                 aria-label="Toggle dark mode"
+              />
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Show Meals on Calendar
+                </p>
+                <p class="text-sm text-muted">
+                  Display meals from meal planner on the calendar view
+                </p>
+              </div>
+              <USwitch
+                v-model="showMeals"
+                color="primary"
+                checked-icon="i-lucide-utensils"
+                unchecked-icon="i-lucide-x"
+                size="xl"
+                aria-label="Toggle meal display on calendar"
               />
             </div>
             <div class="flex items-center justify-between">

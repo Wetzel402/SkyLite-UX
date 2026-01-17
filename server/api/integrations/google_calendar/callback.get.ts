@@ -1,9 +1,10 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { google } from "googleapis";
 import { createError, defineEventHandler, getQuery, sendRedirect } from "h3";
 
-const prisma = new PrismaClient();
+import prisma from "~/lib/prisma";
+
+import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -32,18 +33,51 @@ export default defineEventHandler(async (event) => {
 
   try {
     const integrationData = JSON.parse(decodeURIComponent(state));
-    const { name, type, service, enabled, settings, redirectUri, integrationId } = integrationData;
-    const isReAuth = !!integrationId;
 
-    if (!redirectUri) {
+    // Validate state object structure
+    if (!integrationData || typeof integrationData !== "object") {
       throw createError({
         statusCode: 400,
-        message: "Redirect URI not found in state data",
+        message: "Invalid state parameter format",
       });
     }
 
-    let clientId: string;
-    let clientSecret: string;
+    const { name, type, service, enabled, settings, redirectUri, integrationId } = integrationData;
+
+    // Validate required fields
+    if (typeof redirectUri !== "string" || !redirectUri) {
+      throw createError({
+        statusCode: 400,
+        message: "Invalid redirect URI in state data",
+      });
+    }
+
+    if (typeof enabled !== "boolean") {
+      throw createError({
+        statusCode: 400,
+        message: "Invalid enabled value in state data",
+      });
+    }
+
+    if (integrationId !== undefined && typeof integrationId !== "string") {
+      throw createError({
+        statusCode: 400,
+        message: "Invalid integration ID in state data",
+      });
+    }
+
+    const isReAuth = !!integrationId;
+
+    // Get OAuth credentials from runtime config or environment variables
+    const oauthConfig = getGoogleOAuthConfig();
+    if (!oauthConfig) {
+      throw createError({
+        statusCode: 500,
+        message: "Google Calendar integration is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.",
+      });
+    }
+    const { clientId, clientSecret } = oauthConfig;
+
     let existingIntegration;
 
     if (isReAuth && integrationId) {
@@ -59,42 +93,6 @@ export default defineEventHandler(async (event) => {
         throw createError({
           statusCode: 404,
           message: "Integration not found",
-        });
-      }
-
-      const dbSettings = existingIntegration.settings as Record<string, unknown> || {};
-      clientId = dbSettings.clientId as string;
-      clientSecret = dbSettings.clientSecret as string;
-
-      if (!clientId) {
-        throw createError({
-          statusCode: 400,
-          message: "Client ID not found in integration settings",
-        });
-      }
-
-      if (!clientSecret) {
-        throw createError({
-          statusCode: 400,
-          message: "Client Secret not found in integration settings",
-        });
-      }
-    }
-    else {
-      clientId = settings?.clientId as string;
-      clientSecret = settings?.clientSecret as string;
-
-      if (!clientId) {
-        throw createError({
-          statusCode: 400,
-          message: "Client ID not found in integration data",
-        });
-      }
-
-      if (!clientSecret) {
-        throw createError({
-          statusCode: 400,
-          message: "Client Secret not found in integration data",
         });
       }
     }
@@ -134,6 +132,9 @@ export default defineEventHandler(async (event) => {
       consola.success(`Google Calendar integration ${integration.id} re-authenticated successfully`);
     }
     else {
+      // Extract only non-sensitive settings (exclude clientId/clientSecret as they're now in env vars)
+      const { clientId: _cid, clientSecret: _cs, ...safeSettings } = settings || {};
+
       integration = await prisma.integration.create({
         data: {
           name,
@@ -144,10 +145,9 @@ export default defineEventHandler(async (event) => {
           icon: null,
           enabled,
           settings: {
-            ...settings,
+            ...safeSettings,
             accessToken: tokens.access_token,
             tokenExpiry: tokens.expiry_date,
-            needsReauth: undefined,
           },
         },
       });

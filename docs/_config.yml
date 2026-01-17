@@ -2,7 +2,7 @@
 title: Skylite UX
 description: Life, Organized.
 url: https://wetzel402.github.io
-baseurl: /Skylite-UX
+baseurl: /SkyLite-UX
 
 # Site favicon
 favicon_ico: /assets/images/favicon.ico
@@ -43,6 +43,10 @@ search_enabled: true
 
 # Color scheme
 color_scheme: dark
+
+# Mermaid diagrams
+mermaid:
+  version: "11"
 
 # Auxiliary links (optional)
 aux_links:

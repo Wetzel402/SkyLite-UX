@@ -64,6 +64,13 @@ const settingsFields = computed((): IntegrationSettingsField[] => {
   return config.settingsFields;
 });
 
+const isOAuthOnlyIntegration = computed(() => {
+  const config = currentIntegrationConfig.value;
+  if (!config)
+    return false;
+  return config.capabilities.includes("oauth") && config.settingsFields.length === 0;
+});
+
 const availableTypes = computed(() => {
   const types = new Set<string>();
   integrationRegistry.forEach((config) => {
@@ -183,12 +190,6 @@ watch(() => props.integration, (newIntegration) => {
       if (newIntegration.settings && typeof newIntegration.settings.useUserColors === "boolean") {
         settingsData.value.useUserColors = newIntegration.settings.useUserColors as boolean;
       }
-      if (newIntegration.settings && newIntegration.settings.clientId) {
-        settingsData.value.clientId = newIntegration.settings.clientId as string;
-      }
-      if (newIntegration.settings && newIntegration.settings.clientSecret) {
-        settingsData.value.clientSecret = newIntegration.settings.clientSecret as string;
-      }
     });
   }
   else {
@@ -292,12 +293,9 @@ async function handleSave() {
         user: userSelection,
         eventColor: settingsData.value.eventColor || "#06b6d4",
         useUserColors,
-        clientId: settingsData.value.clientId || "",
-        clientSecret: settingsData.value.clientSecret || "",
         ...(
           props.integration?.id
           && currentIntegrationConfig.value?.capabilities.includes("select_calendars")
-          && !settingsData.value.clientSecret
             ? { calendars: (props.integration.settings as { calendars?: unknown })?.calendars as JsonValue || [] }
             : {}
         ),
@@ -414,7 +412,7 @@ function handleDelete() {
           </div>
         </div>
 
-        <div v-if="integration?.id" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm">
+        <div v-if="integration?.id && settingsFields.some(f => f.type === 'password')" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm">
           <div class="flex items-start gap-2">
             <UIcon name="i-lucide-info" class="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div>
@@ -422,7 +420,7 @@ function handleDelete() {
                 Editing existing integration
               </p>
               <p class="text-xs mt-1">
-                For security reasons, API keys, client secrets, etc. are not displayed. Leave these fields empty to keep current values, or enter new values to update them.
+                For security reasons, API keys are not displayed. Leave these fields empty to keep current values, or enter new values to update them.
               </p>
             </div>
           </div>
@@ -459,6 +457,23 @@ function handleDelete() {
           <p class="text-sm text-muted">
             Optional: If not provided, a name will be generated.
           </p>
+        </div>
+
+        <div
+          v-if="isOAuthOnlyIntegration && !integration?.id"
+          class="bg-info/10 text-info rounded-md px-3 py-2 text-sm"
+        >
+          <div class="flex items-start gap-2">
+            <UIcon name="i-lucide-info" class="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p class="font-medium">
+                Connect with {{ service.charAt(0).toUpperCase() + service.slice(1) }}
+              </p>
+              <p class="text-xs mt-1">
+                Click Save to sign in with your {{ service.charAt(0).toUpperCase() + service.slice(1) }} account and authorize access.
+              </p>
+            </div>
+          </div>
         </div>
 
         <template v-if="currentIntegrationConfig">

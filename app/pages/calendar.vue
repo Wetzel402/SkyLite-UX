@@ -1,16 +1,22 @@
 <script setup lang="ts">
+import { addDays } from "date-fns";
+
 import type { CalendarEvent, IntegrationTarget, SourceCalendar } from "~/types/calendar";
-import type { Integration } from "~/types/database";
+import type { Integration, MealType, MealWithDate } from "~/types/database";
 
 import { useAlertToast } from "~/composables/useAlertToast";
 import { useCalendar } from "~/composables/useCalendar";
 import { useCalendarEvents } from "~/composables/useCalendarEvents";
 import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
 import { useIntegrations } from "~/composables/useIntegrations";
+import { useMealPlans } from "~/composables/useMealPlans";
+import { useWeekDates } from "~/composables/useWeekDates";
 import { integrationRegistry } from "~/types/integrations";
 
 const { allEvents, getEventUserColors } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
+
+// Google Calendar integration functions
 const {
   addCalendarEvent,
   updateCalendarEvent,
@@ -65,6 +71,112 @@ function separateLocalAndIntegrationCalendars(event: { id: string; sourceCalenda
   };
 }
 
+// Meal planner integration
+const { getMealsForDateRange } = useMealPlans();
+const { settings } = useAppSettings();
+const { getWeekRange } = useWeekDates();
+const router = useRouter();
+
+// Get current calendar date and view state (shared with CalendarMainView)
+const currentDate = useState<Date>("calendar-current-date", () => new Date());
+const currentView = useState<"month" | "week" | "day" | "agenda" | "display">("calendar-current-view", () => "display");
+
+// Fetch meals using useAsyncData to ensure SSR compatibility
+const { data: mealsData, refresh: refreshMeals } = await useAsyncData(
+  "calendar-meals",
+  async () => {
+    const shouldShow = settings.value?.showMealsOnCalendar ?? false;
+    if (!shouldShow)
+      return [];
+
+    const { start, end } = getDateRangeForView(currentDate.value, currentView.value);
+    const meals = await getMealsForDateRange(start, end);
+    return meals.map(mealToCalendarEvent);
+  },
+  {
+    server: true,
+    lazy: false,
+  },
+);
+
+// Watch for changes and refresh meals
+watch([settings, currentDate, currentView], () => {
+  refreshMeals();
+});
+
+// Meal events computed from useAsyncData
+const mealEvents = computed(() => mealsData.value || []);
+
+// Convert meal to calendar event
+function mealToCalendarEvent(meal: MealWithDate): CalendarEvent {
+  const mealDate = new Date(meal.calculatedDate);
+  const timeMap: Record<MealType, { hour: number; minute: number }> = {
+    BREAKFAST: { hour: 8, minute: 0 },
+    LUNCH: { hour: 12, minute: 0 },
+    DINNER: { hour: 18, minute: 0 },
+  };
+  const time = timeMap[meal.mealType] || { hour: 12, minute: 0 };
+
+  const start = new Date(mealDate);
+  start.setHours(time.hour, time.minute, 0, 0);
+
+  const end = new Date(start);
+  end.setHours(start.getHours() + 1);
+
+  return {
+    id: `meal-${meal.id}`,
+    title: `${meal.mealType}: ${meal.name}`,
+    description: meal.description || "",
+    start,
+    end,
+    allDay: false,
+    color: "#f59e0b", // Amber color
+    integrationId: "meal-planner",
+  };
+}
+
+// Get date range for current view
+function getDateRangeForView(date: Date, currentView: "month" | "week" | "day" | "agenda" | "display"): { start: Date; end: Date } {
+  switch (currentView) {
+    case "month": {
+      const start = new Date(date.getFullYear(), date.getMonth(), 1);
+      start.setDate(start.getDate() - 7);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      end.setDate(end.getDate() + 7);
+      return { start, end };
+    }
+    case "week": {
+      const sunday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dayOfWeek = sunday.getDay();
+      sunday.setDate(sunday.getDate() - dayOfWeek);
+      const saturday = new Date(sunday.getTime());
+      saturday.setDate(saturday.getDate() + 7);
+      return { start: sunday, end: saturday };
+    }
+    case "day": {
+      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+      return { start, end };
+    }
+    case "agenda": {
+      const start = addDays(date, -15);
+      const end = addDays(date, 15);
+      return { start, end };
+    }
+    case "display": {
+      return getWeekRange(date);
+    }
+    default:
+      return { start: date, end: date };
+  }
+}
+
+// Combine calendar events with meal events
+const combinedEvents = computed(() => {
+  return [...allEvents.value, ...mealEvents.value];
+});
+
+// Google Calendar integration event functions
 async function createIntegrationEvent(
   event: CalendarEvent,
   target: IntegrationTarget,
@@ -265,6 +377,12 @@ async function handleEventAdd(event: CalendarEvent) {
 }
 
 async function handleEventUpdate(event: CalendarEvent) {
+  // If it's a meal event, redirect to meal planner
+  if (event.integrationId === "meal-planner") {
+    router.push("/mealPlanner");
+    return;
+  }
+
   try {
     const writableSources = event.sourceCalendars?.filter(source => source.canEdit) || [];
 
@@ -409,10 +527,16 @@ async function handleEventUpdate(event: CalendarEvent) {
 
 async function handleEventDelete(eventId: string) {
   try {
-    const event = allEvents.value.find(e => e.id === eventId);
+    const event = combinedEvents.value.find(e => e.id === eventId);
 
     if (!event) {
       showError("Event Not Found", "The event could not be found.");
+      return;
+    }
+
+    // If it's a meal event, redirect to meal planner
+    if (event.integrationId === "meal-planner") {
+      router.push("/mealPlanner");
       return;
     }
 
@@ -653,7 +777,7 @@ function getEventIntegrationCapabilities(event: CalendarEvent): { capabilities: 
 <template>
   <div>
     <CalendarMainView
-      :events="allEvents as CalendarEvent[]"
+      :events="combinedEvents as CalendarEvent[]"
       initial-view="week"
       class="h-[calc(100vh-2rem)]"
       :get-integration-capabilities="getEventIntegrationCapabilities"

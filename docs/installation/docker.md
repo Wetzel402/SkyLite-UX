@@ -5,12 +5,13 @@ layout: default
 nav_order: 3
 permalink: /installation/docker/
 ---
+
 # Docker
 
 ## Tags
 
 - **latest** (not currently implemented) - The default most recent release
-- **beta** - Get a preview of the most recent features and bug fixes 
+- **beta** - Get a preview of the most recent features and bug fixes
 - **YYYY.MM.Micro** - If you need a specific version you can specify the version number.
 
 ## Docker CLI
@@ -92,7 +93,18 @@ volumes:
 
 Make sure to update the following environment variables in your `docker-compose.yml`:
 
+### Required
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `NUXT_PUBLIC_TZ` - Your timezone (e.g., America/Chicago, Europe/London)
 - `NUXT_PUBLIC_LOG_LEVEL` - Logging level (debug, info, warn, error)
 - `POSTGRES_PASSWORD` - Choose a strong password for your database
+
+### Optional (Google Calendar Integration)
+
+To enable Google Calendar integration, add these environment variables:
+
+- `GOOGLE_CLIENT_ID` - Your Google OAuth Client ID
+- `GOOGLE_CLIENT_SECRET` - Your Google OAuth Client Secret
+
+See the [Google Calendar integration documentation](/integrations/calendar/#google-calendar) for setup instructions.

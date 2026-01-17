@@ -1,6 +1,6 @@
 services:
   skylite-ux:
-    image: wetzel402/skylite-ux:latest
+    image: y3knik/skylite-ux:latest
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite

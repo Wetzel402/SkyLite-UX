@@ -33,7 +33,7 @@ npm run dev
 
 ### Development Setup
 
-- Default values are configured in `nuxt.config.ts` 
+- Default values are configured in `nuxt.config.ts`
 - `DATABASE_URL` is automatically configured by the dev container
 
 ### Environment Variables
@@ -312,6 +312,7 @@ Using the authenticated base image ensures consistency between local development
 Skylite UX uses [Consola](https://github.com/unjs/consola) for server-side logging. You can control the log level using the `NUXT_PUBLIC_LOG_LEVEL` environment variable.
 
 **Log Levels:**
+
 - `debug` - Detailed debugging information
 - `info` - General informational messages (default)
 - `warn` - Warning messages
@@ -319,6 +320,7 @@ Skylite UX uses [Consola](https://github.com/unjs/consola) for server-side loggi
 - `verbose` - Very detailed logging
 
 **Example:**
+
 ```typescript
 import consola from "consola";
 
@@ -336,10 +338,13 @@ consola.error("This is an error message");
 ### Server-Side Debugging
 
 - **Console Logging** - Use `consola` in server routes for logging:
+
   ```typescript
   import consola from "consola";
+
   consola.debug("Server route executed");
   ```
+
 - **Prisma Studio** - Run `npx prisma studio` to open a visual database browser (typically available at `http://localhost:5555`). This allows you to view and edit database records directly.
 
 ### Common Debugging Scenarios
