@@ -44,6 +44,10 @@ search_enabled: true
 # Color scheme
 color_scheme: dark
 
+# Mermaid diagrams
+mermaid:
+  version: "11"
+
 # Auxiliary links (optional)
 aux_links:
   GitHub: //github.com/wetzel402/SkyLite-UX
