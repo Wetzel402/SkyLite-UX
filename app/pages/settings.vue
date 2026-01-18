@@ -6,10 +6,12 @@ import type { ConnectionTestResult } from "~/types/ui";
 
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
 import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
+import { useAlertToast } from "~/composables/useAlertToast";
 import { integrationServices } from "~/plugins/02.appInit";
 import { getSlogan } from "~/types/global";
 import { createIntegrationService, integrationRegistry } from "~/types/integrations";
 
+const { showError, showSuccess } = useAlertToast();
 const { users, loading, error, createUser, deleteUser, updateUser } = useUsers();
 
 // Logo loading state
@@ -75,24 +77,28 @@ async function handleUserSave(userData: CreateUserInput) {
       try {
         await updateUser(selectedUser.value.id, userData);
         consola.debug("Settings: User updated successfully");
+        showSuccess("User Updated", "User profile has been updated successfully");
       }
-      catch (error) {
+      catch (err) {
         if (cachedUsers.value && previousUsers.length > 0) {
           cachedUsers.value.splice(0, cachedUsers.value.length, ...previousUsers);
         }
-        throw error;
+        throw err;
       }
     }
     else {
       await createUser(userData);
       consola.debug("Settings: User created successfully");
+      showSuccess("User Created", "New user has been created successfully");
     }
 
     isUserDialogOpen.value = false;
     selectedUser.value = null;
   }
-  catch (error) {
-    consola.error("Settings: Failed to save user:", error);
+  catch (err) {
+    consola.error("Settings: Failed to save user:", err);
+    const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+    showError("Failed to Save User", errorMessage);
   }
 }
 
@@ -108,19 +114,22 @@ async function handleUserDelete(userId: string) {
     try {
       await deleteUser(userId);
       consola.debug("Settings: User deleted successfully");
+      showSuccess("User Deleted", "User has been removed successfully");
     }
-    catch (error) {
+    catch (err) {
       if (cachedUsers.value && previousUsers.length > 0) {
         cachedUsers.value.splice(0, cachedUsers.value.length, ...previousUsers);
       }
-      throw error;
+      throw err;
     }
 
     isUserDialogOpen.value = false;
     selectedUser.value = null;
   }
-  catch (error) {
-    consola.error("Settings: Failed to delete user:", error);
+  catch (err) {
+    consola.error("Settings: Failed to delete user:", err);
+    const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+    showError("Failed to Delete User", errorMessage);
   }
 }
 
@@ -260,12 +269,13 @@ async function handleIntegrationDelete(integrationId: string) {
     try {
       await deleteIntegration(integrationId);
       consola.debug("Settings: Integration deleted successfully");
+      showSuccess("Integration Deleted", "Integration has been removed successfully");
     }
-    catch (error) {
+    catch (err) {
       if (cachedIntegrations.value && previousIntegrations.length > 0) {
         cachedIntegrations.value.splice(0, cachedIntegrations.value.length, ...previousIntegrations);
       }
-      throw error;
+      throw err;
     }
 
     await refreshNuxtData("integrations");
@@ -276,8 +286,10 @@ async function handleIntegrationDelete(integrationId: string) {
     isIntegrationDialogOpen.value = false;
     selectedIntegration.value = null;
   }
-  catch (error) {
-    consola.error("Settings: Failed to delete integration:", error);
+  catch (err) {
+    consola.error("Settings: Failed to delete integration:", err);
+    const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+    showError("Failed to Delete Integration", errorMessage);
   }
 }
 
@@ -387,8 +399,10 @@ async function handleToggleIntegration(integrationId: string, enabled: boolean) 
       throw error;
     }
   }
-  catch (error) {
-    consola.error("Settings: Failed to toggle integration:", error);
+  catch (err) {
+    consola.error("Settings: Failed to toggle integration:", err);
+    const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+    showError("Failed to Toggle Integration", errorMessage);
   }
 }
 
