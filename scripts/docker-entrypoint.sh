@@ -17,6 +17,7 @@ if [[ -z "$DATABASE_URL" ]] || [[ "$DATABASE_URL" == file:* ]]; then
   fi
 
   # Use SQLite schema
+  echo "Copying SQLite schema..."
   cp /app/prisma/schema.sqlite.prisma /app/prisma/schema.prisma
 
   # Ensure data directory exists
@@ -28,10 +29,23 @@ if [[ -z "$DATABASE_URL" ]] || [[ "$DATABASE_URL" == file:* ]]; then
 
   # Push schema to database (creates tables if needed)
   echo "Syncing database schema..."
-  npx prisma db push --accept-data-loss
+  if [[ "$PRISMA_ACCEPT_DATA_LOSS" == "true" ]]; then
+    echo "WARNING: PRISMA_ACCEPT_DATA_LOSS is enabled. Destructive schema changes will be applied automatically."
+    npx prisma db push --accept-data-loss
+  else
+    npx prisma db push
+  fi
 
 elif [[ "$DATABASE_URL" == postgresql://* ]]; then
   echo "Database: PostgreSQL"
+
+  # Use PostgreSQL schema
+  echo "Copying PostgreSQL schema..."
+  cp /app/prisma/schema.postgres.prisma /app/prisma/schema.prisma
+
+  # Generate Prisma client for PostgreSQL
+  echo "Generating Prisma client..."
+  npx prisma generate
 
   # PostgreSQL uses migrations
   echo "Running database migrations..."

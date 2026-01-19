@@ -1,0 +1,187 @@
+// Prisma schema for PostgreSQL database
+// This file is used when running with PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  avatar    String?
+  color     String?
+  todoOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  todoColumn TodoColumn?
+  calendarEvents CalendarEventUser[]
+
+  @@map("users")
+}
+
+model TodoColumn {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int      @default(0)
+  isDefault Boolean  @default(false)
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todos     Todo[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("todo_columns")
+}
+
+model Todo {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  priority    Priority @default(MEDIUM)
+  dueDate     DateTime?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  todoColumnId String?
+  todoColumn   TodoColumn? @relation(fields: [todoColumnId], references: [id], onDelete: Cascade)
+
+  @@map("todos")
+}
+
+model ShoppingList {
+  id        String            @id @default(cuid())
+  name      String
+  order     Int               @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  items ShoppingListItem[]
+
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id       String  @id @default(cuid())
+  name     String
+  quantity Int     @default(1)
+  unit     String?
+  checked  Boolean @default(false)
+  notes    String?
+  order    Int     @default(0)
+
+  shoppingListId String
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+
+  @@map("shopping_list_items")
+}
+
+model Integration {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  service   String
+  apiKey    String?
+  baseUrl   String?
+  icon      String?
+  enabled   Boolean  @default(true)
+  settings  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name])
+  @@map("integrations")
+}
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  start       DateTime
+  end         DateTime
+  allDay      Boolean  @default(false)
+  color       Json?
+  location    String?
+  ical_event  Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users CalendarEventUser[]
+
+  @@map("calendar_events")
+}
+
+model CalendarEventUser {
+  id             String        @id @default(cuid())
+  calendarEventId String
+  userId         String
+  createdAt      DateTime      @default(now())
+
+  calendarEvent CalendarEvent @relation(fields: [calendarEventId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarEventId, userId])
+  @@map("calendar_event_users")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model MealPlan {
+  id        String   @id @default(cuid())
+  weekStart DateTime
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meals Meal[]
+
+  @@unique([weekStart])
+  @@map("meal_plans")
+}
+
+model Meal {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  mealType      MealType
+  dayOfWeek     Int
+  daysInAdvance Int      @default(0)
+  completed     Boolean  @default(false)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  mealPlanId String
+  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+
+  @@map("meals")
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+model AppSettings {
+  id                    String   @id @default(cuid())
+  singletonId           Int      @unique @default(1)
+  showMealsOnCalendar   Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("app_settings")
+}
