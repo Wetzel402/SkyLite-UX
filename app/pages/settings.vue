@@ -5,6 +5,7 @@ import type { CreateIntegrationInput, CreateUserInput, Integration, User } from 
 import type { ConnectionTestResult } from "~/types/ui";
 
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
+import SettingsPinDialog from "~/components/settings/settingsPinDialog.vue";
 import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
 import { useAlertToast } from "~/composables/useAlertToast";
 import { integrationServices } from "~/plugins/02.appInit";
@@ -42,6 +43,40 @@ const selectedIntegration = ref<Integration | null>(null);
 const isIntegrationDialogOpen = ref(false);
 
 const connectionTestResult = ref<ConnectionTestResult>(null);
+
+// PIN protection for integrations section
+const isPinDialogOpen = ref(false);
+const isIntegrationsSectionUnlocked = ref(false);
+const hasParentPin = ref(false);
+
+// Check if parent PIN is set on mount
+onMounted(async () => {
+  try {
+    const settings = await $fetch<{ hasParentPin: boolean }>("/api/household/settings");
+    hasParentPin.value = settings.hasParentPin;
+    // If no PIN is set, auto-unlock the section
+    if (!settings.hasParentPin) {
+      isIntegrationsSectionUnlocked.value = true;
+    }
+  }
+  catch (err) {
+    consola.warn("Settings: Failed to check household settings:", err);
+    isIntegrationsSectionUnlocked.value = true;
+  }
+});
+
+function handleUnlockIntegrations() {
+  if (hasParentPin.value && !isIntegrationsSectionUnlocked.value) {
+    isPinDialogOpen.value = true;
+  }
+  else {
+    isIntegrationsSectionUnlocked.value = true;
+  }
+}
+
+function handlePinVerified() {
+  isIntegrationsSectionUnlocked.value = true;
+}
 
 const activeIntegrationTab = ref<string>("");
 
@@ -522,130 +557,170 @@ function getIntegrationIconUrl(integration: Integration) {
 
         <div class="bg-default rounded-lg shadow-sm border border-default p-6 mb-6">
           <div class="flex items-center justify-between mb-6">
-            <div>
+            <div class="flex items-center gap-2">
               <h2 class="text-lg font-semibold text-highlighted">
                 Integrations
               </h2>
+              <UIcon
+                v-if="hasParentPin && !isIntegrationsSectionUnlocked"
+                name="i-lucide-lock"
+                class="h-4 w-4 text-muted"
+              />
             </div>
             <UButton
+              v-if="isIntegrationsSectionUnlocked"
               icon="i-lucide-plug"
               @click="openIntegrationDialog()"
             >
               Add Integration
             </UButton>
+            <UButton
+              v-else-if="hasParentPin"
+              icon="i-lucide-lock"
+              variant="outline"
+              @click="handleUnlockIntegrations"
+            >
+              Unlock
+            </UButton>
           </div>
 
-          <div class="border-b border-default mb-6">
-            <nav class="-mb-px flex space-x-8">
-              <button
-                v-for="type in availableIntegrationTypes"
-                :key="type"
-                type="button"
-                class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
-                :class="[
-                  activeIntegrationTab === type
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted hover:text-toned hover:border-muted',
-                ]"
-                @click="activeIntegrationTab = type"
-              >
-                {{ getIntegrationTypeLabel(type) }}
-              </button>
-            </nav>
-          </div>
-
-          <div v-if="integrationsLoading" class="text-center py-8">
-            <UIcon name="i-lucide-loader-2" class="animate-spin h-8 w-8 mx-auto" />
-            <p class="text-default mt-2">
-              Loading integrations...
-            </p>
-          </div>
-
-          <div v-else-if="servicesInitializing" class="text-center py-8">
-            <UIcon name="i-lucide-loader-2" class="animate-spin h-8 w-8 mx-auto" />
-            <p class="text-default mt-2">
-              Initializing integration services...
-            </p>
-          </div>
-
-          <div v-else-if="filteredIntegrations.length === 0" class="text-center py-8">
-            <div class="flex items-center justify-center gap-2 text-default">
-              <UIcon name="i-lucide-frown" class="h-10 w-10" />
+          <!-- Locked state -->
+          <div v-if="hasParentPin && !isIntegrationsSectionUnlocked" class="text-center py-12">
+            <div class="flex flex-col items-center gap-4">
+              <div class="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+                <UIcon name="i-lucide-lock" class="h-8 w-8 text-muted" />
+              </div>
               <div class="text-center">
-                <p class="text-lg">
-                  No {{ getIntegrationTypeLabel(activeIntegrationTab) }} integrations configured
+                <p class="text-lg font-medium text-highlighted">
+                  Parent Access Required
                 </p>
-                <p class="text-dimmed">
-                  Connect external services to enhance your experience
+                <p class="text-muted mt-1">
+                  Enter the parent PIN to access integration settings
                 </p>
               </div>
+              <UButton
+                icon="i-lucide-key"
+                @click="handleUnlockIntegrations"
+              >
+                Enter PIN
+              </UButton>
             </div>
           </div>
 
-          <div v-else>
-            <div class="space-y-4">
-              <div
-                v-for="integration in filteredIntegrations"
-                :key="integration.id"
-                class="flex items-center justify-between p-4 rounded-lg border"
-                :class="[
-                  integration.enabled
-                    ? 'border-primary bg-primary/10'
-                    : 'border-default bg-default',
-                ]"
-              >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-full flex items-center justify-center text-inverted"
-                    :class="[
-                      integration.enabled
-                        ? 'bg-accented'
-                        : 'bg-muted',
-                    ]"
-                  >
-                    <img
-                      v-if="getIntegrationIconUrl(integration)"
-                      :src="getIntegrationIconUrl(integration) || undefined"
-                      :alt="`${integration.service} icon`"
-                      class="h-5 w-5"
-                      style="object-fit: contain"
+          <!-- Unlocked content -->
+          <template v-else>
+            <div class="border-b border-default mb-6">
+              <nav class="-mb-px flex space-x-8">
+                <button
+                  v-for="type in availableIntegrationTypes"
+                  :key="type"
+                  type="button"
+                  class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
+                  :class="[
+                    activeIntegrationTab === type
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted hover:text-toned hover:border-muted',
+                  ]"
+                  @click="activeIntegrationTab = type"
+                >
+                  {{ getIntegrationTypeLabel(type) }}
+                </button>
+              </nav>
+            </div>
+
+            <div v-if="integrationsLoading" class="text-center py-8">
+              <UIcon name="i-lucide-loader-2" class="animate-spin h-8 w-8 mx-auto" />
+              <p class="text-default mt-2">
+                Loading integrations...
+              </p>
+            </div>
+
+            <div v-else-if="servicesInitializing" class="text-center py-8">
+              <UIcon name="i-lucide-loader-2" class="animate-spin h-8 w-8 mx-auto" />
+              <p class="text-default mt-2">
+                Initializing integration services...
+              </p>
+            </div>
+
+            <div v-else-if="filteredIntegrations.length === 0" class="text-center py-8">
+              <div class="flex items-center justify-center gap-2 text-default">
+                <UIcon name="i-lucide-frown" class="h-10 w-10" />
+                <div class="text-center">
+                  <p class="text-lg">
+                    No {{ getIntegrationTypeLabel(activeIntegrationTab) }} integrations configured
+                  </p>
+                  <p class="text-dimmed">
+                    Connect external services to enhance your experience
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div v-else>
+              <div class="space-y-4">
+                <div
+                  v-for="integration in filteredIntegrations"
+                  :key="integration.id"
+                  class="flex items-center justify-between p-4 rounded-lg border"
+                  :class="[
+                    integration.enabled
+                      ? 'border-primary bg-primary/10'
+                      : 'border-default bg-default',
+                  ]"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 rounded-full flex items-center justify-center text-inverted"
+                      :class="[
+                        integration.enabled
+                          ? 'bg-accented'
+                          : 'bg-muted',
+                      ]"
                     >
-                    <UIcon
-                      v-else
-                      :name="getIntegrationIcon(integration.type)"
-                      class="h-5 w-5"
+                      <img
+                        v-if="getIntegrationIconUrl(integration)"
+                        :src="getIntegrationIconUrl(integration) || undefined"
+                        :alt="`${integration.service} icon`"
+                        class="h-5 w-5"
+                        style="object-fit: contain"
+                      >
+                      <UIcon
+                        v-else
+                        :name="getIntegrationIcon(integration.type)"
+                        class="h-5 w-5"
+                      />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="font-medium text-highlighted">
+                        {{ integration.name }}
+                      </p>
+                      <p class="text-sm text-muted capitalize">
+                        {{ integration.service }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <USwitch
+                      :model-value="integration.enabled"
+                      color="primary"
+                      unchecked-icon="i-lucide-x"
+                      checked-icon="i-lucide-check"
+                      size="xl"
+                      :aria-label="`Toggle ${integration.name} integration`"
+                      @update:model-value="handleToggleIntegration(integration.id, $event)"
+                    />
+                    <UButton
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-edit"
+                      :aria-label="`Edit ${integration.name}`"
+                      @click="openIntegrationDialog(integration)"
                     />
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="font-medium text-highlighted">
-                      {{ integration.name }}
-                    </p>
-                    <p class="text-sm text-muted capitalize">
-                      {{ integration.service }}
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <USwitch
-                    :model-value="integration.enabled"
-                    color="primary"
-                    unchecked-icon="i-lucide-x"
-                    checked-icon="i-lucide-check"
-                    size="xl"
-                    :aria-label="`Toggle ${integration.name} integration`"
-                    @update:model-value="handleToggleIntegration(integration.id, $event)"
-                  />
-                  <UButton
-                    variant="ghost"
-                    size="sm"
-                    icon="i-lucide-edit"
-                    :aria-label="`Edit ${integration.name}`"
-                    @click="openIntegrationDialog(integration)"
-                  />
                 </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
 
         <div class="bg-default rounded-lg shadow-sm border border-default p-6 mb-6">
@@ -751,6 +826,13 @@ function getIntegrationIconUrl(integration: Integration) {
       @close="() => { isIntegrationDialogOpen = false; selectedIntegration = null; }"
       @save="handleIntegrationSave"
       @delete="handleIntegrationDelete"
+    />
+
+    <SettingsPinDialog
+      :is-open="isPinDialogOpen"
+      title="Access Integrations"
+      @close="isPinDialogOpen = false"
+      @verified="handlePinVerified"
     />
   </div>
 </template>
