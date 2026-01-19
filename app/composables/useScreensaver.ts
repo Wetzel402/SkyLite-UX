@@ -12,6 +12,12 @@ let idleTimer: ReturnType<typeof setTimeout> | null = null;
 export function useScreensaver() {
   const router = useRouter();
 
+  // Activate screensaver
+  const activateScreensaver = () => {
+    isScreensaverActive.value = true;
+    router.push("/screensaver");
+  };
+
   // Reset activity timer
   const resetIdleTimer = () => {
     lastActivity.value = Date.now();
@@ -26,12 +32,6 @@ export function useScreensaver() {
         activateScreensaver();
       }, idleTimeout.value);
     }
-  };
-
-  // Activate screensaver
-  const activateScreensaver = () => {
-    isScreensaverActive.value = true;
-    router.push("/screensaver");
   };
 
   // Deactivate screensaver and return to calendar

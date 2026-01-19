@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import ChoreDialog from "~/components/chores/choreDialog.vue";
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
+
+const showCreateDialog = ref(false);
 
 type ChoreUser = {
   id: string;
@@ -25,6 +28,8 @@ const chores = ref<Chore[]>([]);
 const loading = ref(true);
 const claiming = ref<string | null>(null);
 const completing = ref<string | null>(null);
+
+const { showError, showSuccess } = useAlertToast();
 
 // For now, we'll use a simple user selection (in a real app, this would come from auth)
 const users = ref<Array<{ id: string; name: string; avatar: string | null }>>([]);
@@ -65,7 +70,7 @@ async function fetchUsers() {
 // Claim a chore
 async function claimChore(choreId: string) {
   if (!selectedUserId.value) {
-    alert("Please select a user first");
+    showError("Please select a user first");
     return;
   }
 
@@ -85,7 +90,7 @@ async function claimChore(choreId: string) {
   catch (error: unknown) {
     const fetchError = error as { data?: { message?: string } };
     const message = fetchError.data?.message || "Failed to claim chore";
-    alert(message);
+    showError(message);
   }
   finally {
     claiming.value = null;
@@ -95,7 +100,7 @@ async function claimChore(choreId: string) {
 // Complete a chore
 async function completeChore(choreId: string) {
   if (!selectedUserId.value) {
-    alert("Please select a user first");
+    showError("Please select a user first");
     return;
   }
 
@@ -116,13 +121,13 @@ async function completeChore(choreId: string) {
     }
 
     if (result.pointsAwarded) {
-      alert(`${result.message}`);
+      showSuccess(`${result.message}`);
     }
   }
   catch (error: unknown) {
     const fetchError = error as { data?: { message?: string } };
     const message = fetchError.data?.message || "Failed to complete chore";
-    alert(message);
+    showError(message);
   }
   finally {
     completing.value = null;
@@ -350,7 +355,14 @@ onMounted(() => {
       color="primary"
       size="lg"
       position="bottom-right"
-      @click="() => { /* TODO: Open create chore dialog */ }"
+      @click="showCreateDialog = true"
+    />
+
+    <!-- Create Chore Dialog -->
+    <ChoreDialog
+      :is-open="showCreateDialog"
+      @close="showCreateDialog = false"
+      @created="fetchChores"
     />
   </div>
 </template>

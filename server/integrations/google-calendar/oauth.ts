@@ -2,6 +2,7 @@ import type { OAuth2Client } from "google-auth-library";
 
 import { consola } from "consola";
 import { google } from "googleapis";
+import { Buffer } from "node:buffer";
 import crypto from "node:crypto";
 
 import type { TokenInfo } from "./types";
@@ -15,6 +16,7 @@ export function encryptToken(token: string): string {
   const algorithm = "aes-256-gcm";
   const key = getEncryptionKey();
   const iv = crypto.randomBytes(16);
+
   const cipher = crypto.createCipheriv(algorithm, key, iv);
 
   let encrypted = cipher.update(token, "utf8", "hex");
@@ -54,14 +56,15 @@ export function decryptToken(encryptedToken: string): string {
  * @returns 32-byte encryption key buffer
  */
 function getEncryptionKey(): Buffer {
-  const envKey = process.env.OAUTH_ENCRYPTION_KEY;
+  const config = useRuntimeConfig();
+  const envKey = config.oauthEncryptionKey as string;
 
   if (envKey) {
     return Buffer.from(envKey, "hex");
   }
 
   // Development fallback - generate temporary key
-  if (process.env.NODE_ENV === "development") {
+  if (import.meta.dev) {
     consola.warn("OAUTH_ENCRYPTION_KEY not set, using temporary key (development only)");
     return crypto.randomBytes(32);
   }
@@ -74,9 +77,10 @@ function getEncryptionKey(): Buffer {
  * @returns Configured OAuth2Client instance
  */
 export function createOAuth2Client(): OAuth2Client {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/integrations/google-calendar/oauth/callback";
+  const config = useRuntimeConfig();
+  const clientId = config.googleClientId as string;
+  const clientSecret = config.googleClientSecret as string;
+  const redirectUri = (config.googleRedirectUri as string) || "http://localhost:3000/api/integrations/google-calendar/oauth/callback";
 
   if (!clientId || !clientSecret) {
     throw new Error("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are required");

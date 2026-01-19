@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "calendars-selected", calendarIds: string[]): void;
+  (e: "calendarsSelected", calendarIds: string[]): void;
 }>();
 
 const calendars = ref<GoogleCalendarInfo[]>([]);
@@ -58,7 +58,7 @@ function handleContinue() {
     return;
   }
 
-  emit("calendars-selected", selectedCalendarIds.value);
+  emit("calendarsSelected", selectedCalendarIds.value);
 }
 
 function toggleCalendar(calendarId: string) {

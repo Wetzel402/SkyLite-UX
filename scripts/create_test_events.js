@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Script to create 100 test events for performance testing
 const baseUrl = "http://localhost:3000/api/calendar-events";
 

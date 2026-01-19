@@ -1538,18 +1538,29 @@ function handleDelete() {
         </div>
       </div>
       <div class="flex justify-between p-4 border-t border-default">
-        <UButton
-          v-if="event?.id && canDelete"
-          color="error"
-          variant="ghost"
-          icon="i-lucide-trash"
-          :loading="isDeleting"
-          :disabled="isDeleting"
-          @click="handleDelete"
-        >
-          Delete
-        </UButton>
-        <div class="flex gap-2" :class="{ 'ml-auto': !event?.id || !canDelete }">
+        <div class="flex gap-2">
+          <UButton
+            v-if="event?.id && canDelete"
+            color="error"
+            variant="ghost"
+            icon="i-lucide-trash"
+            :loading="isDeleting"
+            :disabled="isDeleting"
+            @click="handleDelete"
+          >
+            Delete
+          </UButton>
+          <UButton
+            v-if="!isReadOnly && !event?.id"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-rotate-ccw"
+            @click="resetForm"
+          >
+            Reset
+          </UButton>
+        </div>
+        <div class="flex gap-2">
           <UButton
             color="neutral"
             variant="ghost"

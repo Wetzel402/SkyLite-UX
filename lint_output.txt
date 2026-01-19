@@ -1,0 +1,55 @@
+
+> skylite-ux@2025.10.1 lint
+> eslint . --fix
+
+
+C:\Users\derus\github\SkyLite-UX\CLAUDE.md
+  1:1  error  Filename is not in camel case. Rename it to `claude.md`  unicorn/filename-case
+
+C:\Users\derus\github\SkyLite-UX\app\components\settings\settingsGoogleCalendarSelector.vue
+  61:8  error  Custom event name 'calendars-selected' must be camelCase  vue/custom-event-name-casing
+
+C:\Users\derus\github\SkyLite-UX\app\composables\useScreensaver.ts
+  26:9  error  'activateScreensaver' was used before it was defined  ts/no-use-before-define
+
+C:\Users\derus\github\SkyLite-UX\app\pages\chores.vue
+   68:5  error  Unexpected alert  no-alert
+   88:5  error  Unexpected alert  no-alert
+   98:5  error  Unexpected alert  no-alert
+  119:7  error  Unexpected alert  no-alert
+  125:5  error  Unexpected alert  no-alert
+
+C:\Users\derus\github\SkyLite-UX\prompts\coding_prompt.md
+  1:1  error  Filename is not in camel case. Rename it to `codingPrompt.md`  unicorn/filename-case
+
+C:\Users\derus\github\SkyLite-UX\prompts\coding_prompt_yolo.md
+  1:1  error  Filename is not in camel case. Rename it to `codingPromptYolo.md`  unicorn/filename-case
+
+C:\Users\derus\github\SkyLite-UX\prompts\initializer_prompt.md
+  1:1  error  Filename is not in camel case. Rename it to `initializerPrompt.md`  unicorn/filename-case
+
+C:\Users\derus\github\SkyLite-UX\scripts\create-test-events.js
+   1:1  error    Filename is not in camel case. Rename it to `createTestEvents.js`                  unicorn/filename-case
+   5:3  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  33:9  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  41:3  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+C:\Users\derus\github\SkyLite-UX\scripts\delete-test-events.js
+   1:1  error    Filename is not in camel case. Rename it to `deleteTestEvents.js`                  unicorn/filename-case
+   5:3  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  12:5  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  23:5  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+C:\Users\derus\github\SkyLite-UX\server\integrations\google-calendar\oauth.ts
+  41:14  error  Unexpected use of the global variable 'Buffer'. Use 'require("buffer").Buffer' instead  node/prefer-global/buffer
+  42:19  error  Unexpected use of the global variable 'Buffer'. Use 'require("buffer").Buffer' instead  node/prefer-global/buffer
+  56:30  error  Unexpected use of the global variable 'Buffer'. Use 'require("buffer").Buffer' instead  node/prefer-global/buffer
+  57:18  error  Unexpected use of process.env                                                           node/no-process-env
+  60:12  error  Unexpected use of the global variable 'Buffer'. Use 'require("buffer").Buffer' instead  node/prefer-global/buffer
+  64:7   error  Unexpected use of process.env                                                           node/no-process-env
+  77:20  error  Unexpected use of process.env                                                           node/no-process-env
+  78:24  error  Unexpected use of process.env                                                           node/no-process-env
+  79:23  error  Unexpected use of process.env                                                           node/no-process-env
+
+✖ 28 problems (22 errors, 6 warnings)
+

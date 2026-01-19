@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Script to delete all performance test events
 const baseUrl = "http://localhost:3000/api/calendar-events";
 

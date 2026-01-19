@@ -7,6 +7,10 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    oauthEncryptionKey: "", // NUXT_OAUTH_ENCRYPTION_KEY
+    googleClientId: "", // NUXT_GOOGLE_CLIENT_ID
+    googleClientSecret: "", // NUXT_GOOGLE_CLIENT_SECRET
+    googleRedirectUri: "", // NUXT_GOOGLE_REDIRECT_URI
     public: {
       skyliteVersion: pkg.version,
       nuxtVersion: pkg.devDependencies.nuxt,
