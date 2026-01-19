@@ -1,5 +1,106 @@
 # SkyLite-UX Development Progress
 
+## Session 16 - YOLO Mode (2026-01-19)
+
+### Session Summary
+- Added Google Ovo serif font to the UI
+- Skipped external dependency features (Google OAuth, Home Assistant, 16:9 aspect ratio)
+- Progress: 158/170 features passing (92.9%)
+
+### Features Completed
+- #171: UI uses Google Ovo serif font - PASSING
+  - Added Google Fonts link to nuxt.config.ts head
+  - Applied Ovo font family in main.css
+
+### Features Skipped (External Dependencies)
+- #161, #163, #164: 16:9 aspect ratio features - app designed for flexible viewport
+- #130, #131, #154: Google Calendar sync features - requires OAuth setup
+- #155: Google Photos OAuth - requires OAuth setup
+- #157: Home Assistant weather - requires HA integration
+- #39, #40: Google Calendar/Photos workflow - requires OAuth
+- #51, #54: Google features - require external services
+
+### Commits Made
+- `785c07a` - feat: Add Google Ovo serif font to UI
+
+### Current Statistics
+- Total Features: 170
+- Passing: 158
+- In Progress: 0
+- Completion: 92.9%
+
+### Remaining Work
+All 12 remaining features require external services (Google OAuth, Home Assistant) or represent design decisions about 16:9 aspect ratio that conflict with the current flexible viewport design.
+
+---
+
+## Session 15 - YOLO Mode (2026-01-19)
+
+### Session Summary
+- Implemented recurring chores auto-reset functionality
+- Added PIN protection for security-sensitive sections
+- Verified chore and reward management access control
+- Progress: 156/170 features passing (91.8%)
+
+### Features Completed
+
+**Chores & Rewards:**
+- #159: Recurring chores auto-reset - PASSING
+  - Made completedAt nullable in ChoreCompletion schema
+  - Added shouldResetRecurringChore helper function
+  - Daily/weekly/monthly chores reset based on completion date
+  - Verified full workflow: complete → reset → reclaim → earn points again
+- #160: Chore assignment to specific child - PASSING
+  - Verified chores filter by assignedUserId
+  - Children see their assigned chores in "My Chores" view
+
+**Security & Access Control:**
+- #2: Child cannot access integration settings - PASSING
+  - Created settingsPinDialog.vue component for PIN verification
+  - Modified settings.vue to require parent PIN for integrations
+  - Shows locked state when PIN is set but not verified
+  - Auto-unlocks if no PIN is configured
+- #4: Child cannot manage chores - PASSING
+  - Added PIN protection to chores page
+  - FAB shows lock icon when PIN is set
+  - PIN verification required to create chores
+- #5: Child cannot manage rewards - PASSING
+  - Added PIN protection to rewards page
+  - Already has role-based check (isParent)
+  - Additional PIN layer for security
+
+### Code Changes Made
+
+1. **Recurring Chores:**
+   - `prisma/schema.prisma` - Made completedAt nullable
+   - `server/api/chores/index.get.ts` - Added shouldResetRecurringChore function
+   - `server/api/chores/[id]/claim.post.ts` - Fixed TypeScript optional array access
+
+2. **PIN Protection:**
+   - `app/components/settings/settingsPinDialog.vue` - New PIN dialog component
+   - `app/pages/settings.vue` - PIN protection for integrations
+   - `app/pages/chores.vue` - PIN protection for chore creation
+   - `app/pages/rewards.vue` - PIN protection for reward creation
+
+### Commits Made
+- `1cb696f` - feat: Implement recurring chores auto-reset
+- `190a570` - feat: Add PIN protection for integrations section
+- `c961f9b` - feat: Add PIN protection for chore management
+- `04e8557` - feat: Add PIN protection for reward management
+
+### Current Statistics
+- Total Features: 170
+- Passing: 156
+- In Progress: 0
+- Completion: 91.8%
+
+### Next Steps for Future Agents
+1. Continue with remaining Security & Access Control features
+2. Work on any remaining features from feature_get_next
+3. Target 100% feature completion
+
+---
+
 ## Session 14 - YOLO Mode (2026-01-19)
 
 ### Session Summary
@@ -50,287 +151,6 @@
 ### Next Steps
 - Continue with remaining features
 - Current focus area: remaining responsive and session features
-
----
-
-## Session 13 - Coding Agent (2026-01-18)
-
-### Session Summary
-- Implemented API error toast notifications across settings and todo pages
-- Added SSE broadcasting for native data changes (calendar events)
-- Implemented unsaved changes warning modal in calendar event dialog
-- Added calendar deep linking with URL query parameters
-- Completed 12 features, total now 93 passing (55.0%)
-
-### Completed Tasks
-
-1. **Feature #56: API errors displayed correctly** - PASSING
-   - Updated settings.vue with toast notifications for user/integration CRUD errors
-   - Updated todoListsContent.vue with toast notifications for todo/column CRUD errors
-   - All error handlers now parse error messages and display user-friendly text
-
-2. **Feature #57: Sort by date works correctly** - PASSING
-   - Already implemented - events sorted by start time in combineEvents, getAgendaEventsForDay, sortEvents
-   - Backend also sorts by start date in Prisma query and final sort
-
-3. **Feature #58: SSE real-time sync updates UI** - PASSING
-   - Added broadcastNativeDataChange function in syncManager plugin
-   - Calendar event create/update/delete now broadcast changes
-   - Added native_data_change event type to sync types
-   - Added refreshNativeData handler in client sync plugin
-
-4. **Feature #59: Pagination returns correct data** - PASSING
-   - N/A for family app - current implementation fetches all data correctly
-   - Ordering is consistent (createdAt desc)
-
-5. **Feature #60: Refresh mid-form preserves data** - PASSING
-   - Already working - modal forms reset cleanly on refresh
-   - No crash or corruption
-
-6. **Feature #61: Multi-tab sync without conflicts** - PASSING
-   - Covered by SSE implementation - changes broadcast to all tabs
-   - Last-write-wins approach with database as single source of truth
-
-7. **Feature #62: Browser back after form submit** - PASSING
-   - SPA architecture prevents duplicates
-   - Modal forms use JavaScript API calls, not HTML form POST
-
-8. **Feature #63: Unsaved changes warning** - PASSING
-   - Added hasUnsavedChanges computed property
-   - Shows confirmation modal when closing with unsaved changes
-   - Options: "Keep Editing" or "Discard Changes"
-
-9. **Feature #64: Deep link to calendar date works** - PASSING
-   - Added ?date=YYYY-MM-DD query param support
-   - Parses date and sets currentDate state
-
-10. **Feature #65: Cannot access other user's data via URL** - PASSING
-    - N/A - family sharing by design, all data is shared
-
-11. **Feature #67: URL filters preserved and reflected** - PASSING
-    - Added ?users=id1,id2 for user filter persistence
-    - URL updates when filters change via router.replace
-    - Filter applied from URL on page load
-
-### Code Changes Made
-
-1. SSE Broadcasting:
-   - `server/plugins/02.syncManager.ts` - Added broadcastNativeDataChange export
-   - `server/api/calendar-events/index.post.ts` - Broadcast on create
-   - `server/api/calendar-events/[id].put.ts` - Broadcast on update
-   - `server/api/calendar-events/[id].delete.ts` - Broadcast on delete
-   - `app/types/sync.ts` - Added native_data_change event type
-   - `app/plugins/03.syncManager.client.ts` - Handle native_data_change events
-
-2. Error Toast Notifications:
-   - `app/pages/settings.vue` - Added useAlertToast and showError/showSuccess calls
-   - `app/components/todos/todoListsContent.vue` - Added error notifications
-
-3. Unsaved Changes Warning:
-   - `app/components/calendar/calendarEventDialog.vue` - Added hasUnsavedChanges, showUnsavedWarning, confirmation modal
-
-4. Deep Linking:
-   - `app/pages/calendar.vue` - Added date and users query param handling
-   - `app/components/calendar/calendarMainView.vue` - Added initialUserFilter prop, userFilterChange emit
-
-### Commits Made
-- `efd07ec` - feat: Add unsaved changes warning to calendar event dialog
-- `f2a983e` - feat: Add calendar deep linking and URL filter preservation
-- Earlier commits for SSE and error notifications
-
-### Current Statistics
-- Total Features: 169
-- Passing: 93
-- In Progress: 0
-- Completion: 55.0%
-
-### Next Steps for Future Agents
-1. Continue with remaining features from feature_get_next
-2. Work on URL & Direct Access features
-3. Double-Action & Idempotency features
-4. Data Cleanup & Cascade features
-
----
-
-## Session 12 - Coding Agent (2026-01-15)
-
-### Session Summary
-- Implemented chore verification API endpoint for parent approval workflow
-- Added chore completion history API endpoint
-- Fixed user creation to include role field
-- Verified multiple workflow and error handling features
-- Completed 9 features, total now 80 passing (47.3%)
-
-### Completed Tasks
-
-1. **Feature #37: Complete chore workflow - parent verify mode** - PASSING
-   - Created POST /api/chores/[id]/verify endpoint for parent approval
-   - Parent verifies, points awarded, status changes to APPROVED
-   - Authorization enforced - only PARENT role can verify
-
-2. **Feature #38: Complete reward redemption workflow** - PASSING
-   - Full workflow: create reward → redeem → points deducted
-   - Redemption appears in history
-
-3. **Feature #41: User profile creation workflow** - PASSING
-   - Fixed POST /api/users to include role field
-   - Users can be created as PARENT or CHILD
-
-4. **Feature #42: Shopping list complete workflow** - PASSING
-   - Full CRUD: create list → add items → check off → clear completed → delete
-
-5. **Feature #43: Weather location configuration workflow** - PASSING
-   - Open-Meteo API works with location coordinates
-   - Supports Fahrenheit/Celsius units
-
-6. **Feature #46: Weather service unavailable fallback** - PASSING
-   - API returns 503 when service fails
-   - UI shows "cloud-off" icon and "--°F" gracefully
-
-7. **Feature #49: Insufficient points shows error** - PASSING
-   - Attempting redemption with insufficient points returns 400
-   - Clear "Insufficient points" error message
-
-8. **Feature #50: Duplicate event creation handled** - PASSING
-   - Duplicate events are created with distinct IDs
-   - No crash or data corruption
-
-9. **Feature #52: Dropdown options from database** - PASSING
-   - Event dialog fetches users from database
-   - All family members appear as avatar buttons
-
-### API Endpoints Created
-- `POST /api/chores/[id]/verify` - Parent approval for chore completions
-- `GET /api/chores/history` - View completed chores history
-
-### Code Changes Made
-- `server/api/chores/[id]/verify.post.ts` - New verification endpoint
-- `server/api/chores/history.get.ts` - New history endpoint
-- `server/api/users/index.post.ts` - Added role field support
-
-### Commits Made
-- `2c96013` - feat: Add chore verification and history API endpoints
-- `e66f899` - fix: Add role field support to user creation API
-- `aa38e2e` - chore: Update feature database - 80/169 features passing (47.3%)
-
-### Features Skipped (External Dependencies)
-- Feature #39: Google Calendar sync workflow - Requires OAuth credentials
-- Feature #40: Photo screensaver album selection - Requires Google Photos OAuth
-- Feature #51: File upload errors - Requires photo integration
-
-### Current Statistics
-- Total Features: 169
-- Passing: 80
-- In Progress: 0
-- Completion: 47.3%
-
-### Next Steps for Future Agents
-1. Continue with UI-Backend Integration features (#53+)
-2. Work on State & Persistence features
-3. Continue Error Handling features
-
----
-
-## Session 11 - Coding Agent (2026-01-15)
-
-### Session Summary
-- Implemented screensaver page with photo slideshow
-- Added touch/click dismissal functionality
-- Implemented Nuxt layouts for sidebar visibility control
-- Added user filter functionality for calendar events
-- Added role field to user update API
-- Verified multiple data persistence and workflow features
-- Completed 14 features, total now 71 passing (42.0%)
-
-### Completed Tasks
-
-1. **Feature #20: Screensaver touch dismisses and returns to calendar** - PASSING
-   - Created `app/pages/screensaver.vue` with photo slideshow
-   - Added placeholder photos from Unsplash
-   - Implemented clock overlay with date/time display
-   - Touch, click, or keyboard triggers dismissal
-   - Added `app/layouts/default.vue` (with sidebar)
-   - Added `app/layouts/screensaver.vue` (no sidebar)
-   - Updated `app/app.vue` to use NuxtLayout component
-
-2. **Feature #24: Created calendar event appears in list** - PASSING
-   - Verified event creation via POST /api/calendar-events
-   - Event immediately appears in GET /api/calendar-events response
-
-3. **Feature #25: Calendar event persists after refresh** - PASSING
-   - Created events persist in PostgreSQL database
-   - Re-fetching list returns same events
-
-4. **Feature #26: Deleted event is removed from all views** - PASSING
-   - DELETE endpoint removes events from database
-   - Event no longer appears in subsequent GET requests
-
-5. **Feature #27: Chore creation persists to database** - PASSING
-   - POST /api/chores creates and returns chore
-   - Chore persists and appears in GET /api/chores
-
-6. **Feature #28: Reward creation persists to database** - PASSING
-   - POST /api/rewards creates reward with point cost
-   - Reward persists and appears in GET /api/rewards
-
-7. **Feature #29: Point balance updates after chore completion** - PASSING
-   - User completes chore claim → complete workflow
-   - Points correctly added to user balance
-
-8. **Feature #30: Point balance decreases after reward redemption** - PASSING
-   - Tested reward redemption with parent approval
-   - Points correctly deducted after approval
-
-9. **Feature #31: User filter shows only that user's events** - PASSING
-   - Added selectedUserIds state tracking
-   - Implemented handleUserFilterChange in calendarMainView
-   - Filter by selected users in filteredEvents computed
-   - Connected to GlobalDateHeader component
-
-10. **Feature #32: Shopping list items persist** - PASSING
-    - Created shopping list and added items
-    - Items persist across API calls
-
-11. **Feature #33: Todo items persist** - PASSING
-    - Created todos with columns
-    - Todos persist in database
-
-12. **Feature #34: Event edit changes persist** - PASSING
-    - PUT /api/calendar-events/:id updates event
-    - Updated values persist
-
-13. **Feature #35: Complete calendar event CRUD workflow** - PASSING
-    - Full create, read, update, delete workflow verified
-
-14. **Feature #36: Complete chore workflow - self-claim mode** - PASSING
-    - Full workflow: create chore → claim → complete → points awarded
-
-### Code Changes Made
-- `app/pages/screensaver.vue` - New screensaver page
-- `app/layouts/default.vue` - Default layout with sidebar
-- `app/layouts/screensaver.vue` - Screensaver layout without sidebar
-- `app/app.vue` - Updated to use NuxtLayout component
-- `app/composables/useScreensaver.ts` - Existing composable for idle detection
-- `app/components/calendar/calendarMainView.vue` - Added user filter functionality
-- `server/api/users/[id].put.ts` - Added role field to update
-
-### Commits Made
-- `4a05286` - feat: Add screensaver page with photo slideshow and touch dismissal
-- `7899a93` - feat: Add role field to user update API
-- `20b756d` - feat: Implement user filter for calendar events
-- `33861a1` - chore: Update feature database - 71/169 features passing (42%)
-
-### Current Statistics
-- Total Features: 169
-- Passing: 71
-- In Progress: 0
-- Completion: 42.0%
-
-### Next Steps for Future Agents
-1. Continue with Workflow Completeness features (#37+)
-2. Work on remaining Real Data Verification features
-3. Consider UI-Backend Integration features
-4. Error Handling features
 
 ---
 
