@@ -18,6 +18,10 @@ const { integrations, loading: integrationsLoading, servicesInitializing, create
 const { checkIntegrationCache, purgeIntegrationCache, triggerImmediateSync, purgeCalendarEvents } = useSyncManager();
 
 const colorMode = useColorMode();
+
+// Fetch database info
+const { data: databaseInfo } = await useFetch("/api/system/database");
+
 const isDark = computed({
   get() {
     return colorMode.value === "dark";
@@ -843,6 +847,26 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
               </p>
             </div>
           </div>
+          <div v-if="databaseInfo" class="mt-4 p-3 bg-muted/20 rounded-lg border border-muted">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center" :class="databaseInfo.provider === 'sqlite' ? 'bg-green-500/10' : 'bg-blue-500/10'">
+                <UIcon
+                  :name="databaseInfo.provider === 'sqlite' ? 'i-lucide-database' : 'i-lucide-server'"
+                  :class="databaseInfo.provider === 'sqlite' ? 'text-green-600' : 'text-blue-600'"
+                  class="w-4 h-4"
+                />
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-highlighted">
+                  Database: {{ databaseInfo.displayName }}
+                </p>
+                <p class="text-xs text-muted font-mono">
+                  {{ databaseInfo.location }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="mt-6 pt-4 border-t border-muted">
             <p class="text-xs text-muted text-center">
               Built with ❤️ by the community using Nuxt {{ $config.public.nuxtVersion.replace("^", "") }} & Nuxt UI {{ $config.public.nuxtUiVersion.replace("^", "") }}

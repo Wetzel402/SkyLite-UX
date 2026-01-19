@@ -12,44 +12,93 @@ permalink: /installation/docker/
 
 - **latest** (not currently implemented) - The default most recent release
 - **beta** - Get a preview of the most recent features and bug fixes
+- **develop** - Latest development build from main branch
 - **YYYY.MM.Micro** - If you need a specific version you can specify the version number.
 
-## Docker CLI
+## Database Options
+
+Skylite UX supports two database backends. **SQLite is the default** and recommended for most users.
+
+### SQLite (Default - Recommended)
+
+SQLite runs inside the same container - no external database needed. Perfect for:
+- Single-user or family deployments
+- Raspberry Pi or low-resource devices
+- Simple self-hosted setups
+
+Just mount a volume for persistent storage:
 
 ```bash
-# Create a network
-docker network create skylite-network
-
-# Create a volume for PostgreSQL data
-docker volume create postgres-data
-
-# Run PostgreSQL
 docker run -d \
-  --name skylite-ux-db \
-  --network skylite-network \
-  -e POSTGRES_USER=skylite \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=skylite \
-  -v postgres-data:/var/lib/postgresql/data \
-  postgres:16
+  -p 3000:3000 \
+  -v /path/to/data:/data \
+  -e NUXT_PUBLIC_TZ=America/Chicago \
+  --name skylite-ux \
+  y3knik/skylite-ux:beta
+```
+
+Your database will be stored at `/path/to/data/skylite.db`.
+
+### PostgreSQL (Optional)
+
+If you prefer PostgreSQL for production or multi-user deployments, set the `DATABASE_URL` environment variable:
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -e DATABASE_URL="postgresql://user:password@host:5432/skylite" \
+  -e NUXT_PUBLIC_TZ=America/Chicago \
+  --name skylite-ux \
+  y3knik/skylite-ux:beta
+```
+
+---
+
+## Quick Start with SQLite
+
+The simplest way to get started:
+
+```bash
+# Create a directory for your data
+mkdir -p ~/skylite-data
 
 # Run Skylite UX
 docker run -d \
-  --name skylite-ux \
-  --network skylite-network \
-  -e DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite \
-  -e NUXT_PUBLIC_TZ=America/Chicago \
-  -e NUXT_PUBLIC_LOG_LEVEL=warn \
   -p 3000:3000 \
-  wetzel402/skylite-ux:beta
+  -v ~/skylite-data:/data \
+  -e NUXT_PUBLIC_TZ=America/Chicago \
+  --name skylite-ux \
+  y3knik/skylite-ux:beta
 ```
 
+Then open http://localhost:3000 in your browser.
+
+---
+
 ## Docker Compose
+
+### SQLite Version (Recommended)
 
 ```yaml
 services:
   skylite-ux:
-    image: wetzel402/skylite-ux:beta
+    image: y3knik/skylite-ux:beta
+    restart: unless-stopped
+    environment:
+      - NUXT_PUBLIC_TZ=America/Chicago
+      - NUXT_PUBLIC_LOG_LEVEL=warn
+    volumes:
+      - ./data:/data
+    ports:
+      - 3000:3000
+```
+
+### PostgreSQL Version
+
+```yaml
+services:
+  skylite-ux:
+    image: y3knik/skylite-ux:beta
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite
@@ -89,18 +138,20 @@ volumes:
     driver: local
 ```
 
-## Configuration
+---
 
-Make sure to update the following environment variables in your `docker-compose.yml`:
+## Configuration
 
 ### Required
 
-- `DATABASE_URL` - PostgreSQL connection string
 - `NUXT_PUBLIC_TZ` - Your timezone (e.g., America/Chicago, Europe/London)
-- `NUXT_PUBLIC_LOG_LEVEL` - Logging level (debug, info, warn, error)
-- `POSTGRES_PASSWORD` - Choose a strong password for your database
 
-### Optional (Google Calendar Integration)
+### Optional
+
+- `NUXT_PUBLIC_LOG_LEVEL` - Logging level (debug, info, warn, error)
+- `DATABASE_URL` - PostgreSQL connection string (omit for SQLite)
+
+### Google Calendar Integration
 
 To enable Google Calendar integration, add these environment variables:
 
