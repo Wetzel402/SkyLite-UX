@@ -1,5 +1,6 @@
 // Prisma schema for SQLite database
 // This file is used when running with SQLite instead of PostgreSQL
+// Note: Enums are stored as TEXT in SQLite, Json fields are stored as TEXT and auto-parsed
 
 generator client {
   provider = "prisma-client-js"
@@ -45,7 +46,7 @@ model Todo {
   title       String
   description String?
   completed   Boolean  @default(false)
-  priority    String   @default("MEDIUM")
+  priority    Priority @default(MEDIUM)
   dueDate     DateTime?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -86,17 +87,18 @@ model ShoppingListItem {
 
 model Integration {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
   type      String
   service   String
   apiKey    String?
   baseUrl   String?
   icon      String?
   enabled   Boolean  @default(true)
-  settings  String?  // JSON stored as string for SQLite
+  settings  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([name])
   @@map("integrations")
 }
 
@@ -107,9 +109,9 @@ model CalendarEvent {
   start       DateTime
   end         DateTime
   allDay      Boolean  @default(false)
-  color       String?  // JSON stored as string for SQLite
+  color       Json?
   location    String?
-  ical_event  String?  // JSON stored as string for SQLite
+  ical_event  Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -131,15 +133,23 @@ model CalendarEventUser {
   @@map("calendar_event_users")
 }
 
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model MealPlan {
   id        String   @id @default(cuid())
-  weekStart DateTime @unique
+  weekStart DateTime
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   meals Meal[]
 
+  @@unique([weekStart])
   @@map("meal_plans")
 }
 
@@ -147,7 +157,7 @@ model Meal {
   id            String   @id @default(cuid())
   name          String
   description   String?
-  mealType      String   // BREAKFAST, LUNCH, DINNER stored as string
+  mealType      MealType
   dayOfWeek     Int
   daysInAdvance Int      @default(0)
   completed     Boolean  @default(false)
@@ -159,6 +169,12 @@ model Meal {
   mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
 
   @@map("meals")
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
 }
 
 model AppSettings {
