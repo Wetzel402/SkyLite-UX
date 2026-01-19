@@ -144,18 +144,47 @@ volumes:
 
 ### Required
 
-- `NUXT_PUBLIC_TZ` - Your timezone (e.g., America/Chicago, Europe/London)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NUXT_PUBLIC_TZ` | Your timezone | `America/Chicago`, `Europe/London` |
 
-### Optional
+### Database
 
-- `NUXT_PUBLIC_LOG_LEVEL` - Logging level (debug, info, warn, error)
-- `DATABASE_URL` - PostgreSQL connection string (omit for SQLite)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | Database connection string | `file:/data/skylite.db` (SQLite) |
+| `PRISMA_ACCEPT_DATA_LOSS` | Allow destructive schema changes on startup | `false` |
+
+**DATABASE_URL formats:**
+
+- **SQLite (default):** `file:/data/skylite.db` or `file:/custom/path/mydb.db`
+- **PostgreSQL:** `postgresql://user:password@host:5432/dbname`
+
+If `DATABASE_URL` is not set, SQLite is used with the default path `/data/skylite.db`.
+
+**PRISMA_ACCEPT_DATA_LOSS:**
+
+When set to `true`, allows Prisma to apply destructive schema changes automatically during startup. Only use this if you understand the risks of potential data loss during schema migrations.
+
+```bash
+-e PRISMA_ACCEPT_DATA_LOSS=true
+```
+
+### Application
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NUXT_PUBLIC_LOG_LEVEL` | Logging level | `info` |
+
+Valid log levels: `debug`, `info`, `warn`, `error`
 
 ### Google Calendar Integration
 
 To enable Google Calendar integration, add these environment variables:
 
-- `GOOGLE_CLIENT_ID` - Your Google OAuth Client ID
-- `GOOGLE_CLIENT_SECRET` - Your Google OAuth Client Secret
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
 
 See the [Google Calendar integration documentation](/integrations/calendar/#google-calendar) for setup instructions.
