@@ -14,12 +14,14 @@ const props = defineProps<{
   initialView?: CalendarView;
   class?: string;
   getIntegrationCapabilities?: (event: CalendarEvent) => { capabilities: string[]; serviceName?: string } | undefined;
+  initialUserFilter?: string[];
 }>();
 
-const _emit = defineEmits<{
+const emit = defineEmits<{
   (e: "eventAdd", event: CalendarEvent): void;
   (e: "eventUpdate", event: CalendarEvent): void;
   (e: "eventDelete", eventId: string): void;
+  (e: "userFilterChange", userIds: string[]): void;
 }>();
 
 const { getStableDate } = useStableDate();
@@ -28,10 +30,11 @@ const currentDate = useState<Date>("calendar-current-date", () => getStableDate(
 const view = ref<CalendarView>(props.initialView || "week");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
-const selectedUserIds = ref<string[]>([]);
+const selectedUserIds = ref<string[]>(props.initialUserFilter || []);
 
 function handleUserFilterChange(userIds: string[]) {
   selectedUserIds.value = userIds;
+  emit("userFilterChange", userIds);
 }
 
 onMounted(() => {
@@ -125,17 +128,17 @@ function handleEventCreate(date: Date) {
 
 function handleEventSave(event: CalendarEvent) {
   if (event.id) {
-    _emit("eventUpdate", event);
+    emit("eventUpdate", event);
   }
   else {
-    _emit("eventAdd", event);
+    emit("eventAdd", event);
   }
   isEventDialogOpen.value = false;
   selectedEvent.value = null;
 }
 
 function handleEventDelete(eventId: string) {
-  _emit("eventDelete", eventId);
+  emit("eventDelete", eventId);
   isEventDialogOpen.value = false;
   selectedEvent.value = null;
 }

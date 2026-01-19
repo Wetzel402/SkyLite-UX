@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { isValid, parseISO } from "date-fns";
+
 import type { CalendarEvent } from "~/types/calendar";
 import type { Integration } from "~/types/database";
 
@@ -8,8 +10,37 @@ import { useCalendarEvents } from "~/composables/useCalendarEvents";
 import { useIntegrations } from "~/composables/useIntegrations";
 import { integrationRegistry } from "~/types/integrations";
 
+const route = useRoute();
 const { allEvents, getEventUserColors } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
+
+const router = useRouter();
+
+// Handle deep link to specific date via ?date=YYYY-MM-DD query parameter
+const currentDate = useState<Date>("calendar-current-date");
+const dateParam = route.query.date as string | undefined;
+if (dateParam) {
+  const parsedDate = parseISO(dateParam);
+  if (isValid(parsedDate)) {
+    currentDate.value = parsedDate;
+  }
+}
+
+// Handle user filter from URL query parameter
+const usersParam = route.query.users as string | undefined;
+const initialUserFilter = usersParam ? usersParam.split(",") : [];
+
+// Update URL when filters change
+function handleUserFilterChange(userIds: string[]) {
+  const query = { ...route.query };
+  if (userIds.length > 0) {
+    query.users = userIds.join(",");
+  }
+  else {
+    delete query.users;
+  }
+  router.replace({ query });
+}
 
 async function handleEventAdd(event: CalendarEvent) {
   try {
@@ -177,9 +208,11 @@ function getEventIntegrationCapabilities(event: CalendarEvent): { capabilities: 
       initial-view="week"
       class="h-[calc(100vh-2rem)]"
       :get-integration-capabilities="getEventIntegrationCapabilities"
+      :initial-user-filter="initialUserFilter"
       @event-add="handleEventAdd"
       @event-update="handleEventUpdate"
       @event-delete="handleEventDelete"
+      @user-filter-change="handleUserFilterChange"
     />
   </div>
 </template>
