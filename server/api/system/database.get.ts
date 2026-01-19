@@ -1,5 +1,4 @@
 import { defineEventHandler } from "h3";
-// @ts-expect-error - useRuntimeConfig is a valid import
 import { useRuntimeConfig } from "#imports";
 
 export default defineEventHandler(() => {
