@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* Apply Ovo font as the primary serif font */
+html,
+body {
+  font-family: "Ovo", Georgia, "Times New Roman", serif;
+}
+
 :root {
   --ui-text-dimmed: var(--ui-color-neutral-400);
   --ui-text-muted: var(--ui-color-neutral-500);
