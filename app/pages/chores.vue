@@ -1,8 +1,46 @@
 <script setup lang="ts">
+import { consola } from "consola";
+
 import ChoreDialog from "~/components/chores/choreDialog.vue";
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
+import SettingsPinDialog from "~/components/settings/settingsPinDialog.vue";
 
 const showCreateDialog = ref(false);
+
+// PIN protection for chore management
+const isPinDialogOpen = ref(false);
+const isChoreManagementUnlocked = ref(false);
+const hasParentPin = ref(false);
+
+// Check if parent PIN is set
+async function checkParentPin() {
+  try {
+    const settings = await $fetch<{ hasParentPin: boolean }>("/api/household/settings");
+    hasParentPin.value = settings.hasParentPin;
+    // If no PIN is set, auto-unlock chore management
+    if (!settings.hasParentPin) {
+      isChoreManagementUnlocked.value = true;
+    }
+  }
+  catch (err) {
+    consola.warn("Chores: Failed to check household settings:", err);
+    isChoreManagementUnlocked.value = true;
+  }
+}
+
+function handleCreateChore() {
+  if (hasParentPin.value && !isChoreManagementUnlocked.value) {
+    isPinDialogOpen.value = true;
+  }
+  else {
+    showCreateDialog.value = true;
+  }
+}
+
+function handlePinVerified() {
+  isChoreManagementUnlocked.value = true;
+  showCreateDialog.value = true;
+}
 
 type ChoreUser = {
   id: string;
@@ -217,6 +255,7 @@ function formatDueDate(dateString: string | null): string {
 onMounted(() => {
   fetchChores();
   fetchUsers();
+  checkParentPin();
 });
 </script>
 
@@ -389,12 +428,12 @@ onMounted(() => {
 
     <!-- Floating action button for creating chores (parent only) -->
     <GlobalFloatingActionButton
-      icon="i-lucide-plus"
-      label="Add new chore"
+      :icon="hasParentPin && !isChoreManagementUnlocked ? 'i-lucide-lock' : 'i-lucide-plus'"
+      :label="hasParentPin && !isChoreManagementUnlocked ? 'Unlock to add chore' : 'Add new chore'"
       color="primary"
       size="lg"
       position="bottom-right"
-      @click="showCreateDialog = true"
+      @click="handleCreateChore"
     />
 
     <!-- Create Chore Dialog -->
@@ -402,6 +441,14 @@ onMounted(() => {
       :is-open="showCreateDialog"
       @close="showCreateDialog = false"
       @created="fetchChores"
+    />
+
+    <!-- PIN verification dialog -->
+    <SettingsPinDialog
+      :is-open="isPinDialogOpen"
+      title="Parent Access Required"
+      @close="isPinDialogOpen = false"
+      @verified="handlePinVerified"
     />
   </div>
 </template>
