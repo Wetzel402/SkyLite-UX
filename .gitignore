@@ -17,10 +17,15 @@ logs
 .DS_Store
 .fleet
 .idea
+tmpclaude-*
 
 # Local env files
 .env
 .env.*
 !.env.example
+
+# SQLite database
+data/
+*.db
 
 /app/generated/prisma

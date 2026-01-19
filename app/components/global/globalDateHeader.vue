@@ -6,6 +6,7 @@ import { addDays, endOfWeek, isSameMonth, startOfWeek } from "date-fns";
 import type { CalendarView } from "~/types/calendar";
 
 import { useStableDate } from "~/composables/useStableDate";
+import { useWeekDates } from "~/composables/useWeekDates";
 
 const props = defineProps<{
   showNavigation?: boolean;
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const { getStableDate } = useStableDate();
+const { getMondayOfWeek, getSundayOfWeek } = useWeekDates();
 
 const currentDate = computed(() => props.currentDate || getStableDate());
 const view = computed(() => props.view || "week");
@@ -67,6 +69,17 @@ const viewTitle = computed(() => {
       return "agenda-different-months";
     }
   }
+  else if (view.value === "display") {
+    const monday = getMondayOfWeek(currentDate.value);
+    const sunday = getSundayOfWeek(currentDate.value);
+
+    if (isSameMonth(monday, sunday)) {
+      return "display-same-month";
+    }
+    else {
+      return "display-different-months";
+    }
+  }
   return "month";
 });
 
@@ -94,6 +107,11 @@ const items: DropdownMenuItem[][] = [
       label: "Agenda",
       icon: "i-lucide-list",
       onSelect: () => emit("viewChange", "agenda"),
+    },
+    {
+      label: "Display",
+      icon: "i-lucide-tv",
+      onSelect: () => emit("viewChange", "display"),
     },
   ],
 ];
@@ -179,6 +197,23 @@ function handleToday() {
           /> -
           <NuxtTime
             :datetime="addDays(currentDate, 30 - 1)"
+            month="short"
+            year="numeric"
+          />
+        </span>
+        <NuxtTime
+          v-else-if="viewTitle === 'display-same-month'"
+          :datetime="getMondayOfWeek(currentDate)"
+          month="long"
+          year="numeric"
+        />
+        <span v-else-if="viewTitle === 'display-different-months'">
+          <NuxtTime
+            :datetime="getMondayOfWeek(currentDate)"
+            month="short"
+          /> -
+          <NuxtTime
+            :datetime="getSundayOfWeek(currentDate)"
             month="short"
             year="numeric"
           />

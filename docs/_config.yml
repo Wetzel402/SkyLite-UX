@@ -1,15 +1,15 @@
 # Site settings
 title: Skylite UX
 description: Life, Organized.
-url: https://wetzel402.github.io
-baseurl: /Skylite-UX
+url: https://y3knik.github.io
+baseurl: /SkyLite-UX
 
 # Site favicon
 favicon_ico: /assets/images/favicon.ico
 
 # GitHub Pages settings
 github:
-  repository_url: https://github.com/wetzel402/SkyLite-UX
+  repository_url: https://github.com/y3knik/SkyLite-UX
 
 # Theme configuration
 remote_theme: just-the-docs/just-the-docs
@@ -44,13 +44,17 @@ search_enabled: true
 # Color scheme
 color_scheme: dark
 
+# Mermaid diagrams
+mermaid:
+  version: "11"
+
 # Auxiliary links (optional)
 aux_links:
-  GitHub: //github.com/wetzel402/SkyLite-UX
+  GitHub: //github.com/y3knik/SkyLite-UX
 
 # GitHub edit links
 gh_edit_link: true
-gh_edit_repository: https://github.com/wetzel402/SkyLite-UX
+gh_edit_repository: https://github.com/y3knik/SkyLite-UX
 gh_edit_branch: main
 gh_edit_view_mode: tree
 

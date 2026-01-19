@@ -23,6 +23,16 @@ export function useCalendar() {
 
   const { getStableDate, parseStableDate } = useStableDate();
 
+  // Meal display toggle state - read from database settings
+  const { settings, updateSettings } = useAppSettings();
+
+  const showMealsOnCalendar = computed(() => settings.value?.showMealsOnCalendar ?? false);
+
+  const toggleMealsOnCalendar = async () => {
+    const newValue = !showMealsOnCalendar.value;
+    await updateSettings({ showMealsOnCalendar: newValue });
+  };
+
   function getSafeTimezone(): string {
     if (isTimezoneRegistered()) {
       const registeredTimezone = getBrowserTimezone();
@@ -839,7 +849,7 @@ export function useCalendar() {
     emit("eventClick", calendarEvent, e);
   }
 
-  function scrollToDate(date: Date, view: "month" | "week" | "day" | "agenda") {
+  function scrollToDate(date: Date, view: "month" | "week" | "day" | "agenda" | "display") {
     if (view === "month") {
       const dateElement = document.querySelector(`[data-date="${format(date, "yyyy-MM-dd")}"]`);
       if (dateElement) {
@@ -1009,5 +1019,8 @@ export function useCalendar() {
     getLocalWeekDays,
     getLocalMonthWeeks,
     getLocalAgendaDays,
+
+    showMealsOnCalendar,
+    toggleMealsOnCalendar,
   };
 }

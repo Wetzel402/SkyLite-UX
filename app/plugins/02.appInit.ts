@@ -2,7 +2,7 @@ import { consola } from "consola";
 import ical from "ical.js";
 
 import type { CalendarEvent } from "~/types/calendar";
-import type { Integration, ShoppingListWithItemsAndCount, TodoColumn, TodoWithUser, User } from "~/types/database";
+import type { AppSettings, Integration, MealPlanWithMeals, ShoppingListWithItemsAndCount, TodoColumn, TodoWithUser, User } from "~/types/database";
 import type { CalendarIntegrationService, IntegrationService, ShoppingIntegrationService, TodoIntegrationService } from "~/types/integrations";
 
 import { integrationConfigs } from "~/integrations/integrationConfig";
@@ -56,7 +56,7 @@ export default defineNuxtPlugin(async () => {
   consola.debug(`AppInit: Registered ${integrationConfigs.length} integrations`);
 
   try {
-    const [_usersResult, _currentUserResult, integrationsResult] = await Promise.all([
+    const [_usersResult, _currentUserResult, integrationsResult, _appSettingsResult] = await Promise.all([
       useAsyncData("users", () => $fetch<User[]>("/api/users"), {
         server: true,
         lazy: false,
@@ -71,11 +71,16 @@ export default defineNuxtPlugin(async () => {
         server: true,
         lazy: false,
       }),
+
+      useAsyncData("app-settings", () => $fetch<AppSettings>("/api/app-settings"), {
+        server: true,
+        lazy: false,
+      }),
     ]);
 
     consola.debug("AppInit: Core dependencies loaded successfully");
 
-    const [_localCalendarResult, _localTodosResult, _localShoppingResult, _todoColumnsResult] = await Promise.all([
+    const [_localCalendarResult, _localTodosResult, _localShoppingResult, _todoColumnsResult, _mealPlansResult] = await Promise.all([
       useAsyncData("calendar-events", () => $fetch<CalendarEvent[]>("/api/calendar-events"), {
         server: true,
         lazy: false,
@@ -92,6 +97,11 @@ export default defineNuxtPlugin(async () => {
       }),
 
       useAsyncData("todo-columns", () => $fetch<TodoColumn[]>("/api/todo-columns"), {
+        server: true,
+        lazy: false,
+      }),
+
+      useAsyncData("meal-plans", () => $fetch<MealPlanWithMeals[]>("/api/meal-plans"), {
         server: true,
         lazy: false,
       }),

@@ -6,7 +6,11 @@ export function sanitizeSettings(settings: unknown) {
 
   const sanitized = { ...settings } as Record<string, unknown>;
 
+  // Remove all sensitive OAuth credentials
   delete sanitized.clientSecret;
+  delete sanitized.accessToken;
+  delete sanitized.refreshToken;
+  delete sanitized.clientId;
 
   return sanitized;
 }

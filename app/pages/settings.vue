@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { consola } from "consola";
 
-import type { CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
+import type { AppSettings, CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
 import type { ConnectionTestResult } from "~/types/ui";
 
 import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
@@ -18,12 +18,55 @@ const { integrations, loading: integrationsLoading, servicesInitializing, create
 const { checkIntegrationCache, purgeIntegrationCache, triggerImmediateSync, purgeCalendarEvents } = useSyncManager();
 
 const colorMode = useColorMode();
+
+// Fetch database info
+const { data: databaseInfo } = await useFetch("/api/system/database");
+
 const isDark = computed({
   get() {
     return colorMode.value === "dark";
   },
   set() {
     colorMode.value = colorMode.value === "dark" ? "light" : "dark";
+  },
+});
+
+const { showError } = useAlertToast();
+
+const { settings, updateSettings, getSettings } = useAppSettings();
+const showMeals = computed({
+  get() {
+    return settings.value?.showMealsOnCalendar ?? false;
+  },
+  set(value: boolean) {
+    // Get mutable cached settings for optimistic update
+    const { data: cachedSettings } = useNuxtData<AppSettings>("app-settings");
+
+    // Capture previous state for rollback
+    const previousValue = cachedSettings.value?.showMealsOnCalendar ?? false;
+
+    // Optimistic update - apply immediately to cached data
+    if (cachedSettings.value) {
+      cachedSettings.value.showMealsOnCalendar = value;
+    }
+
+    // Update server and handle errors with rollback
+    (async () => {
+      try {
+        await updateSettings({ showMealsOnCalendar: value });
+      }
+      catch (error) {
+        // Rollback optimistic update on failure
+        if (cachedSettings.value) {
+          cachedSettings.value.showMealsOnCalendar = previousValue;
+        }
+        // Refresh from server to ensure consistency
+        await getSettings();
+
+        consola.error("Settings: Failed to update meal calendar setting:", error);
+        showError("Settings Update Failed", "Failed to update meal calendar visibility setting.");
+      }
+    })();
   },
 });
 
@@ -251,11 +294,10 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
     const { refreshIntegrations } = useIntegrations();
     await refreshIntegrations();
 
-    setTimeout(() => {
-      isIntegrationDialogOpen.value = false;
-      selectedIntegration.value = null;
-      connectionTestResult.value = null;
-    }, 1500);
+    // Close dialog immediately after successful operation
+    isIntegrationDialogOpen.value = false;
+    selectedIntegration.value = null;
+    connectionTestResult.value = null;
   }
   catch (error) {
     consola.error("Settings: Failed to save integration:", error);
@@ -736,6 +778,24 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
             <div class="flex items-center justify-between">
               <div>
                 <p class="font-medium text-highlighted">
+                  Show Meals on Calendar
+                </p>
+                <p class="text-sm text-muted">
+                  Display meals from meal planner on the calendar view
+                </p>
+              </div>
+              <USwitch
+                v-model="showMeals"
+                color="primary"
+                checked-icon="i-lucide-utensils"
+                unchecked-icon="i-lucide-x"
+                size="xl"
+                aria-label="Toggle meal display on calendar"
+              />
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
                   Notifications
                 </p>
                 <p class="text-sm text-muted">
@@ -787,6 +847,26 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
               </p>
             </div>
           </div>
+          <div v-if="databaseInfo" class="mt-4 p-3 bg-muted/20 rounded-lg border border-muted">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center" :class="databaseInfo.provider === 'sqlite' ? 'bg-green-500/10' : 'bg-blue-500/10'">
+                <UIcon
+                  :name="databaseInfo.provider === 'sqlite' ? 'i-lucide-database' : 'i-lucide-server'"
+                  :class="databaseInfo.provider === 'sqlite' ? 'text-green-600' : 'text-blue-600'"
+                  class="w-4 h-4"
+                />
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-highlighted">
+                  Database: {{ databaseInfo.displayName }}
+                </p>
+                <p class="text-xs text-muted font-mono">
+                  {{ databaseInfo.location }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="mt-6 pt-4 border-t border-muted">
             <p class="text-xs text-muted text-center">
               Built with ❤️ by the community using Nuxt {{ $config.public.nuxtVersion.replace("^", "") }} & Nuxt UI {{ $config.public.nuxtUiVersion.replace("^", "") }}

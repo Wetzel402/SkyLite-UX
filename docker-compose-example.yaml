@@ -1,6 +1,35 @@
+# =============================================================================
+# Skylite UX Docker Compose Examples
+# =============================================================================
+# Choose ONE of the following configurations:
+#
+# 1. SQLite (Recommended) - Simple, single container, no external database
+# 2. PostgreSQL - For production or multi-user deployments
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# OPTION 1: SQLite (Recommended for most users)
+# -----------------------------------------------------------------------------
+# Uncomment this section for SQLite (and comment out the PostgreSQL section)
+#
+# services:
+#   skylite-ux:
+#     image: y3knik/skylite-ux:latest
+#     restart: unless-stopped
+#     environment:
+#       - NUXT_PUBLIC_TZ=America/Chicago
+#       - NUXT_PUBLIC_LOG_LEVEL=warn
+#     volumes:
+#       - ./data:/data
+#     ports:
+#       - 3000:3000
+
+# -----------------------------------------------------------------------------
+# OPTION 2: PostgreSQL
+# -----------------------------------------------------------------------------
 services:
   skylite-ux:
-    image: wetzel402/skylite-ux:latest
+    image: y3knik/skylite-ux:latest
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite

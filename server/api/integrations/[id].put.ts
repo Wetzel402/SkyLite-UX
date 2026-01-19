@@ -1,10 +1,10 @@
-import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, readBody } from "h3";
 
+import prisma from "~/lib/prisma";
 import { integrationRegistry } from "~/types/integrations";
 
-const prisma = new PrismaClient();
+import { sanitizeIntegration } from "../../utils/sanitizeIntegration";
 
 export default defineEventHandler(async (event) => {
   try {
