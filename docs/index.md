@@ -10,14 +10,14 @@ permalink: /
 **Life, Organized.**
 
 <div class="badges">
-  <a href="https://github.com/wetzel402/SkyLite-UX/releases">
-    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/wetzel402/SkyLite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release">
+  <a href="https://github.com/y3knik/SkyLite-UX/releases">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/y3knik/SkyLite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release">
   </a>
-  <a href="https://github.com/wetzel402/SkyLite-UX">
-    <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/wetzel402/SkyLite-UX?style=for-the-badge">
+  <a href="https://github.com/y3knik/SkyLite-UX">
+    <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/y3knik/SkyLite-UX?style=for-the-badge">
   </a>
-  <a href="https://hub.docker.com/r/wetzel402/skylite-ux">
-    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/wetzel402/skylite-ux?style=for-the-badge">
+  <a href="https://hub.docker.com/r/y3knik/skylite-ux">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/y3knik/skylite-ux?style=for-the-badge">
   </a>
 </div>
 
@@ -25,7 +25,7 @@ permalink: /
   <a href="https://discord.gg/KJn3YfWxn7">
     <img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
   </a>
-  <a href="https://hub.docker.com/r/wetzel402/skylite-ux">
+  <a href="https://hub.docker.com/r/y3knik/skylite-ux">
     <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   </a>
   <a href="https://nuxt.com/docs/getting-started/introduction">
@@ -92,7 +92,7 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](https://github.com/wetzel402/SkyLite-UX/blob/main/LICENSE.md) for more information.
+Distributed under the MIT License. See [LICENSE](https://github.com/y3knik/SkyLite-UX/blob/main/LICENSE.md) for more information.
 
 ## Special Thanks
 
