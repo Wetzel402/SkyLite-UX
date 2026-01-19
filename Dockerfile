@@ -35,7 +35,6 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY prisma ./prisma/
 
 # Install system dependencies and production npm packages
 RUN apt-get update -y && apt-get install -y openssl && \
@@ -45,11 +44,19 @@ RUN apt-get update -y && apt-get install -y openssl && \
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Generate Prisma client in production
-RUN npx prisma generate
+# Copy Prisma schema files (both PostgreSQL and SQLite)
+COPY prisma ./prisma/
+
+# Copy entrypoint script
+COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Create data directory for SQLite and set up volume
+RUN mkdir -p /data
+VOLUME ["/data"]
 
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Initialize database and start application
-CMD npx prisma migrate deploy && node .output/server/index.mjs
+# Use entrypoint script for database setup and startup
+CMD ["/app/docker-entrypoint.sh"]

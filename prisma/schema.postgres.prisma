@@ -1,13 +1,12 @@
-// Prisma schema for SQLite database
-// This file is used when running with SQLite instead of PostgreSQL
-// Note: Enums are stored as TEXT in SQLite, Json fields are stored as TEXT and auto-parsed
+// Prisma schema for PostgreSQL database
+// This file is used when running with PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

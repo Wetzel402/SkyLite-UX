@@ -12,6 +12,10 @@ export default defineNuxtConfig({
     // Also supports GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET for backwards compatibility
     googleClientId: "",
     googleClientSecret: "",
+    // Database URL - can be overridden by NUXT_DATABASE_URL or DATABASE_URL env vars
+    // docker-entrypoint.sh exports DATABASE_URL, Nuxt auto-reads NUXT_DATABASE_URL
+    // eslint-disable-next-line node/no-process-env
+    databaseUrl: process.env.NUXT_DATABASE_URL || process.env.DATABASE_URL || "",
     public: {
       skyliteVersion: pkg.version,
       nuxtVersion: pkg.devDependencies.nuxt,

@@ -24,4 +24,8 @@ tmpclaude-*
 .env.*
 !.env.example
 
+# SQLite database
+data/
+*.db
+
 /app/generated/prisma
