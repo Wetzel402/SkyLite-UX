@@ -56,8 +56,8 @@ export default defineEventHandler(async (event) => {
       }
 
       // Check if there's already a pending completion (chore already claimed)
-      if (chore.completions.length > 0) {
-        const existingClaim = chore.completions[0];
+      const existingClaim = chore.completions[0];
+      if (existingClaim) {
         if (existingClaim.userId === body.userId) {
           throw createError({
             statusCode: 409,

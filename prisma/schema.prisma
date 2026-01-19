@@ -245,7 +245,7 @@ model ChoreCompletion {
   id               String                @id @default(cuid())
   choreId          String
   userId           String
-  completedAt      DateTime              @default(now())
+  completedAt      DateTime?
   verifiedAt       DateTime?
   verifiedByUserId String?
   status           ChoreCompletionStatus @default(PENDING_APPROVAL)

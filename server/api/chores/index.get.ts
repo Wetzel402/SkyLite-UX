@@ -54,6 +54,44 @@ export default defineEventHandler(async (event) => {
       ],
     });
 
+    // Helper to check if a recurring chore should reset based on completion date
+    const shouldResetRecurringChore = (
+      recurrence: string,
+      completedAt: Date | null,
+    ): boolean => {
+      if (!completedAt || recurrence === "NONE")
+        return false;
+
+      const now = new Date();
+      const completionDate = new Date(completedAt);
+
+      // Reset times to start of day for comparison
+      const nowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const completionStart = new Date(
+        completionDate.getFullYear(),
+        completionDate.getMonth(),
+        completionDate.getDate(),
+      );
+
+      switch (recurrence) {
+        case "DAILY":
+          // Reset if completed on a different day
+          return nowStart.getTime() > completionStart.getTime();
+        case "WEEKLY": {
+          // Reset if completed in a different week (week starts on Sunday)
+          const nowWeekStart = new Date(nowStart.getTime() - (now.getDay() * 24 * 60 * 60 * 1000));
+          const completionWeekStart = new Date(completionStart.getTime() - (completionDate.getDay() * 24 * 60 * 60 * 1000));
+          return nowWeekStart.getTime() > completionWeekStart.getTime();
+        }
+        case "MONTHLY":
+          // Reset if completed in a different month
+          return nowStart.getMonth() !== completionStart.getMonth()
+            || nowStart.getFullYear() !== completionStart.getFullYear();
+        default:
+          return false;
+      }
+    };
+
     // Transform chores to include status based on completions
     const choreWithStatus = chores.map((chore) => {
       const latestCompletion = chore.completions[0];
@@ -62,7 +100,12 @@ export default defineEventHandler(async (event) => {
       if (latestCompletion) {
         if (latestCompletion.status === "APPROVED") {
           // Check if it's a recurring chore that should reset
-          status = "completed";
+          if (shouldResetRecurringChore(chore.recurrence, latestCompletion.completedAt)) {
+            status = "available";
+          }
+          else {
+            status = "completed";
+          }
         }
         else if (latestCompletion.status === "PENDING_APPROVAL") {
           status = "pending-approval";
