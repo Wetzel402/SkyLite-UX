@@ -66,7 +66,7 @@ export function useCalendarEvents() {
 
   const deleteEvent = async (id: string) => {
     try {
-      await $fetch(`/api/calendar-events/${id}`, {
+      await ($fetch as (url: string, opts?: { method?: string }) => Promise<void>)(`/api/calendar-events/${id}`, {
         method: "DELETE",
       });
 

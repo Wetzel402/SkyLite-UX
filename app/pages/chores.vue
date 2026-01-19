@@ -96,7 +96,7 @@ async function fetchUsers() {
   try {
     const data = await $fetch<Array<{ id: string; name: string; avatar: string | null }>>("/api/users");
     users.value = data;
-    if (data.length > 0 && !selectedUserId.value) {
+    if (data.length > 0 && !selectedUserId.value && data[0]) {
       selectedUserId.value = data[0].id;
     }
   }
@@ -151,9 +151,10 @@ async function completeChore(choreId: string) {
 
     // Update the chore in the list
     const index = chores.value.findIndex(c => c.id === choreId);
-    if (index !== -1) {
+    const existingChore = chores.value[index];
+    if (index !== -1 && existingChore) {
       chores.value[index] = {
-        ...chores.value[index],
+        ...existingChore,
         status: result.status as Chore["status"],
       };
     }
@@ -197,7 +198,9 @@ function getRecurrenceLabel(recurrence: string): string {
   }
 }
 
-function getStatusBadgeColor(status: string): string {
+type BadgeColor = "primary" | "neutral" | "secondary" | "success" | "warning" | "error" | "info";
+
+function getStatusBadgeColor(status: string): BadgeColor {
   switch (status) {
     case "available": return "primary";
     case "in-progress": return "warning";

@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { GoogleCalendarInfo } from "~/server/integrations/google-calendar/types";
+type GoogleCalendarInfo = {
+  id: string;
+  summary: string;
+  description?: string;
+  primary?: boolean;
+  accessRole: string;
+  backgroundColor?: string;
+  foregroundColor?: string;
+};
 
 const props = defineProps<{
   accessToken: string;

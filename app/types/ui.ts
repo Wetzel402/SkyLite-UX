@@ -53,10 +53,11 @@ export type DialogField = {
 export type IntegrationSettingsField = {
   key: string;
   label: string;
-  type: "text" | "password" | "url" | "color" | "boolean";
+  type: "text" | "password" | "url" | "color" | "boolean" | "oauth" | "multiselect" | "select";
   placeholder?: string;
   required?: boolean;
   description?: string;
+  options?: string[];
 };
 
 export type ToastType = "error" | "warning" | "success" | "info";

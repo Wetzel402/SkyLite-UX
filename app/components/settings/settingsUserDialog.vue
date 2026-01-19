@@ -18,6 +18,7 @@ const name = ref("");
 const email = ref("");
 const color = ref("#3b82f6");
 const avatar = ref("");
+const role = ref<"PARENT" | "CHILD">("CHILD");
 const error = ref<string | null>(null);
 
 const chip = computed(() => ({ backgroundColor: color.value }));
@@ -41,6 +42,7 @@ watch(() => props.user, (newUser) => {
     email.value = newUser.email || "";
     color.value = newUser.color || "#06b6d4";
     avatar.value = newUser.avatar && !newUser.avatar.startsWith("https://ui-avatars.com/api/") ? newUser.avatar : "";
+    role.value = (newUser as User & { role?: "PARENT" | "CHILD" }).role || "CHILD";
     error.value = null;
   }
   else {
@@ -59,6 +61,7 @@ function resetForm() {
   email.value = "";
   color.value = "#06b6d4";
   avatar.value = "";
+  role.value = "CHILD";
   error.value = null;
 }
 
@@ -77,6 +80,7 @@ function handleSave() {
     email: email.value?.trim() || "",
     color: color.value,
     avatar: avatar.value || getDefaultAvatarUrl(),
+    role: role.value,
     todoOrder: 0,
   } as CreateUserInput);
 }

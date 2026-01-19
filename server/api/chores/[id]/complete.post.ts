@@ -54,8 +54,15 @@ export default defineEventHandler(async (event) => {
 
       const completion = chore.completions[0];
 
+      if (!completion) {
+        throw createError({
+          statusCode: 400,
+          message: "Completion record not found",
+        });
+      }
+
       // Check if already completed (prevents double-completion)
-      if (completion!.completedAt !== null) {
+      if (completion.completedAt !== null) {
         throw createError({
           statusCode: 400,
           message: "This chore has already been completed",

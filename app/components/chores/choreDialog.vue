@@ -179,9 +179,7 @@ watch(() => props.isOpen, (isOpen) => {
           <UFormField label="Assign To">
             <USelect
               v-model="assignedUserId"
-              :items="[{ id: null, name: 'Anyone (open)' }, ...users]"
-              option-attribute="name"
-              value-attribute="id"
+              :items="[{ value: null, label: 'Anyone (open)' }, ...users.map(u => ({ value: u.id, label: u.name }))]"
               placeholder="Anyone can claim"
             />
           </UFormField>

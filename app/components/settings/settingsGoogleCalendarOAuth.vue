@@ -11,7 +11,7 @@ async function initiateOAuth() {
 <template>
   <div class="space-y-4">
     <UAlert
-      color="blue"
+      color="info"
       variant="soft"
       title="Connect to Google Calendar"
       description="You'll be redirected to Google to authorize SkyLite to access your calendars."

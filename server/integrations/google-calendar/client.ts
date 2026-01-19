@@ -114,11 +114,11 @@ export class GoogleCalendarServerService {
       return (response.data.items || []).map((item): GoogleCalendarInfo => ({
         id: item.id || "",
         summary: item.summary || "Unnamed Calendar",
-        description: item.description,
+        description: item.description ?? undefined,
         primary: item.primary || false,
         accessRole: item.accessRole || "reader",
-        backgroundColor: item.backgroundColor,
-        foregroundColor: item.foregroundColor,
+        backgroundColor: item.backgroundColor ?? undefined,
+        foregroundColor: item.foregroundColor ?? undefined,
       }));
     }
     catch (error) {
@@ -183,26 +183,26 @@ export class GoogleCalendarServerService {
     return (response.data.items || []).map((item): GoogleEvent => ({
       id: item.id || "",
       summary: item.summary || "(No title)",
-      description: item.description,
-      location: item.location,
+      description: item.description ?? undefined,
+      location: item.location ?? undefined,
       start: {
-        dateTime: item.start?.dateTime,
-        date: item.start?.date,
-        timeZone: item.start?.timeZone,
+        dateTime: item.start?.dateTime ?? undefined,
+        date: item.start?.date ?? undefined,
+        timeZone: item.start?.timeZone ?? undefined,
       },
       end: {
-        dateTime: item.end?.dateTime,
-        date: item.end?.date,
-        timeZone: item.end?.timeZone,
+        dateTime: item.end?.dateTime ?? undefined,
+        date: item.end?.date ?? undefined,
+        timeZone: item.end?.timeZone ?? undefined,
       },
       attendees: item.attendees?.map(att => ({
         email: att.email || "",
-        displayName: att.displayName,
-        responseStatus: att.responseStatus,
+        displayName: att.displayName ?? undefined,
+        responseStatus: att.responseStatus ?? undefined,
       })),
-      recurrence: item.recurrence,
-      status: item.status,
-      etag: item.etag,
+      recurrence: item.recurrence ?? undefined,
+      status: item.status ?? undefined,
+      etag: item.etag ?? undefined,
       calendarId,
     }));
   }
@@ -229,8 +229,8 @@ export class GoogleCalendarServerService {
       start,
       end,
       allDay,
-      color: this.settings.useUserColors ? undefined : { background: this.settings.eventColor || "#06b6d4" },
-      users: this.settings.user || [],
+      color: this.settings.useUserColors ? undefined : (this.settings.eventColor || "#06b6d4"),
+      users: [], // Users will be populated by the integration layer based on settings
     };
   }
 
@@ -259,20 +259,20 @@ export class GoogleCalendarServerService {
       return {
         id: response.data.id,
         summary: response.data.summary || "",
-        description: response.data.description,
-        location: response.data.location,
+        description: response.data.description ?? undefined,
+        location: response.data.location ?? undefined,
         start: {
-          dateTime: response.data.start?.dateTime,
-          date: response.data.start?.date,
-          timeZone: response.data.start?.timeZone,
+          dateTime: response.data.start?.dateTime ?? undefined,
+          date: response.data.start?.date ?? undefined,
+          timeZone: response.data.start?.timeZone ?? undefined,
         },
         end: {
-          dateTime: response.data.end?.dateTime,
-          date: response.data.end?.date,
-          timeZone: response.data.end?.timeZone,
+          dateTime: response.data.end?.dateTime ?? undefined,
+          date: response.data.end?.date ?? undefined,
+          timeZone: response.data.end?.timeZone ?? undefined,
         },
-        status: response.data.status,
-        etag: response.data.etag,
+        status: response.data.status ?? undefined,
+        etag: response.data.etag ?? undefined,
         calendarId,
       };
     }
@@ -304,20 +304,20 @@ export class GoogleCalendarServerService {
       return {
         id: response.data.id || eventId,
         summary: response.data.summary || "",
-        description: response.data.description,
-        location: response.data.location,
+        description: response.data.description ?? undefined,
+        location: response.data.location ?? undefined,
         start: {
-          dateTime: response.data.start?.dateTime,
-          date: response.data.start?.date,
-          timeZone: response.data.start?.timeZone,
+          dateTime: response.data.start?.dateTime ?? undefined,
+          date: response.data.start?.date ?? undefined,
+          timeZone: response.data.start?.timeZone ?? undefined,
         },
         end: {
-          dateTime: response.data.end?.dateTime,
-          date: response.data.end?.date,
-          timeZone: response.data.end?.timeZone,
+          dateTime: response.data.end?.dateTime ?? undefined,
+          date: response.data.end?.date ?? undefined,
+          timeZone: response.data.end?.timeZone ?? undefined,
         },
-        status: response.data.status,
-        etag: response.data.etag,
+        status: response.data.status ?? undefined,
+        etag: response.data.etag ?? undefined,
         calendarId,
       };
     }
