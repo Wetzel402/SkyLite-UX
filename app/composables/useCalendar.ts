@@ -348,7 +348,13 @@ export function useCalendar() {
         const integrationEvents = getCachedIntegrationData("calendar", integration.id) as CalendarEvent[];
 
         if (integrationEvents && Array.isArray(integrationEvents)) {
-          events.push(...integrationEvents);
+          // Add integrationId to each event so the dialog knows these are from an integration
+          const eventsWithIntegrationId = integrationEvents.map(event => ({
+            ...event,
+            integrationId: integration.id,
+            integrationName: integration.name || "Unknown",
+          }));
+          events.push(...eventsWithIntegrationId);
         }
       }
       catch (error) {

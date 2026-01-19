@@ -1,5 +1,96 @@
 # SkyLite-UX Development Progress
 
+## Session 20 - YOLO Mode (2026-01-19)
+
+### Session Summary
+- Fixed critical bug: Google Calendar events showing empty edit dialog
+- Verified Google Calendar OAuth integration working correctly
+- Progress: 166/170 features passing (97.6%)
+
+### Bug Fixed
+1. **Event Dialog Empty for Google Calendar Events** (CRITICAL)
+   - **Problem**: Clicking on Google Calendar events opened an empty edit dialog
+   - **Root Cause**: Events from integrations were missing `integrationId` property
+   - **Effect**: Dialog tried to fetch event from `/api/calendar-events/{id}` and failed with 404
+   - **Fix**: Modified `useCalendar.ts` to add `integrationId` and `integrationName` to integration events
+   - **Location**: `app/composables/useCalendar.ts` lines 348-358
+
+### Features Verified as Passing
+- #130: Google Calendar import reflects in app - PASSED
+- #131: Sync maintains data integrity - PASSED
+- #154: Google Calendar OAuth flow works - PASSED
+- #54: Google Calendar list from API - PASSED
+
+### Features Skipped (Not Implemented)
+These features require backend services that are not yet implemented:
+- #155: Google Photos OAuth flow - No service factory exists
+- #39: Google Calendar sync workflow - Two-way sync not implemented (SkyLite → Google)
+- #40: Photo screensaver album selection - Google Photos backend missing
+- #51: File upload errors - Related to Photos feature
+
+### Regression Tests Verified
+- Calendar UI displays events from Google Calendar correctly
+- Event times and dates show properly
+- User assignments (Dad, Mom, Oliver, Zoey) display on events
+- New event form defaults work correctly (date=today, time=current hour)
+
+### Current Statistics
+- Total Features: 170
+- Passing: 166
+- In Progress: 0
+- Completion: 97.6%
+
+### Remaining 4 Features (All Blocked)
+All require unimplemented Google Photos backend or two-way calendar sync:
+1. #155: Google Photos OAuth flow
+2. #39: Google Calendar sync workflow (two-way)
+3. #40: Photo screensaver album selection
+4. #51: File upload errors
+
+---
+
+## Session 19 - YOLO Mode (2026-01-19)
+
+### Session Summary
+- Implemented Home Assistant weather integration
+- Fixed integration settings dialog to pass custom fields (entityId, etc.)
+- Progress: 162/170 features passing (95.3%)
+
+### Features Completed
+- #157: Home Assistant weather entity works - PASSING
+  - Created `homeAssistantWeather.ts` client service
+  - Created `server/api/integrations/home-assistant/weather/current.get.ts` API endpoint
+  - Registered `weather:home-assistant` factory in integrationConfig
+  - Fixed settingsIntegrationDialog to pass all custom settings fields
+  - Successfully tested with real Home Assistant instance
+
+### Technical Fixes Made
+1. **settingsIntegrationDialog.vue**:
+   - Fixed `handleSave()` to build settings object from all settingsData fields
+   - Previously only passed hardcoded fields (user, eventColor, useUserColors)
+   - Now includes all custom fields like `entityId` for Home Assistant
+   - Fixed integration loading to restore all saved settings
+
+### Files Created
+- `app/integrations/home-assistant/homeAssistantWeather.ts`
+- `server/api/integrations/home-assistant/weather/current.get.ts`
+
+### Commits Made
+- `2b4e0cd` - feat: Implement Home Assistant weather integration
+
+### Current Statistics
+- Total Features: 170
+- Passing: 162
+- In Progress: 0
+- Completion: 95.3%
+
+### Remaining Features (External Dependencies)
+All 8 remaining features require external services:
+- #130, #131, #154, #39, #54: Google Calendar - requires OAuth setup
+- #155, #40, #51: Google Photos - requires OAuth setup
+
+---
+
 ## Session 18 - YOLO Mode (2026-01-19)
 
 ### Session Summary
