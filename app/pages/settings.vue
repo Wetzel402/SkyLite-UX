@@ -30,6 +30,7 @@ const isDark = computed({
 const { showError } = useAlertToast();
 
 const { settings, updateSettings, getSettings } = useAppSettings();
+const { homeSettings, fetchHomeSettings, updateHomeSettings: updateHomeSettingsComposable } = useHomeSettings();
 const showMeals = computed({
   get() {
     return settings.value?.showMealsOnCalendar ?? false;
@@ -98,6 +99,7 @@ onMounted(async () => {
   }
 
   await refreshNuxtData("integrations");
+  await fetchHomeSettings();
 });
 
 watch(() => route.query, (query) => {
@@ -805,6 +807,178 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                 size="xl"
                 aria-label="Toggle notifications"
               />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-default rounded-lg shadow-sm border border-default p-6 mb-6">
+          <h2 class="text-lg font-semibold text-highlighted mb-4">
+            Home Page
+          </h2>
+          <div class="space-y-4">
+            <!-- Enable Photos -->
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Photo Slideshow
+                </p>
+                <p class="text-sm text-muted">
+                  Display photos from Google Photos
+                </p>
+              </div>
+              <USwitch
+                :model-value="homeSettings?.photosEnabled ?? true"
+                color="primary"
+                checked-icon="i-lucide-image"
+                unchecked-icon="i-lucide-x"
+                size="xl"
+                aria-label="Toggle photo slideshow"
+                @update:model-value="updateHomeSettingsComposable({ photosEnabled: $event })"
+              />
+            </div>
+
+            <!-- Transition Speed -->
+            <div v-if="homeSettings?.photosEnabled" class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-highlighted">Transition Speed</label>
+                <span class="text-sm text-muted">{{ (homeSettings?.photoTransitionSpeed ?? 10000) / 1000 }}s</span>
+              </div>
+              <input
+                type="range"
+                :value="homeSettings?.photoTransitionSpeed ?? 10000"
+                min="5000"
+                max="60000"
+                step="5000"
+                class="w-full"
+                @change="updateHomeSettingsComposable({ photoTransitionSpeed: Number(($event.target as HTMLInputElement).value) })"
+              >
+              <p class="text-xs text-muted">Time between photo transitions (5-60 seconds)</p>
+            </div>
+
+            <!-- Ken Burns Intensity -->
+            <div v-if="homeSettings?.photosEnabled" class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-highlighted">Ken Burns Effect</label>
+                <span class="text-sm text-muted">{{ homeSettings?.kenBurnsIntensity ?? 1.0 }}x</span>
+              </div>
+              <input
+                type="range"
+                :value="homeSettings?.kenBurnsIntensity ?? 1.0"
+                min="0"
+                max="2"
+                step="0.1"
+                class="w-full"
+                @change="updateHomeSettingsComposable({ kenBurnsIntensity: Number(($event.target as HTMLInputElement).value) })"
+              >
+              <p class="text-xs text-muted">Zoom and pan effect strength (0 = off, 2 = maximum)</p>
+            </div>
+
+            <!-- Weather Settings -->
+            <div class="pt-4 border-t border-muted">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="font-medium text-highlighted">
+                    Weather Widget
+                  </p>
+                  <p class="text-sm text-muted">
+                    Show current weather conditions
+                  </p>
+                </div>
+                <USwitch
+                  :model-value="homeSettings?.weatherEnabled ?? true"
+                  color="primary"
+                  checked-icon="i-lucide-cloud"
+                  unchecked-icon="i-lucide-x"
+                  size="xl"
+                  aria-label="Toggle weather widget"
+                  @update:model-value="updateHomeSettingsComposable({ weatherEnabled: $event })"
+                />
+              </div>
+
+              <div v-if="homeSettings?.weatherEnabled" class="space-y-3 pl-4">
+                <div>
+                  <label class="text-sm font-medium text-highlighted">Latitude</label>
+                  <input
+                    type="number"
+                    :value="homeSettings?.latitude ?? ''"
+                    step="0.0001"
+                    placeholder="41.8781"
+                    class="w-full mt-1 px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                    @blur="updateHomeSettingsComposable({ latitude: Number(($event.target as HTMLInputElement).value) })"
+                  >
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-highlighted">Longitude</label>
+                  <input
+                    type="number"
+                    :value="homeSettings?.longitude ?? ''"
+                    step="0.0001"
+                    placeholder="-87.6298"
+                    class="w-full mt-1 px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                    @blur="updateHomeSettingsComposable({ longitude: Number(($event.target as HTMLInputElement).value) })"
+                  >
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-highlighted">Temperature Unit</label>
+                  <select
+                    :value="homeSettings?.temperatureUnit ?? 'celsius'"
+                    class="w-full mt-1 px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                    @change="updateHomeSettingsComposable({ temperatureUnit: ($event.target as HTMLSelectElement).value })"
+                  >
+                    <option value="celsius">
+                      Celsius (°C)
+                    </option>
+                    <option value="fahrenheit">
+                      Fahrenheit (°F)
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Widget Visibility -->
+            <div class="pt-4 border-t border-muted">
+              <h3 class="text-sm font-medium text-highlighted mb-3">
+                Visible Widgets
+              </h3>
+              <div class="space-y-2 pl-4">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Clock</label>
+                  <USwitch
+                    :model-value="homeSettings?.clockEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ clockEnabled: $event })"
+                  />
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Events</label>
+                  <USwitch
+                    :model-value="homeSettings?.eventsEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ eventsEnabled: $event })"
+                  />
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Todos</label>
+                  <USwitch
+                    :model-value="homeSettings?.todosEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ todosEnabled: $event })"
+                  />
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Meals</label>
+                  <USwitch
+                    :model-value="homeSettings?.mealsEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ mealsEnabled: $event })"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
