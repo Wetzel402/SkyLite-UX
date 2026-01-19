@@ -12,6 +12,8 @@ export default defineNuxtConfig({
     // Also supports GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET for backwards compatibility
     googleClientId: "",
     googleClientSecret: "",
+    // Database URL - defaults to SQLite if not set
+    databaseUrl: "",
     public: {
       skyliteVersion: pkg.version,
       nuxtVersion: pkg.devDependencies.nuxt,

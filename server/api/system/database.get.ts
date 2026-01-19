@@ -1,7 +1,10 @@
 import { defineEventHandler } from "h3";
+// @ts-expect-error - useRuntimeConfig is a valid import
+import { useRuntimeConfig } from "#imports";
 
 export default defineEventHandler(() => {
-  const databaseUrl = process.env.DATABASE_URL || "";
+  const config = useRuntimeConfig();
+  const databaseUrl = config.databaseUrl || "";
 
   let provider: "sqlite" | "postgresql" | "unknown" = "unknown";
   let displayName = "Unknown";
