@@ -1,7 +1,31 @@
 <script setup lang="ts">
+import { consola } from "consola";
+
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
+import SettingsPinDialog from "~/components/settings/settingsPinDialog.vue";
 
 const { showSuccess, showError, showWarning } = useAlertToast();
+
+// PIN protection for reward management
+const isPinDialogOpen = ref(false);
+const isRewardManagementUnlocked = ref(false);
+const hasParentPin = ref(false);
+
+// Check if parent PIN is set
+async function checkParentPin() {
+  try {
+    const settings = await $fetch<{ hasParentPin: boolean }>("/api/household/settings");
+    hasParentPin.value = settings.hasParentPin;
+    // If no PIN is set, auto-unlock reward management
+    if (!settings.hasParentPin) {
+      isRewardManagementUnlocked.value = true;
+    }
+  }
+  catch (err) {
+    consola.warn("Rewards: Failed to check household settings:", err);
+    isRewardManagementUnlocked.value = true;
+  }
+}
 
 type Reward = {
   id: string;
@@ -62,6 +86,21 @@ const newReward = ref({
   icon: null as string | null,
 });
 const createError = ref("");
+
+// PIN protection handlers
+function handleCreateReward() {
+  if (hasParentPin.value && !isRewardManagementUnlocked.value) {
+    isPinDialogOpen.value = true;
+  }
+  else {
+    showCreateDialog.value = true;
+  }
+}
+
+function handlePinVerified() {
+  isRewardManagementUnlocked.value = true;
+  showCreateDialog.value = true;
+}
 
 // Fetch rewards
 async function fetchRewards() {
@@ -310,6 +349,7 @@ onMounted(async () => {
     fetchRewards(),
     fetchUsers(),
     fetchPendingRedemptions(),
+    checkParentPin(),
   ]);
   await fetchUserPoints();
   loading.value = false;
@@ -426,10 +466,10 @@ onMounted(async () => {
           <UButton
             v-if="isParent"
             class="mt-4"
-            @click="showCreateDialog = true"
+            @click="handleCreateReward"
           >
-            <UIcon name="i-lucide-plus" class="w-4 h-4 mr-1" />
-            Create First Reward
+            <UIcon :name="hasParentPin && !isRewardManagementUnlocked ? 'i-lucide-lock' : 'i-lucide-plus'" class="w-4 h-4 mr-1" />
+            {{ hasParentPin && !isRewardManagementUnlocked ? 'Unlock to Create Reward' : 'Create First Reward' }}
           </UButton>
         </div>
 
@@ -493,12 +533,12 @@ onMounted(async () => {
     <!-- Floating action button for creating rewards (parent only) -->
     <GlobalFloatingActionButton
       v-if="isParent"
-      icon="i-lucide-plus"
-      label="Add new reward"
+      :icon="hasParentPin && !isRewardManagementUnlocked ? 'i-lucide-lock' : 'i-lucide-plus'"
+      :label="hasParentPin && !isRewardManagementUnlocked ? 'Unlock to add reward' : 'Add new reward'"
       color="primary"
       size="lg"
       position="bottom-right"
-      @click="showCreateDialog = true"
+      @click="handleCreateReward"
     />
 
     <!-- Create Reward Dialog -->
@@ -644,5 +684,13 @@ onMounted(async () => {
         </UCard>
       </template>
     </UModal>
+
+    <!-- PIN verification dialog -->
+    <SettingsPinDialog
+      :is-open="isPinDialogOpen"
+      title="Parent Access Required"
+      @close="isPinDialogOpen = false"
+      @verified="handlePinVerified"
+    />
   </div>
 </template>
