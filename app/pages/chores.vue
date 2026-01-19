@@ -194,6 +194,26 @@ function canComplete(chore: Chore): boolean {
   );
 }
 
+// Check if chore is overdue
+function isOverdue(chore: Chore): boolean {
+  if (!chore.dueDate)
+    return false;
+  if (chore.status === "completed")
+    return false;
+  const dueDate = new Date(chore.dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return dueDate < today;
+}
+
+// Format due date for display
+function formatDueDate(dateString: string | null): string {
+  if (!dateString)
+    return "";
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+}
+
 onMounted(() => {
   fetchChores();
   fetchUsers();
@@ -275,7 +295,8 @@ onMounted(() => {
           <div
             v-for="chore in filteredChores"
             :key="chore.id"
-            class="bg-default rounded-lg border border-default p-4 hover:shadow-md transition-shadow"
+            class="bg-default rounded-lg border p-4 hover:shadow-md transition-shadow"
+            :class="isOverdue(chore) ? 'border-error/50 bg-error/5' : 'border-default'"
           >
             <div class="flex items-start justify-between mb-3">
               <div class="flex items-center gap-3">
@@ -304,7 +325,7 @@ onMounted(() => {
             </p>
 
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <UBadge
                   color="warning"
                   variant="soft"
@@ -312,6 +333,24 @@ onMounted(() => {
                 >
                   <UIcon name="i-lucide-star" class="w-3 h-3 mr-1" />
                   {{ chore.pointValue }} pts
+                </UBadge>
+                <UBadge
+                  v-if="isOverdue(chore)"
+                  color="error"
+                  variant="soft"
+                  size="sm"
+                >
+                  <UIcon name="i-lucide-alert-circle" class="w-3 h-3 mr-1" />
+                  Overdue
+                </UBadge>
+                <UBadge
+                  v-else-if="chore.dueDate"
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                >
+                  <UIcon name="i-lucide-calendar" class="w-3 h-3 mr-1" />
+                  Due {{ formatDueDate(chore.dueDate) }}
                 </UBadge>
                 <div v-if="chore.claimedBy || chore.assignedUser" class="flex items-center gap-1">
                   <img
