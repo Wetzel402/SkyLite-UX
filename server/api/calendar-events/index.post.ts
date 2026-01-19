@@ -1,4 +1,5 @@
 import prisma from "~/lib/prisma";
+import { broadcastNativeDataChange } from "../../plugins/02.syncManager";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -39,6 +40,9 @@ export default defineEventHandler(async (event) => {
         },
       },
     });
+
+    // Broadcast the change to all connected clients
+    broadcastNativeDataChange("calendar-events", "create", calendarEvent.id);
 
     return {
       id: calendarEvent.id,

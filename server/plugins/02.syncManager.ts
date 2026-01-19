@@ -238,6 +238,22 @@ export function unregisterClient(event: H3Event) {
   }
 }
 
+export function broadcastNativeDataChange(
+  dataType: "calendar-events" | "todos" | "shopping-lists" | "users" | "integrations" | "todo-columns",
+  action: "create" | "update" | "delete",
+  entityId: string,
+) {
+  const event: ServerSyncEvent = {
+    type: "native_data_change",
+    dataType,
+    action,
+    entityId,
+    timestamp: new Date(),
+    success: true,
+  };
+  broadcastToClients(event);
+}
+
 export const syncManager = {
   setupIntegrationSync,
   clearIntegrationSync,
@@ -246,4 +262,5 @@ export const syncManager = {
   unregisterClient,
   getConnectedClientsCount: () => connectedClients.size,
   getActiveSyncIntervals: () => Array.from(syncIntervals.keys()),
+  broadcastNativeDataChange,
 };

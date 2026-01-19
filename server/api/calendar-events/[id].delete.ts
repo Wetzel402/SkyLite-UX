@@ -1,4 +1,5 @@
 import prisma from "~/lib/prisma";
+import { broadcastNativeDataChange } from "../../plugins/02.syncManager";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,6 +33,9 @@ export default defineEventHandler(async (event) => {
     await prisma.calendarEvent.delete({
       where: { id: actualId },
     });
+
+    // Broadcast the change to all connected clients
+    broadcastNativeDataChange("calendar-events", "delete", actualId);
 
     return {
       success: true,

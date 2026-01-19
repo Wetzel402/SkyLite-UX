@@ -123,6 +123,14 @@ export default defineNuxtPlugin(() => {
             });
           }
           break;
+
+        case "native_data_change":
+          if (event.dataType) {
+            consola.debug(`Sync Manager: Native data changed: ${event.dataType} ${event.action} ${event.entityId}`);
+            // Refresh the corresponding data to update UI in other tabs
+            refreshNativeData(event.dataType);
+          }
+          break;
       }
     }
     catch (error) {
@@ -161,6 +169,48 @@ export default defineNuxtPlugin(() => {
           [`todos-${integrationId}`]: data,
         };
         break;
+    }
+  }
+
+  async function refreshNativeData(dataType: string) {
+    try {
+      switch (dataType) {
+        case "calendar-events":
+          await refreshNuxtData("calendar-events");
+          consola.debug("Sync Manager: Refreshed calendar events data");
+          break;
+
+        case "todos":
+          await refreshNuxtData("todos");
+          consola.debug("Sync Manager: Refreshed todos data");
+          break;
+
+        case "todo-columns":
+          await refreshNuxtData("todo-columns");
+          consola.debug("Sync Manager: Refreshed todo columns data");
+          break;
+
+        case "shopping-lists":
+          await refreshNuxtData("shopping-lists");
+          consola.debug("Sync Manager: Refreshed shopping lists data");
+          break;
+
+        case "users":
+          await refreshNuxtData("users");
+          consola.debug("Sync Manager: Refreshed users data");
+          break;
+
+        case "integrations":
+          await refreshNuxtData("integrations");
+          consola.debug("Sync Manager: Refreshed integrations data");
+          break;
+
+        default:
+          consola.warn(`Sync Manager: Unknown data type for refresh: ${dataType}`);
+      }
+    }
+    catch (error) {
+      consola.error(`Sync Manager: Failed to refresh ${dataType} data:`, error);
     }
   }
 

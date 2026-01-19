@@ -4,7 +4,7 @@ import type { ShoppingListWithItemsAndCount, TodoWithUser } from "~/types/databa
 export type SyncData = CalendarEvent[] | ShoppingListWithItemsAndCount[] | TodoWithUser[];
 
 export type SyncEvent = {
-  type: "integration_sync" | "connection_established" | "sync_status" | "heartbeat";
+  type: "integration_sync" | "connection_established" | "sync_status" | "heartbeat" | "native_data_change";
   integrationId?: string;
   integrationType?: string;
   service?: string;
@@ -15,6 +15,9 @@ export type SyncEvent = {
   message?: string;
   activeIntegrations?: string[];
   connectedClients?: number;
+  dataType?: "calendar-events" | "todos" | "shopping-lists" | "users" | "integrations" | "todo-columns";
+  action?: "create" | "update" | "delete";
+  entityId?: string;
 };
 
 export type IntegrationSyncData = {
@@ -67,12 +70,15 @@ export type ConnectedClient = {
 };
 
 export type ServerSyncEvent = {
-  type: "integration_sync";
-  integrationId: string;
-  integrationType: string;
-  service: string;
-  data: SyncData;
+  type: "integration_sync" | "native_data_change";
+  integrationId?: string;
+  integrationType?: string;
+  service?: string;
+  data?: SyncData;
   timestamp: Date;
   success: boolean;
   error?: string;
+  dataType?: "calendar-events" | "todos" | "shopping-lists" | "users" | "integrations" | "todo-columns";
+  action?: "create" | "update" | "delete";
+  entityId?: string;
 };
