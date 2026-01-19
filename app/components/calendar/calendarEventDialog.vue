@@ -46,6 +46,19 @@ const location = ref("");
 const selectedUsers = ref<string[]>([]);
 const error = ref<string | null>(null);
 
+// Track if form has unsaved changes
+const showUnsavedWarning = ref(false);
+
+// Store initial values to compare for dirty state
+const initialValues = ref({
+  title: "",
+  description: "",
+  location: "",
+  allDay: false,
+  selectedUsers: [] as string[],
+  isRecurring: false,
+});
+
 const isRecurring = ref(false);
 const recurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("weekly");
 const recurrenceInterval = ref(1);
@@ -165,9 +178,57 @@ const isReadOnly = computed(() => {
   return Boolean(props.event && !canEdit.value);
 });
 
+// Check if form has unsaved changes
+const hasUnsavedChanges = computed(() => {
+  return (
+    title.value !== initialValues.value.title
+    || description.value !== initialValues.value.description
+    || location.value !== initialValues.value.location
+    || allDay.value !== initialValues.value.allDay
+    || isRecurring.value !== initialValues.value.isRecurring
+    || JSON.stringify([...selectedUsers.value].sort()) !== JSON.stringify([...initialValues.value.selectedUsers].sort())
+  );
+});
+
+// Handle close with warning
+function handleClose() {
+  if (hasUnsavedChanges.value && !isReadOnly.value) {
+    showUnsavedWarning.value = true;
+  }
+  else {
+    emit("close");
+  }
+}
+
+function confirmClose() {
+  showUnsavedWarning.value = false;
+  emit("close");
+}
+
+function cancelClose() {
+  showUnsavedWarning.value = false;
+}
+
+// Store initial values when form opens or event changes
+function storeInitialValues() {
+  initialValues.value = {
+    title: title.value,
+    description: description.value,
+    location: location.value,
+    allDay: allDay.value,
+    selectedUsers: [...selectedUsers.value],
+    isRecurring: isRecurring.value,
+  };
+}
+
 watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
     await fetchUsers();
+    // Store initial values after a short delay to let the form populate
+    setTimeout(() => storeInitialValues(), 100);
+  }
+  else {
+    showUnsavedWarning.value = false;
   }
 });
 
@@ -991,10 +1052,45 @@ function handleDelete() {
 </script>
 
 <template>
+  <!-- Unsaved Changes Warning Modal -->
+  <div
+    v-if="showUnsavedWarning"
+    class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+    @click="cancelClose"
+  >
+    <div
+      class="w-full max-w-sm mx-4 bg-default rounded-lg border border-default shadow-lg p-4"
+      @click.stop
+    >
+      <h3 class="text-base font-semibold mb-2">
+        Unsaved Changes
+      </h3>
+      <p class="text-sm text-muted mb-4">
+        You have unsaved changes. Are you sure you want to close without saving?
+      </p>
+      <div class="flex gap-2 justify-end">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="cancelClose"
+        >
+          Keep Editing
+        </UButton>
+        <UButton
+          color="error"
+          variant="subtle"
+          @click="confirmClose"
+        >
+          Discard Changes
+        </UButton>
+      </div>
+    </div>
+  </div>
+
   <div
     v-if="isOpen"
     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
-    @click="emit('close')"
+    @click="handleClose"
   >
     <div
       class="w-full max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
@@ -1010,7 +1106,7 @@ function handleDelete() {
           icon="i-lucide-x"
           class="-my-1"
           aria-label="Close dialog"
-          @click="emit('close')"
+          @click="handleClose"
         />
       </div>
       <div class="p-4 space-y-6">
@@ -1427,7 +1523,7 @@ function handleDelete() {
           <UButton
             color="neutral"
             variant="ghost"
-            @click="emit('close')"
+            @click="handleClose"
           >
             Cancel
           </UButton>

@@ -1,4 +1,5 @@
 import prisma from "~/lib/prisma";
+
 import { broadcastNativeDataChange } from "../../plugins/02.syncManager";
 
 export default defineEventHandler(async (event) => {
