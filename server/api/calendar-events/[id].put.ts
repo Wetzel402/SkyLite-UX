@@ -68,7 +68,14 @@ export default defineEventHandler(async (event) => {
       users: calendarEvent.users.map(ce => ce.user),
     };
   }
-  catch (error) {
+  catch (error: unknown) {
+    // Handle record not found (deleted while viewing)
+    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
+      throw createError({
+        statusCode: 404,
+        message: "Event not found. It may have been deleted.",
+      });
+    }
     throw createError({
       statusCode: 500,
       message: `Failed to update calendar event: ${error}`,
