@@ -20,8 +20,14 @@ if [[ -z "$DATABASE_URL" ]] || [[ "$DATABASE_URL" == file:* ]]; then
   echo "Copying SQLite schema..."
   cp /app/prisma/schema.sqlite.prisma /app/prisma/schema.prisma
 
-  # Ensure data directory exists
-  mkdir -p /data
+  # Parse file path from DATABASE_URL (strip "file:" prefix and query params)
+  DB_FILE_PATH="${DATABASE_URL#file:}"
+  DB_FILE_PATH="${DB_FILE_PATH%%\?*}"
+  DB_DIR="$(dirname "$DB_FILE_PATH")"
+
+  # Ensure the database directory exists
+  echo "Ensuring database directory exists: $DB_DIR"
+  mkdir -p "$DB_DIR"
 
   # Generate Prisma client for SQLite
   echo "Generating Prisma client..."
