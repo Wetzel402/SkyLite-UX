@@ -49,6 +49,10 @@ const error = ref<string | null>(null);
 // Track if form has unsaved changes
 const showUnsavedWarning = ref(false);
 
+// Prevent double-submission
+const isSubmitting = ref(false);
+const isDeleting = ref(false);
+
 // Store initial values to compare for dirty state
 const initialValues = ref({
   title: "",
@@ -576,6 +580,8 @@ function resetForm() {
   location.value = "";
   selectedUsers.value = [];
   error.value = null;
+  isSubmitting.value = false;
+  isDeleting.value = false;
 
   isRecurring.value = false;
   recurrenceType.value = "weekly";
@@ -880,6 +886,11 @@ function generateICalEvent(start: Date, end: Date): ICalEvent {
 }
 
 function handleSave() {
+  // Prevent double-submission
+  if (isSubmitting.value) {
+    return;
+  }
+
   if (!canAdd.value && !props.event) {
     error.value = "This integration does not support creating new events";
     return;
@@ -899,6 +910,8 @@ function handleSave() {
     error.value = "Invalid date selection";
     return;
   }
+
+  isSubmitting.value = true;
 
   let start: Date;
   let end: Date;
@@ -1031,22 +1044,37 @@ function handleSave() {
     };
 
     emit("save", eventData);
+    // Reset submitting state after a short delay to prevent rapid re-clicks
+    setTimeout(() => {
+      isSubmitting.value = false;
+    }, 500);
   }
   catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     consola.error("Calendar Event Dialog: Error converting dates in handleSave:", errorMessage);
     error.value = "Failed to process event dates. Please try again.";
+    isSubmitting.value = false;
   }
 }
 
 function handleDelete() {
+  // Prevent double-delete
+  if (isDeleting.value) {
+    return;
+  }
+
   if (!canDelete.value) {
     error.value = "This integration does not support deleting events";
     return;
   }
 
   if (props.event?.id) {
+    isDeleting.value = true;
     emit("delete", props.event.id);
+    // Reset after a short delay
+    setTimeout(() => {
+      isDeleting.value = false;
+    }, 500);
   }
 }
 </script>
@@ -1515,6 +1543,8 @@ function handleDelete() {
           color="error"
           variant="ghost"
           icon="i-lucide-trash"
+          :loading="isDeleting"
+          :disabled="isDeleting"
           @click="handleDelete"
         >
           Delete
@@ -1530,6 +1560,8 @@ function handleDelete() {
           <UButton
             v-if="!isReadOnly"
             color="primary"
+            :loading="isSubmitting"
+            :disabled="isSubmitting"
             @click="handleSave"
           >
             Save

@@ -59,6 +59,10 @@ export default defineEventHandler(async (event) => {
     };
   }
   catch (error) {
+    // Re-throw H3 errors (like 404) as-is
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
     throw createError({
       statusCode: 500,
       message: `Failed to fetch calendar event: ${error}`,

@@ -54,6 +54,14 @@ export default defineEventHandler(async (event) => {
 
       const completion = chore.completions[0];
 
+      // Check if already completed (prevents double-completion)
+      if (completion!.completedAt !== null) {
+        throw createError({
+          statusCode: 400,
+          message: "This chore has already been completed",
+        });
+      }
+
       // Get household settings to check completion mode
       const householdSettings = await tx.householdSettings.findFirst();
       const requiresVerification = householdSettings?.choreCompletionMode === "PARENT_VERIFY";
