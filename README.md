@@ -26,11 +26,12 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 
 ## Features
 
-- Family Calendar
-- Todo Lists
-- Shopping Lists
-- Meal Planning (Not yet implemented)
-- User Management
+- **Home Screen** - Beautiful ambient display with Google Photos slideshow (Ken Burns effect), weather, clock, and daily overview widgets
+- **Family Calendar** - Unified calendar with Google Calendar integration
+- **Todo Lists** - Organize tasks with due dates and priorities
+- **Shopping Lists** - Collaborative shopping lists with integration support
+- **Meal Planning** - Plan your meals for the week (Not yet implemented)
+- **User Management** - Multi-user support with individual profiles
 
 ## Installation
 

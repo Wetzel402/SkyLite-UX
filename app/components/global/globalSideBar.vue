@@ -8,6 +8,14 @@ function isActivePath(path: string) {
 <template>
   <div class="sticky top-0 left-0 h-[calc(100vh-80px)] w-[50px] bg-default flex flex-col items-center justify-evenly py-4 z-100">
     <UButton
+      :class="isActivePath('/home') ? 'text-primary' : 'text-default'"
+      to="/home"
+      variant="ghost"
+      icon="i-lucide-home"
+      size="xl"
+      aria-label="Home"
+    />
+    <UButton
       :class="isActivePath('/calendar') ? 'text-primary' : 'text-default'"
       to="/calendar"
       variant="ghost"

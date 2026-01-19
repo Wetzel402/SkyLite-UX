@@ -217,5 +217,7 @@ export type MealWithDate = Meal & {
 
 export type AppSettings = Prisma.AppSettingsGetPayload<Record<string, never>>;
 
+export type HomeSettings = Prisma.HomeSettingsGetPayload<Record<string, never>>;
+
 export type { Priority };
 export type { MealType } from "@prisma/client";
