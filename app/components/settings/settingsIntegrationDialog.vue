@@ -188,14 +188,15 @@ watch(() => props.integration, (newIntegration) => {
       error.value = null;
 
       initializeSettingsData();
-      if (newIntegration.settings && newIntegration.settings.user) {
-        settingsData.value.user = newIntegration.settings.user as string[];
-      }
-      if (newIntegration.settings && newIntegration.settings.eventColor) {
-        settingsData.value.eventColor = newIntegration.settings.eventColor as string;
-      }
-      if (newIntegration.settings && typeof newIntegration.settings.useUserColors === "boolean") {
-        settingsData.value.useUserColors = newIntegration.settings.useUserColors as boolean;
+
+      // Restore all saved settings from the integration
+      if (newIntegration.settings) {
+        const savedSettings = newIntegration.settings as Record<string, unknown>;
+        for (const [key, value] of Object.entries(savedSettings)) {
+          if (value !== undefined && value !== null) {
+            settingsData.value[key] = value as string | string[] | boolean;
+          }
+        }
       }
     });
   }
@@ -287,6 +288,15 @@ async function handleSave() {
   try {
     const integrationName = name.value.trim() || generateUniqueName(service.value, props.existingIntegrations);
 
+    // Build settings object from all settingsData fields
+    // Filter out apiKey and baseUrl as they're handled separately
+    const customSettings: Record<string, string | string[] | boolean> = {};
+    for (const [key, value] of Object.entries(settingsData.value)) {
+      if (key !== "apiKey" && key !== "baseUrl" && value !== undefined && value !== "") {
+        customSettings[key] = value;
+      }
+    }
+
     const integrationData = {
       name: integrationName,
       type: type.value,
@@ -296,12 +306,12 @@ async function handleSave() {
       icon: null,
       enabled: enabled.value,
       settings: {
-        user: settingsData.value.user || [],
-        eventColor: settingsData.value.eventColor || "#06b6d4",
-        useUserColors: Boolean(settingsData.value.useUserColors),
-        ...(service.value === "google-calendar" && {
-          selectedCalendars: settingsData.value.selectedCalendars || [],
-        }),
+        // Include all custom settings from the form
+        ...customSettings,
+        // Ensure defaults for common fields if not set
+        user: customSettings.user || [],
+        eventColor: customSettings.eventColor || "#06b6d4",
+        useUserColors: customSettings.useUserColors !== undefined ? Boolean(customSettings.useUserColors) : true,
       },
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -4,6 +4,7 @@ import type { ICalSettings, IntegrationConfig } from "~/types/integrations";
 import type { DialogField } from "~/types/ui";
 
 import { createGoogleCalendarService } from "./google-calendar/googleCalendar";
+import { createHomeAssistantWeatherService, type HomeAssistantWeatherSettings } from "./home-assistant/homeAssistantWeather";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
@@ -320,6 +321,9 @@ const serviceFactoryMap = {
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
   "calendar:google-calendar": (id: string) => createGoogleCalendarService(id),
+  "weather:home-assistant": (id: string, apiKey: string, baseUrl: string, settings?: HomeAssistantWeatherSettings) => {
+    return createHomeAssistantWeatherService(id, apiKey, baseUrl, settings);
+  },
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,
 } as const;
