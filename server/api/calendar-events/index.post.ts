@@ -7,8 +7,30 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { title, description, start, end, allDay, color, location, ical_event, users } = body;
 
+    // Validate required fields
+    if (!title || typeof title !== "string" || title.trim() === "") {
+      throw createError({
+        statusCode: 400,
+        message: "Event title is required",
+      });
+    }
+
+    if (!start || !end) {
+      throw createError({
+        statusCode: 400,
+        message: "Start and end times are required",
+      });
+    }
+
     const utcStart = new Date(start);
     const utcEnd = new Date(end);
+
+    if (utcEnd < utcStart) {
+      throw createError({
+        statusCode: 400,
+        message: "End time must be after start time",
+      });
+    }
 
     const calendarEvent = await prisma.calendarEvent.create({
       data: {
@@ -58,7 +80,11 @@ export default defineEventHandler(async (event) => {
       users: calendarEvent.users.map(ce => ce.user),
     };
   }
-  catch (error) {
+  catch (error: unknown) {
+    // Re-throw if it's already an H3 error (validation error)
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
     throw createError({
       statusCode: 500,
       message: `Failed to create calendar event: ${error}`,
