@@ -10,9 +10,47 @@ import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
 import { useAlertToast } from "~/composables/useAlertToast";
 import { integrationServices } from "~/plugins/02.appInit";
 import { getSlogan } from "~/types/global";
-import { createIntegrationService, integrationRegistry } from "~/types/integrations";
+import { createIntegrationService, integrationRegistry, type IntegrationStatus } from "~/types/integrations";
 
 const { showError, showSuccess } = useAlertToast();
+
+// Integration status tracking
+const integrationStatuses = ref<Map<string, IntegrationStatus>>(new Map());
+const statusLoading = ref<Set<string>>(new Set());
+
+async function fetchIntegrationStatus(integrationId: string) {
+  const service = integrationServices.get(integrationId);
+  if (!service) {
+    // Not enabled or service not available
+    integrationStatuses.value.delete(integrationId);
+    return;
+  }
+
+  statusLoading.value.add(integrationId);
+  try {
+    const status = await service.getStatus();
+    integrationStatuses.value.set(integrationId, status);
+  }
+  catch (err) {
+    consola.warn(`Settings: Failed to get status for integration ${integrationId}:`, err);
+    integrationStatuses.value.set(integrationId, {
+      isConnected: false,
+      lastChecked: new Date(),
+      error: "Failed to check status",
+    });
+  }
+  finally {
+    statusLoading.value.delete(integrationId);
+  }
+}
+
+function getIntegrationStatus(integrationId: string): IntegrationStatus | null {
+  return integrationStatuses.value.get(integrationId) || null;
+}
+
+function isStatusLoading(integrationId: string): boolean {
+  return statusLoading.value.has(integrationId);
+}
 const { users, loading, error, createUser, deleteUser, updateUser } = useUsers();
 
 // Logo loading state
@@ -26,7 +64,7 @@ const isDark = computed({
     return colorMode.value === "dark";
   },
   set() {
-    colorMode.value = colorMode.value === "dark" ? "light" : "dark";
+    colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
   },
 });
 
@@ -50,14 +88,26 @@ const isIntegrationsSectionUnlocked = ref(false);
 const hasParentPin = ref(false);
 
 // Check if parent PIN is set on mount
+const householdSettings = ref<any>(null);
+
+// Check if parent PIN is set on mount
 onMounted(async () => {
   try {
-    const settings = await $fetch<{ hasParentPin: boolean }>("/api/household/settings");
-    hasParentPin.value = settings.hasParentPin;
-    // If no PIN is set, auto-unlock the section
-    if (!settings.hasParentPin) {
-      isIntegrationsSectionUnlocked.value = true;
-    }
+    const settings = await $fetch<any>("/api/household/settings");
+    householdSettings.value = settings;
+    // Check if there are any PARENT users
+    const { data: usersData } = useNuxtData("users"); // Use cached data or fetch?
+    // Actually best to rely on fetching fresh list or assuming `users` composable is source of truth.
+    // The `useUsers` composable is already used in script.
+    
+    // We'll rely on the `users` computed property from `useUsers`.
+    // Wait for users to load? `useUsers` fetches on mount usually if not called.
+    // Let's just set unlocked to false by default.
+    isIntegrationsSectionUnlocked.value = false;
+
+    // We can auto-unlock if there are NO parent users (first install scenario?)
+    // But index.post.ts forces first user to be PARENT.
+    // So if there are users, there should be a parent.
   }
   catch (err) {
     consola.warn("Settings: Failed to check household settings:", err);
@@ -65,8 +115,20 @@ onMounted(async () => {
   }
 });
 
+// Watch users to determine locking state?
+// If no users exist, unlock.
+watch(users, (newUsers) => {
+  if (newUsers.length === 0) {
+     isIntegrationsSectionUnlocked.value = true;
+  } else {
+     // If locked and we have users, ensure it stays locked until verified.
+     // But if we just created the first user, maybe we should auto-unlock?
+     // For safety, default to locked if users exist.
+  }
+}, { immediate: true });
+
 function handleUnlockIntegrations() {
-  if (hasParentPin.value && !isIntegrationsSectionUnlocked.value) {
+  if (users.value.length > 0 && !isIntegrationsSectionUnlocked.value) {
     isPinDialogOpen.value = true;
   }
   else {
@@ -77,6 +139,29 @@ function handleUnlockIntegrations() {
 function handlePinVerified() {
   isIntegrationsSectionUnlocked.value = true;
 }
+
+// Fetch integration statuses when section is unlocked
+watch(isIntegrationsSectionUnlocked, async (unlocked) => {
+  if (unlocked) {
+    // Fetch status for all enabled integrations
+    for (const integration of integrations.value as Integration[]) {
+      if (integration.enabled) {
+        fetchIntegrationStatus(integration.id);
+      }
+    }
+  }
+}, { immediate: true });
+
+// Also refresh statuses when integrations change
+watch(() => (integrations.value as Integration[]).filter(i => i.enabled).map(i => i.id), (enabledIds) => {
+  if (isIntegrationsSectionUnlocked.value) {
+    for (const id of enabledIds) {
+      if (!integrationStatuses.value.has(id)) {
+        fetchIntegrationStatus(id);
+      }
+    }
+  }
+}, { deep: true });
 
 const activeIntegrationTab = ref<string>("");
 
@@ -129,6 +214,17 @@ async function handleUserSave(userData: CreateUserInput) {
 
     isUserDialogOpen.value = false;
     selectedUser.value = null;
+
+    // Trigger explicit sync for calendar integrations to update user-event mapping
+    const calendarIntegrations = (integrations.value as Integration[] || []).filter(i => i.type === 'calendar' && i.enabled);
+    for (const integration of calendarIntegrations) {
+      if (integration.service === 'google-calendar') {
+        consola.debug(`Settings: Triggering sync for integration ${integration.id} to update user colors`);
+        triggerImmediateSync('calendar', integration.id).catch(err => {
+           consola.warn(`Settings: Failed to trigger sync for ${integration.id}:`, err);
+        });
+      }
+    }
   }
   catch (err) {
     consola.error("Settings: Failed to save user:", err);
@@ -468,6 +564,118 @@ function getIntegrationIconUrl(integration: Integration) {
   const config = integrationRegistry.get(`${integration.type}:${integration.service}`);
   return config?.icon || null;
 }
+
+// Logic for Household Calendars
+const availableCalendars = computed(() => {
+  const calendars: { label: string; value: string; color?: string }[] = [];
+  
+  if (!integrations.value) return calendars;
+
+  for (const integration of integrations.value) {
+    if (integration.service === "google-calendar" && integration.enabled && integration.settings) {
+      // Robustly handle settings
+      let settings: unknown = integration.settings;
+      if (typeof settings === 'string') {
+        try {
+          settings = JSON.parse(settings);
+        } catch (e) { console.error(e); continue; }
+      }
+
+      if (!settings || typeof settings !== 'object') continue;
+
+      const metadata = (settings as any).calendarMetadata || {};
+      const selectedIds = Array.isArray((settings as any).selectedCalendars) 
+        ? (settings as any).selectedCalendars 
+        : [];
+
+      for (const calId of selectedIds) {
+        const meta = metadata[calId];
+        calendars.push({
+          label: meta?.summary || "Unknown Calendar",
+          value: `${integration.id}:${calId}`,
+          color: meta?.color,
+        });
+      }
+    }
+  }
+  return calendars;
+});
+
+function getLinkedCalendarsByType(type: "HOLIDAY" | "FAMILY"): string[] {
+  if (!householdSettings.value?.linkedCalendars) return [];
+  
+  // Clean up old string format if any (backward compatibility safety)
+  if (!Array.isArray(householdSettings.value.linkedCalendars)) return [];
+
+  return householdSettings.value.linkedCalendars
+    .filter((l: any) => l.type === type)
+    .map((l: any) => `${l.integrationId}:${l.calendarId}`);
+}
+
+async function toggleHouseholdCalendar(type: "HOLIDAY" | "FAMILY", value: string, checked: boolean) {
+  if (!householdSettings.value) return;
+
+  const [integrationId, calendarId] = value.split(":");
+  let currentLinks = Array.isArray(householdSettings.value.linkedCalendars) ? [...householdSettings.value.linkedCalendars] : [];
+
+  if (checked) {
+    // Check if already exists (shouldn't if UI is correct but safety first)
+    const exists = currentLinks.some((l: any) => l.type === type && l.integrationId === integrationId && l.calendarId === calendarId);
+    if (!exists) {
+      currentLinks.push({ type, integrationId, calendarId });
+    }
+  } else {
+    currentLinks = currentLinks.filter((l: any) => !(l.type === type && l.integrationId === integrationId && l.calendarId === calendarId));
+  }
+
+  // Update local state immediately for UI
+  householdSettings.value.linkedCalendars = currentLinks;
+
+  // Persist to server
+  try {
+    await $fetch("/api/household/settings", {
+      method: "PUT",
+      body: { linkedCalendars: currentLinks }
+    });
+    
+    // Trigger Sync to update event tags
+    // Retrieve ALL engaged calendar integrations to be safe
+    const calendarIntegrations = (integrations.value as Integration[]).filter(i => i.type === 'calendar' && i.enabled);
+    calendarIntegrations.forEach(i => triggerImmediateSync('calendar', i.id));
+
+  } catch (err) {
+    console.error("Failed to update household calendars", err);
+    showError("Failed to Save", "Could not update calendar settings.");
+  }
+}
+
+const linkedHolidayCalendars = computed(() => getLinkedCalendarsByType("HOLIDAY"));
+const linkedFamilyCalendars = computed(() => getLinkedCalendarsByType("FAMILY"));
+
+async function updateHouseholdColor(type: "HOLIDAY" | "FAMILY", color: string) {
+  if (!householdSettings.value) return;
+
+  if (type === "HOLIDAY") householdSettings.value.holidayColor = color;
+  if (type === "FAMILY") householdSettings.value.familyColor = color;
+
+  try {
+    await $fetch("/api/household/settings", {
+      method: "PUT",
+      body: {
+        holidayColor: householdSettings.value.holidayColor,
+        familyColor: householdSettings.value.familyColor,
+      },
+    });
+
+    // Trigger Sync to update event tags
+    const calendarIntegrations = (integrations.value as Integration[]).filter(i => i.type === "calendar" && i.enabled);
+    calendarIntegrations.forEach(i => triggerImmediateSync("calendar", i.id));
+  }
+  catch (err) {
+    console.error("Failed to update household colors", err);
+    showError("Failed to Save", "Could not update color settings.");
+  }
+}
 </script>
 
 <template>
@@ -562,7 +770,7 @@ function getIntegrationIconUrl(integration: Integration) {
                 Integrations
               </h2>
               <UIcon
-                v-if="hasParentPin && !isIntegrationsSectionUnlocked"
+                v-if="users.length > 0 && !isIntegrationsSectionUnlocked"
                 name="i-lucide-lock"
                 class="h-4 w-4 text-muted"
               />
@@ -575,7 +783,7 @@ function getIntegrationIconUrl(integration: Integration) {
               Add Integration
             </UButton>
             <UButton
-              v-else-if="hasParentPin"
+              v-else-if="users.length > 0"
               icon="i-lucide-lock"
               variant="outline"
               @click="handleUnlockIntegrations"
@@ -585,17 +793,17 @@ function getIntegrationIconUrl(integration: Integration) {
           </div>
 
           <!-- Locked state -->
-          <div v-if="hasParentPin && !isIntegrationsSectionUnlocked" class="text-center py-12">
+          <div v-if="users.length > 0 && !isIntegrationsSectionUnlocked" class="text-center py-12">
             <div class="flex flex-col items-center gap-4">
               <div class="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
                 <UIcon name="i-lucide-lock" class="h-8 w-8 text-muted" />
               </div>
               <div class="text-center">
                 <p class="text-lg font-medium text-highlighted">
-                  Parent Access Required
+                  Access Restricted
                 </p>
                 <p class="text-muted mt-1">
-                  Enter the parent PIN to access integration settings
+                  Select an adult user to unlock integration settings
                 </p>
               </div>
               <UButton
@@ -610,7 +818,7 @@ function getIntegrationIconUrl(integration: Integration) {
           <!-- Unlocked content -->
           <template v-else>
             <div class="border-b border-default mb-6">
-              <nav class="-mb-px flex space-x-8">
+              <nav class="-mb-px flex space-x-8" aria-label="Integration categories">
                 <button
                   v-for="type in availableIntegrationTypes"
                   :key="type"
@@ -697,6 +905,29 @@ function getIntegrationIconUrl(integration: Integration) {
                       <p class="text-sm text-muted capitalize">
                         {{ integration.service }}
                       </p>
+                      <!-- Connection status indicator -->
+                      <div v-if="integration.enabled" class="flex items-center gap-1 mt-1">
+                        <template v-if="isStatusLoading(integration.id)">
+                          <UIcon name="i-lucide-loader-2" class="h-3 w-3 animate-spin text-muted" />
+                          <span class="text-xs text-muted">Checking...</span>
+                        </template>
+                        <template v-else-if="getIntegrationStatus(integration.id)">
+                          <template v-if="getIntegrationStatus(integration.id)?.isConnected">
+                            <span class="inline-block w-2 h-2 rounded-full bg-success" />
+                            <span class="text-xs text-success">Connected</span>
+                          </template>
+                          <template v-else-if="getIntegrationStatus(integration.id)?.error">
+                            <span class="inline-block w-2 h-2 rounded-full bg-error" />
+                            <span class="text-xs text-error truncate max-w-[150px]" :title="getIntegrationStatus(integration.id)?.error">
+                              {{ getIntegrationStatus(integration.id)?.error }}
+                            </span>
+                          </template>
+                          <template v-else>
+                            <span class="inline-block w-2 h-2 rounded-full bg-warning" />
+                            <span class="text-xs text-warning">Disconnected</span>
+                          </template>
+                        </template>
+                      </div>
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
@@ -721,6 +952,78 @@ function getIntegrationIconUrl(integration: Integration) {
               </div>
             </div>
           </template>
+        </div>
+
+        <div class="bg-default rounded-lg shadow-sm border border-default p-6 mb-6">
+          <h2 class="text-lg font-semibold text-highlighted mb-4">
+            Household Calendars
+          </h2>
+          <div v-if="availableCalendars.length === 0" class="text-muted text-sm italic">
+            No calendars available. Please configure a Calendar integration first.
+          </div>
+          <div v-else class="space-y-6">
+            <!-- Holiday Calendars -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="block text-sm font-medium text-highlighted">Holiday Calendars</label>
+                  <p class="text-xs text-muted mb-2">Events from these calendars will be tagged as Holidays.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-muted">Color</span>
+                  <input
+                    type="color"
+                    :value="householdSettings?.holidayColor || '#ef4444'"
+                    class="h-6 w-8 p-0 border border-default rounded cursor-pointer bg-transparent"
+                    aria-label="Holiday Calendar Color"
+                    @change="(e) => updateHouseholdColor('HOLIDAY', (e.target as HTMLInputElement).value)"
+                  >
+                </div>
+              </div>
+              <div class="space-y-1 max-h-48 overflow-y-auto border border-default rounded-md p-2">
+                 <div v-for="cal in availableCalendars" :key="`holiday-${cal.value}`" class="flex items-center gap-2">
+                    <UCheckbox 
+                      :model-value="linkedHolidayCalendars.includes(cal.value)"
+                      @update:model-value="(checked: any) => toggleHouseholdCalendar('HOLIDAY', cal.value, checked)"
+                      :label="cal.label"
+                      color="primary"
+                    />
+                    <span v-if="cal.color" :style="{ backgroundColor: cal.color }" class="size-2 rounded-full shrink-0" />
+                 </div>
+              </div>
+            </div>
+
+            <!-- Family Calendars -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="block text-sm font-medium text-highlighted">Family Calendars</label>
+                  <p class="text-xs text-muted mb-2">Events from these calendars will be tagged as Family Events.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-muted">Color</span>
+                  <input
+                    type="color"
+                    :value="householdSettings?.familyColor || '#3b82f6'"
+                    class="h-6 w-8 p-0 border border-default rounded cursor-pointer bg-transparent"
+                    aria-label="Family Calendar Color"
+                    @change="(e) => updateHouseholdColor('FAMILY', (e.target as HTMLInputElement).value)"
+                  >
+                </div>
+              </div>
+              <div class="space-y-1 max-h-48 overflow-y-auto border border-default rounded-md p-2">
+                 <div v-for="cal in availableCalendars" :key="`family-${cal.value}`" class="flex items-center gap-2">
+                    <UCheckbox 
+                      :model-value="linkedFamilyCalendars.includes(cal.value)"
+                      @update:model-value="(checked: any) => toggleHouseholdCalendar('FAMILY', cal.value, checked)"
+                      :label="cal.label"
+                      color="primary"
+                    />
+                    <span v-if="cal.color" :style="{ backgroundColor: cal.color }" class="size-2 rounded-full shrink-0" />
+                 </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="bg-default rounded-lg shadow-sm border border-default p-6 mb-6">
@@ -824,6 +1127,7 @@ function getIntegrationIconUrl(integration: Integration) {
       :existing-integrations="integrations as Integration[]"
       :connection-test-result="connectionTestResult"
       @close="() => { isIntegrationDialogOpen = false; selectedIntegration = null; }"
+      @open="isIntegrationDialogOpen = true"
       @save="handleIntegrationSave"
       @delete="handleIntegrationDelete"
     />

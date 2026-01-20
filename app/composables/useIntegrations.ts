@@ -80,8 +80,10 @@ export function useIntegrations() {
       consola.debug("Use Integrations: Integration created successfully:", response.name);
       return response;
     }
-    catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to create integration";
+    catch (err: unknown) {
+      // Extract proper error message from FetchError (server response) or fallback to generic message
+      const fetchError = err as { data?: { message?: string }; statusMessage?: string; message?: string };
+      const errorMessage = fetchError.data?.message || fetchError.statusMessage || fetchError.message || "Failed to create integration";
       consola.error("Use Integrations: Error creating integration:", err);
       throw new Error(errorMessage);
     }
@@ -121,8 +123,10 @@ export function useIntegrations() {
       consola.debug("Use Integrations: Integration updated successfully:", response.name);
       return response;
     }
-    catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update integration";
+    catch (err: unknown) {
+      // Extract proper error message from FetchError (server response) or fallback to generic message
+      const fetchError = err as { data?: { message?: string }; statusMessage?: string; message?: string };
+      const errorMessage = fetchError.data?.message || fetchError.statusMessage || fetchError.message || "Failed to update integration";
       consola.error("Use Integrations: Error updating integration:", err);
       throw new Error(errorMessage);
     }
@@ -140,8 +144,10 @@ export function useIntegrations() {
 
       consola.debug("Use Integrations: Integration deleted successfully:", id);
     }
-    catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete integration";
+    catch (err: unknown) {
+      // Extract proper error message from FetchError (server response) or fallback to generic message
+      const fetchError = err as { data?: { message?: string }; statusMessage?: string; message?: string };
+      const errorMessage = fetchError.data?.message || fetchError.statusMessage || fetchError.message || "Failed to delete integration";
       consola.error("Use Integrations: Error deleting integration:", err);
       throw new Error(errorMessage);
     }
