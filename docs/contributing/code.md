@@ -33,7 +33,7 @@ npm run dev
 
 ### Development Setup
 
-- Default values are configured in `nuxt.config.ts` 
+- Default values are configured in `nuxt.config.ts`
 - `DATABASE_URL` is automatically configured by the dev container
 
 ### Environment Variables
@@ -299,8 +299,31 @@ docker login
 # Build Docker image (uses dhi.io/node:20, same as production)
 docker build -t skylite-ux .
 
-# Run Docker container
-docker run -p 3000:3000 skylite-ux
+# Create a network
+docker network create skylite-network
+
+# Create a volume for PostgreSQL data
+docker volume create postgres-data
+
+# Run PostgreSQL
+docker run -d \
+  --name skylite-ux-db \
+  --network skylite-network \
+  -e POSTGRES_USER=skylite \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=skylite \
+  -v postgres-data:/var/lib/postgresql/data \
+  postgres:16
+
+# Run Skylite UX
+docker run -d \
+  --name skylite-ux \
+  --network skylite-network \
+  -e DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite \
+  -e NUXT_PUBLIC_TZ=America/Chicago \
+  -e NUXT_PUBLIC_LOG_LEVEL=warn \
+  -p 3000:3000 \
+  skylite-ux
 ```
 
 Using the authenticated base image ensures consistency between local development builds and production builds, avoiding any potential differences between public and authenticated images.
@@ -312,6 +335,7 @@ Using the authenticated base image ensures consistency between local development
 Skylite UX uses [Consola](https://github.com/unjs/consola) for server-side logging. You can control the log level using the `NUXT_PUBLIC_LOG_LEVEL` environment variable.
 
 **Log Levels:**
+
 - `debug` - Detailed debugging information
 - `info` - General informational messages (default)
 - `warn` - Warning messages
@@ -319,6 +343,7 @@ Skylite UX uses [Consola](https://github.com/unjs/consola) for server-side loggi
 - `verbose` - Very detailed logging
 
 **Example:**
+
 ```typescript
 import consola from "consola";
 
@@ -336,10 +361,13 @@ consola.error("This is an error message");
 ### Server-Side Debugging
 
 - **Console Logging** - Use `consola` in server routes for logging:
+
   ```typescript
   import consola from "consola";
+
   consola.debug("Server route executed");
   ```
+
 - **Prisma Studio** - Run `npx prisma studio` to open a visual database browser (typically available at `http://localhost:5555`). This allows you to view and edit database records directly.
 
 ### Common Debugging Scenarios
