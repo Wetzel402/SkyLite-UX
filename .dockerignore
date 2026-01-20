@@ -1,0 +1,44 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+docs
+
+# Logs
+logs
+*.log
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Misc
+.DS_Store
+.fleet
+.idea
+.vscode
+
+# Generated files
+/app/generated/prisma
+
+# Docker
+Dockerfile
+docker-compose*.yaml
+.dockerignore
+
+# Dev container configs
+.devcontainer
