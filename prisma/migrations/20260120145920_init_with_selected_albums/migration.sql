@@ -69,7 +69,7 @@ CREATE TABLE "integrations" (
     "baseUrl" TEXT,
     "icon" TEXT,
     "enabled" BOOLEAN NOT NULL DEFAULT true,
-    "settings" JSONB,
+    "settings" JSON,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -82,9 +82,9 @@ CREATE TABLE "calendar_events" (
     "start" DATETIME NOT NULL,
     "end" DATETIME NOT NULL,
     "allDay" BOOLEAN NOT NULL DEFAULT false,
-    "color" JSONB,
+    "color" JSON,
     "location" TEXT,
-    "ical_event" JSONB,
+    "ical_event" JSON,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -170,7 +170,7 @@ CREATE TABLE "selected_albums" (
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "todo_columns_userId_key" ON "todo_columns"("userId");
+CREATE INDEX "todo_columns_userId_idx" ON "todo_columns"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "integrations_name_key" ON "integrations"("name");

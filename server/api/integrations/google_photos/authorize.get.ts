@@ -11,11 +11,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Determine callback URL
-  const headers = getHeaders(event);
-  const host = headers.host || "localhost:3001";
-  const protocol = host.includes("localhost") ? "http" : "https";
-  const redirectUri = `${protocol}://${host}/api/integrations/google_photos/callback`;
+  // Determine callback URL using getRequestURL for proxy-safe origin
+  const requestUrl = getRequestURL(event, {
+    xForwardedHost: true,
+    xForwardedProto: true,
+  });
+  const origin = requestUrl.origin;
+  const redirectUri = `${origin}/api/integrations/google_photos/callback`;
 
   // Generate CSRF protection state token
   const state = randomBytes(32).toString("hex");
@@ -23,7 +25,7 @@ export default defineEventHandler(async (event) => {
   // Store state in cookie for verification in callback
   setCookie(event, "google_photos_oauth_state", state, {
     httpOnly: true,
-    secure: !host.includes("localhost"),
+    secure: requestUrl.protocol === "https:",
     sameSite: "lax",
     maxAge: 600, // 10 minutes
     path: "/",

@@ -40,11 +40,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Determine callback URL
-  const headers = getHeaders(event);
-  const host = headers.host || "localhost:3001";
-  const protocol = host.includes("localhost") ? "http" : "https";
-  const redirectUri = `${protocol}://${host}/api/integrations/google_photos/callback`;
+  // Determine callback URL using getRequestURL for proxy-safe origin
+  const requestUrl = getRequestURL(event, {
+    xForwardedHost: true,
+    xForwardedProto: true,
+  });
+  const origin = requestUrl.origin;
+  const redirectUri = `${origin}/api/integrations/google_photos/callback`;
 
   // Initialize OAuth2 client
   const oauth2Client = new google.auth.OAuth2(
