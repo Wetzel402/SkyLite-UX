@@ -1,7 +1,7 @@
 {
   "name": "skylite-ux",
   "type": "module",
-  "version": "2025.10.1",
+  "version": "2026.1.0",
   "private": true,
   "scripts": {
     "dev": "nuxt dev",
@@ -12,7 +12,8 @@
     "format": "prettier --write app/",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "docs": "cd docs && bundle exec jekyll serve --host 0.0.0.0"
   },
   "dependencies": {
     "@eslint/plugin-kit": "^0.3.4",
@@ -24,6 +25,7 @@
     "consola": "^3.4.2",
     "date-fns": "^3.3.1",
     "eslint-plugin-unicorn": "^60.0.0",
+    "googleapis": "^105.0.0",
     "ical.js": "^2.2.0",
     "node-fetch": "^2.7.0",
     "pinia": "^3.0.1",
@@ -55,6 +57,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.0.2",
+    "eslint-plugin-format": "^1.0.2",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-vue": "^9.32.0",
     "happy-dom": "^20.0.10",

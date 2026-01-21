@@ -18,7 +18,7 @@ export default defineNuxtPlugin(async () => {
   const browserTimezone = config.public.tz;
 
   try {
-    const apiUrl = `https://tz.add-to-calendar-technology.com/api/${encodeURIComponent(browserTimezone)}.ics`;
+    const apiUrl = `https://tz.add-to-calendar-technology.com/api/${browserTimezone}.ics`;
     const { data: vtimezoneBlock, error } = await useFetch(apiUrl, {
       key: `timezone-${browserTimezone}`,
       server: true,
@@ -46,7 +46,8 @@ export default defineNuxtPlugin(async () => {
     setBrowserTimezone(browserTimezone);
   }
   catch (error) {
-    consola.warn("AppInit: Failed to register timezone, calendar will use fallback:", error);
+    const apiUrl = `https://tz.add-to-calendar-technology.com/api/${browserTimezone}.ics`;
+    consola.warn("AppInit: Failed to register timezone, calendar will use fallback. URL:", apiUrl, "Error:", error);
     setTimezoneRegistered(false);
   }
 

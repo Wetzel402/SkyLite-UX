@@ -6,11 +6,18 @@ import { consola } from "consola";
 import { isBefore } from "date-fns";
 import ical from "ical.js";
 
-import type { CalendarEvent } from "~/types/calendar";
+import type { RecurrenceState } from "~/composables/useRecurrence";
+import type { CalendarEvent, SourceCalendar } from "~/types/calendar";
+import type { Integration } from "~/types/database";
+import type { CalendarConfig } from "~/types/integrations";
 
 import { useCalendar } from "~/composables/useCalendar";
+import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
+import { useRecurrence } from "~/composables/useRecurrence";
+import { useTimePicker } from "~/composables/useTimePicker";
 import { useUsers } from "~/composables/useUsers";
-import { getBrowserTimezone } from "~/types/global";
+import { DEFAULT_LOCAL_EVENT_COLOR, getBrowserTimezone } from "~/types/global";
+import { integrationRegistry } from "~/types/integrations";
 
 import type { ICalEvent } from "../../../server/integrations/iCal/types";
 
@@ -19,6 +26,7 @@ const props = defineProps<{
   isOpen: boolean;
   integrationCapabilities?: string[];
   integrationServiceName?: string;
+  integrations?: Integration[];
 }>();
 
 const emit = defineEmits<{
@@ -30,6 +38,20 @@ const emit = defineEmits<{
 const { users, fetchUsers } = useUsers();
 
 const { getEventStartTimeForInput, getEventEndTimeForInput, getLocalTimeFromUTC } = useCalendar();
+const {
+  convert12To24,
+  convert24To12,
+  addMinutes,
+  subtractMinutes,
+  isTimeAfter,
+  getCurrentTime12Hour,
+} = useTimePicker();
+const {
+  parseRecurrenceFromICal,
+  generateRecurrenceRule,
+  resetRecurrenceFields: resetRecurrenceFieldsComposable,
+  adjustStartDateForRecurrenceDays,
+} = useRecurrence();
 
 const StartHour = 0;
 const EndHour = 23;
@@ -46,6 +68,66 @@ const location = ref("");
 const selectedUsers = ref<string[]>([]);
 const error = ref<string | null>(null);
 
+const selectedIntegrationId = ref<string | null>("local");
+const selectedCalendarId = ref<string | null>(null);
+const availableIntegrations = ref<Array<{ id: string; name: string; calendars: CalendarConfig[]; supportsSelectCalendars: boolean }>>([]);
+const selectedEditableCalendars = ref<Set<string>>(new Set());
+const calendarEventUsers = ref<Map<string, Array<{ id: string; name: string; avatar?: string | null; color?: string | null }>>>(new Map());
+
+const eventSourceCalendars = computed(() => props.event?.sourceCalendars || []);
+const editableSourceCalendars = computed(() => eventSourceCalendars.value.filter(calendar => calendar.canEdit));
+const hasEditableSourceCalendars = computed(() => editableSourceCalendars.value.length > 0);
+
+const enrichedSourceCalendars = computed(() => {
+  return eventSourceCalendars.value.map((calendar) => {
+    const user = getCalendarUsers(calendar);
+    const displayColor = calendar.userColor || calendar.eventColor || "#06b6d4";
+    const calendarKey = `${calendar.integrationId}-${calendar.calendarId}`;
+    const eventUsers = calendarEventUsers.value.get(calendarKey) || [];
+
+    let displayName: string;
+    if (props.integrations) {
+      const integration = props.integrations.find(i => i.id === calendar.integrationId);
+      if (integration) {
+        const hasSelectCalendars = hasCapability(integration, "select_calendars");
+
+        if (hasSelectCalendars) {
+          const calendarName = calendar.calendarName || calendar.calendarId;
+          displayName = calendar.integrationName ? `${calendar.integrationName} · ${calendarName}` : calendarName;
+        }
+        else {
+          displayName = calendar.integrationName || integration.name || integration.service;
+        }
+      }
+      else {
+        displayName = calendar.calendarName || calendar.integrationName || calendar.calendarId;
+      }
+    }
+    else {
+      displayName = calendar.calendarName || calendar.integrationName || calendar.calendarId;
+    }
+
+    return {
+      ...calendar,
+      user,
+      displayColor,
+      calendarName: displayName,
+      eventUsers,
+    };
+  });
+});
+
+const calendarAccordionItems = computed(() => {
+  if (enrichedSourceCalendars.value.length === 0)
+    return [];
+
+  return [{
+    value: "calendars",
+    label: "Calendars",
+    content: "",
+  }];
+});
+
 const isRecurring = ref(false);
 const recurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("weekly");
 const recurrenceInterval = ref(1);
@@ -57,6 +139,20 @@ const recurrenceMonthlyType = ref<"day" | "weekday">("day");
 const recurrenceMonthlyWeekday = ref<{ week: number; day: number }>({ week: 1, day: 1 });
 const recurrenceYearlyType = ref<"day" | "weekday">("day");
 const recurrenceYearlyWeekday = ref<{ week: number; day: number; month: number }>({ week: 1, day: 1, month: 0 });
+
+const recurrenceState: RecurrenceState = {
+  isRecurring,
+  recurrenceType,
+  recurrenceInterval,
+  recurrenceEndType,
+  recurrenceCount,
+  recurrenceUntil: recurrenceUntil as Ref<DateValue>,
+  recurrenceDays,
+  recurrenceMonthlyType,
+  recurrenceMonthlyWeekday,
+  recurrenceYearlyType,
+  recurrenceYearlyWeekday,
+};
 
 const hourOptions = computed(() => {
   const options = [];
@@ -144,12 +240,16 @@ const endMinute = ref(0);
 const endAmPm = ref("AM");
 
 const canEdit = computed(() => {
+  if (eventSourceCalendars.value.length > 0)
+    return hasEditableSourceCalendars.value;
   if (!props.integrationCapabilities)
     return true;
   return props.integrationCapabilities.includes("edit_events");
 });
 
 const canDelete = computed(() => {
+  if (eventSourceCalendars.value.length > 0)
+    return hasEditableSourceCalendars.value;
   if (!props.integrationCapabilities)
     return true;
   return props.integrationCapabilities.includes("delete_events");
@@ -162,12 +262,373 @@ const canAdd = computed(() => {
 });
 
 const isReadOnly = computed(() => {
-  return Boolean(props.event && !canEdit.value);
+  if (!props.event)
+    return false;
+
+  if (hasEditableSourceCalendars.value) {
+    return selectedEditableCalendars.value.size === 0;
+  }
+
+  return !canEdit.value;
 });
+
+const currentIntegration = computed(() => {
+  const integrationId = props.event?.integrationId || selectedIntegrationId.value;
+  if (!integrationId || integrationId === "local" || !props.integrations)
+    return null;
+  return props.integrations.find(i => i.id === integrationId);
+});
+
+const selectedIntegrationConfig = computed(() => {
+  return availableIntegrations.value.find(i => i.id === selectedIntegrationId.value);
+});
+
+function getCalendarUserIds(calendar: SourceCalendar, integration: Integration): string[] {
+  if (!integration?.settings)
+    return [];
+
+  const hasSelectCalendars = hasCapability(integration, "select_calendars");
+
+  if (hasSelectCalendars) {
+    const calendars = integration.settings.calendars;
+    if (Array.isArray(calendars)) {
+      const calendarConfig = calendars.find((c): c is CalendarConfig => {
+        return typeof c === "object" && c !== null && "id" in c && c.id === calendar.calendarId;
+      });
+      if (calendarConfig?.user) {
+        return Array.isArray(calendarConfig.user) ? calendarConfig.user.filter((id): id is string => typeof id === "string") : [];
+      }
+    }
+    return [];
+  }
+
+  const integrationUserIds = integration.settings.user;
+  return Array.isArray(integrationUserIds) ? integrationUserIds.filter((id): id is string => typeof id === "string") : [];
+}
+
+function getUsersFromIds(userIds: string[]): Array<{ id: string; name: string; avatar?: string | null; color?: string | null }> {
+  if (!users.value || userIds.length === 0)
+    return [];
+
+  const result: Array<{ id: string; name: string; avatar?: string | null; color?: string | null }> = [];
+  for (const userId of userIds) {
+    const user = users.value.find(u => u.id === userId);
+    if (user) {
+      result.push({
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar ?? undefined,
+        color: user.color ?? undefined,
+      });
+    }
+  }
+  return result;
+}
+
+const integrationAssignedUserIds = computed(() => {
+  const integration = currentIntegration.value;
+  if (!integration)
+    return [];
+
+  const calendarId = props.event?.calendarId || selectedCalendarId.value;
+  if (calendarId) {
+    const calendar: SourceCalendar = {
+      integrationId: integration.id,
+      calendarId,
+      integrationName: integration.name || integration.service,
+      calendarName: calendarId,
+      accessRole: "read",
+      canEdit: false,
+    };
+    return getCalendarUserIds(calendar, integration);
+  }
+
+  return getCalendarUserIds({ integrationId: integration.id, calendarId: "", integrationName: "", calendarName: "", accessRole: "read", canEdit: false }, integration);
+});
+
+function getCalendarUsers(calendar: SourceCalendar) {
+  if (!props.integrations)
+    return null;
+
+  const integration = props.integrations.find(i => i.id === calendar.integrationId);
+  if (!integration)
+    return null;
+
+  const userIds = getCalendarUserIds(calendar, integration);
+  if (userIds.length === 0)
+    return null;
+
+  const user = users.value?.find(u => userIds.includes(u.id));
+  return user || null;
+}
+
+async function getCalendarEventUsers(calendar: SourceCalendar): Promise<Array<{ id: string; name: string; avatar?: string | null; color?: string | null }>> {
+  if (calendar.integrationId === "" || calendar.calendarId === "local") {
+    if (!calendar.eventId)
+      return [];
+
+    try {
+      const event = await $fetch<CalendarEvent>(`/api/calendar-events/${calendar.eventId}`);
+      return event.users || [];
+    }
+    catch (error) {
+      consola.warn("CalendarEventDialog: Failed to fetch local event users:", error);
+      return [];
+    }
+  }
+
+  if (!props.integrations)
+    return [];
+
+  const integration = props.integrations.find(i => i.id === calendar.integrationId);
+  if (!integration)
+    return [];
+
+  const userIds = getCalendarUserIds(calendar, integration);
+  return getUsersFromIds(userIds);
+}
+
+function supportsUserSelection(calendar: SourceCalendar): boolean {
+  if (calendar.integrationId === "" || calendar.calendarId === "local")
+    return true;
+
+  if (!props.integrations)
+    return false;
+
+  const integration = props.integrations.find(i => i.id === calendar.integrationId);
+  return hasCapability(integration, "select_users");
+}
+
+const allowsUserSelection = computed(() => {
+  if (eventSourceCalendars.value.length > 0) {
+    if (selectedEditableCalendars.value.size === 0)
+      return false;
+
+    for (const calendarKey of selectedEditableCalendars.value) {
+      const [integrationId, calendarId] = calendarKey.split("-");
+      const calendar = eventSourceCalendars.value.find(
+        cal => cal.integrationId === integrationId && cal.calendarId === calendarId,
+      );
+      if (calendar && supportsUserSelection(calendar))
+        return true;
+    }
+    return false;
+  }
+
+  if (selectedIntegrationId.value === "local" || !selectedIntegrationId.value)
+    return true;
+
+  if (!props.integrations)
+    return false;
+
+  const integration = props.integrations.find(i => i.id === selectedIntegrationId.value);
+  return hasCapability(integration, "select_users");
+});
+
+const userSelectionState = computed(() => {
+  const support = eventSourceCalendars.value.length > 0
+    ? (() => {
+        const supports = eventSourceCalendars.value.map(calendar => supportsUserSelection(calendar));
+        const allSupport = supports.every(s => s === true);
+        const noneSupport = supports.every(s => s === false);
+        if (allSupport)
+          return "all" as const;
+        if (noneSupport)
+          return "none" as const;
+        return "mixed" as const;
+      })()
+    : "none" as const;
+
+  const selectedIntegrationSupports = selectedIntegrationId.value === "local" || !selectedIntegrationId.value
+    ? true
+    : hasCapability(currentIntegration.value, "select_users");
+
+  const showLocked = eventSourceCalendars.value.length > 0
+    ? support === "none" && canEdit.value
+    : (!props.event || !props.event.id) && availableIntegrations.value.length > 0
+        ? !selectedIntegrationSupports && canEdit.value
+        : false;
+
+  const showMixed = support === "mixed" && canEdit.value;
+
+  return {
+    support,
+    selectedIntegrationSupports,
+    showLocked,
+    showMixed,
+  };
+});
+
+const showLockedUserMessage = computed(() => userSelectionState.value.showLocked);
+const showMixedUserMessage = computed(() => userSelectionState.value.showMixed);
+
+const showCalendarPicker = computed(() => {
+  if (props.event && props.event.id) {
+    return false;
+  }
+  const shouldShow = availableIntegrations.value.length > 0;
+  consola.debug("CalendarEventDialog: showCalendarPicker computed", {
+    hasEvent: !!props.event,
+    eventId: props.event?.id,
+    availableIntegrationsCount: availableIntegrations.value.length,
+    shouldShow,
+  });
+  return shouldShow;
+});
+
+const calendarPickerOptions = computed(() => {
+  const options = [{ value: "local", label: "Local Calendar" }];
+
+  availableIntegrations.value.forEach((integration) => {
+    options.push({ value: integration.id, label: integration.name });
+  });
+
+  return options;
+});
+
+const integrationCalendarOptions = computed(() => {
+  const integration = selectedIntegrationConfig.value;
+  if (!integration || !integration.supportsSelectCalendars)
+    return [];
+
+  return integration.calendars
+    .filter(c => c.accessRole === "write" && c.enabled)
+    .map(c => ({ value: c.id, label: c.name }));
+});
+
+async function loadCalendarEventUsers() {
+  calendarEventUsers.value.clear();
+  if (eventSourceCalendars.value.length > 0) {
+    await Promise.all(eventSourceCalendars.value.map(async (calendar) => {
+      const calendarKey = `${calendar.integrationId}-${calendar.calendarId}`;
+      const users = await getCalendarEventUsers(calendar);
+      calendarEventUsers.value.set(calendarKey, users);
+    }));
+  }
+}
+
+function processIntegrationForPicker(integration: Integration): { id: string; name: string; calendars: CalendarConfig[]; supportsSelectCalendars: boolean } | null {
+  const config = integrationRegistry.get(`calendar:${integration.service}`);
+  if (!config)
+    return null;
+
+  const hasAddEvents = config.capabilities.includes("add_events");
+  const hasSelectCalendars = config.capabilities.includes("select_calendars");
+
+  if (!hasAddEvents)
+    return null;
+
+  const settingsCalendars = Array.isArray(integration.settings?.calendars)
+    ? integration.settings.calendars as CalendarConfig[]
+    : [];
+  const integrationEnabled = integration.enabled ?? false;
+
+  const calendars = settingsCalendars.map(cal => ({
+    ...cal,
+    enabled: integrationEnabled && (cal.enabled ?? false),
+  }));
+
+  const hasEnabledCalendars = calendars.some(
+    cal => cal.accessRole === "write" && cal.enabled,
+  );
+
+  if (!hasSelectCalendars || hasEnabledCalendars) {
+    return {
+      id: integration.id,
+      name: integration.name || `${integration.service} Calendar`,
+      calendars,
+      supportsSelectCalendars: hasSelectCalendars,
+    };
+  }
+
+  return null;
+}
+
+async function setupEventDialog() {
+  if (eventSourceCalendars.value.length > 0) {
+    await loadCalendarEventUsers();
+  }
+
+  if ((!props.event || !props.event.id) && props.integrations) {
+    availableIntegrations.value = [];
+    const integrations = props.integrations as Integration[];
+
+    const processedIntegrations = await Promise.all(
+      integrations.map(integration => processIntegrationForPicker(integration)),
+    );
+
+    availableIntegrations.value = processedIntegrations.filter((integration): integration is { id: string; name: string; calendars: CalendarConfig[]; supportsSelectCalendars: boolean } => integration !== null);
+
+    selectedIntegrationId.value = "local";
+    selectedCalendarId.value = null;
+  }
+
+  await fetchUsers();
+}
 
 watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
-    await fetchUsers();
+    await setupEventDialog();
+  }
+}, { immediate: true });
+
+watch(selectedIntegrationId, (newIntegrationId) => {
+  consola.debug("CalendarEventDialog: Integration selected", {
+    integrationId: newIntegrationId,
+    selectedIntegrationConfig: selectedIntegrationConfig.value,
+  });
+
+  selectedCalendarId.value = null;
+
+  if (props.event?.id) {
+    return;
+  }
+
+  if (newIntegrationId && newIntegrationId !== "local" && !allowsUserSelection.value) {
+    selectedUsers.value = integrationAssignedUserIds.value || [];
+  }
+
+  if (!newIntegrationId || newIntegrationId === "local") {
+    selectedUsers.value = [];
+  }
+
+  nextTick(() => {
+    if (selectedIntegrationConfig.value?.supportsSelectCalendars && integrationCalendarOptions.value.length > 0 && !selectedCalendarId.value) {
+      const firstCalendar = integrationCalendarOptions.value[0];
+      if (firstCalendar) {
+        selectedCalendarId.value = firstCalendar.value as string;
+        consola.debug("CalendarEventDialog: Auto-selected first calendar", {
+          calendarId: firstCalendar.value,
+          calendarName: firstCalendar.label,
+        });
+        if (!allowsUserSelection.value) {
+          selectedUsers.value = integrationAssignedUserIds.value || [];
+        }
+      }
+    }
+  });
+});
+
+watch(integrationCalendarOptions, (options) => {
+  if (selectedIntegrationConfig.value?.supportsSelectCalendars && options.length > 0 && !selectedCalendarId.value) {
+    const firstCalendar = options[0];
+    if (firstCalendar) {
+      selectedCalendarId.value = firstCalendar.value as string;
+      consola.debug("CalendarEventDialog: Auto-selected first calendar from options watch", {
+        calendarId: firstCalendar.value,
+        calendarName: firstCalendar.label,
+      });
+    }
+  }
+});
+
+watch(selectedCalendarId, () => {
+  if (props.event?.id) {
+    return;
+  }
+
+  if (selectedIntegrationConfig.value?.supportsSelectCalendars && !allowsUserSelection.value) {
+    selectedUsers.value = integrationAssignedUserIds.value || [];
   }
 });
 
@@ -224,63 +685,21 @@ watch(recurrenceUntil, () => {
 
 function handleAllDayToggle() {
   if (!allDay.value) {
-    const now = new Date();
+    const currentTime = getCurrentTime12Hour();
+    startHour.value = currentTime.hour;
+    startMinute.value = currentTime.minute;
+    startAmPm.value = currentTime.amPm;
 
-    const currentMinutes = now.getMinutes();
-    const roundedMinutes = Math.round(currentMinutes / 5) * 5;
-
-    let currentHour = now.getHours();
-    let adjustedMinutes = roundedMinutes;
-
-    if (adjustedMinutes === 60) {
-      adjustedMinutes = 0;
-      currentHour += 1;
-    }
-
-    let startHourValue = currentHour;
-    let startAmPmValue = "AM";
-
-    if (startHourValue === 0) {
-      startHourValue = 12;
-    }
-    else if (startHourValue > 12) {
-      startHourValue -= 12;
-      startAmPmValue = "PM";
-    }
-    else if (startHourValue === 12) {
-      startAmPmValue = "PM";
-    }
-
-    startHour.value = startHourValue;
-    startMinute.value = adjustedMinutes;
-    startAmPm.value = startAmPmValue;
-
-    let endHourValue = startHour.value;
-    let endMinuteValue = startMinute.value + 30;
-    let endAmPmValue = startAmPm.value;
-
-    if (endMinuteValue >= 60) {
-      endMinuteValue -= 60;
-      endHourValue += 1;
-    }
-
-    if (endHourValue > 12) {
-      endHourValue -= 12;
-      endAmPmValue = endAmPmValue === "AM" ? "PM" : "AM";
-    }
-
-    if (endHourValue === 0) {
-      endHourValue = 12;
-    }
-
-    endHour.value = endHourValue;
-    endMinute.value = endMinuteValue;
-    endAmPm.value = endAmPmValue;
+    const endTime = addMinutes(startHour.value, startMinute.value, startAmPm.value, 30);
+    endHour.value = endTime.hour;
+    endMinute.value = endTime.minute;
+    endAmPm.value = endTime.amPm;
   }
 }
 
 watch(() => props.event, async (newEvent) => {
   if (newEvent && newEvent.id) {
+    selectedEditableCalendars.value.clear();
     const isExpandedEvent = newEvent.id.includes("-");
     let originalEvent = newEvent;
 
@@ -304,6 +723,37 @@ watch(() => props.event, async (newEvent) => {
               }
             : null,
         } as CalendarEvent;
+      }
+    }
+
+    if (isExpandedEvent && newEvent.integrationId) {
+      const originalId = newEvent.id.split("-")[0];
+      try {
+        if (currentIntegration.value?.service === "google") {
+          const { getCalendarEvent } = useCalendarIntegrations();
+          const fetchedEvent = await getCalendarEvent(
+            newEvent.integrationId,
+            originalId || "",
+            newEvent.calendarId,
+          );
+
+          if (fetchedEvent) {
+            originalEvent = {
+              ...fetchedEvent,
+              start: newEvent.start,
+              end: newEvent.end,
+              ical_event: newEvent.ical_event
+                ? {
+                    ...fetchedEvent.ical_event,
+                    dtstart: newEvent.ical_event.dtstart,
+                    dtend: newEvent.ical_event.dtend,
+                  }
+                : null,
+            } as CalendarEvent;
+          }
+        }
+      }
+      catch {
       }
     }
 
@@ -335,22 +785,24 @@ watch(() => props.event, async (newEvent) => {
     const startTimeParts = startTimeStr.split(":");
     if (startTimeParts.length >= 2) {
       const startTimeHour = Number.parseInt(startTimeParts[0]!);
-      const startHourValue = startTimeHour === 0 ? 12 : startTimeHour > 12 ? startTimeHour - 12 : startTimeHour;
-      startHour.value = startHourValue;
+      const startTime12 = convert24To12(startTimeHour);
+      startHour.value = startTime12.hour;
       startMinute.value = Number.parseInt(startTimeParts[1]!);
-      startAmPm.value = startTimeHour >= 12 ? "PM" : "AM";
+      startAmPm.value = startTime12.amPm;
     }
 
     const endTimeParts = endTimeStr.split(":");
     if (endTimeParts.length >= 2) {
       const endTimeHour = Number.parseInt(endTimeParts[0]!);
-      endHour.value = endTimeHour === 0 ? 12 : endTimeHour > 12 ? endTimeHour - 12 : endTimeHour;
+      const endTime12 = convert24To12(endTimeHour);
+      endHour.value = endTime12.hour;
       endMinute.value = Number.parseInt(endTimeParts[1]!);
-      endAmPm.value = endTimeHour >= 12 ? "PM" : "AM";
+      endAmPm.value = endTime12.amPm;
     }
     allDay.value = newEvent.allDay || false;
     location.value = newEvent.location || "";
-    selectedUsers.value = newEvent.users?.map(user => user.id) || [];
+    const eventToUse = originalEvent.users ? originalEvent : newEvent;
+    selectedUsers.value = eventToUse.users?.map(user => user.id) || [];
     error.value = null;
 
     if (newEvent.ical_event) {
@@ -378,56 +830,15 @@ function resetForm() {
     endDate.value = todayDate;
   }
 
-  const currentMinutes = now.getMinutes();
-  const roundedMinutes = Math.round(currentMinutes / 5) * 5;
+  const currentTime = getCurrentTime12Hour();
+  startHour.value = currentTime.hour;
+  startMinute.value = currentTime.minute;
+  startAmPm.value = currentTime.amPm;
 
-  let currentHour = now.getHours();
-  let adjustedMinutes = roundedMinutes;
-
-  if (adjustedMinutes === 60) {
-    adjustedMinutes = 0;
-    currentHour += 1;
-  }
-
-  let startHourValue = currentHour;
-  let startAmPmValue = "AM";
-
-  if (startHourValue === 0) {
-    startHourValue = 12;
-  }
-  else if (startHourValue > 12) {
-    startHourValue -= 12;
-    startAmPmValue = "PM";
-  }
-  else if (startHourValue === 12) {
-    startAmPmValue = "PM";
-  }
-
-  startHour.value = startHourValue;
-  startMinute.value = adjustedMinutes;
-  startAmPm.value = startAmPmValue;
-
-  let endHourValue = startHour.value;
-  let endMinuteValue = startMinute.value + 30;
-  let endAmPmValue = startAmPm.value;
-
-  if (endMinuteValue >= 60) {
-    endMinuteValue -= 60;
-    endHourValue += 1;
-  }
-
-  if (endHourValue > 12) {
-    endHourValue -= 12;
-    endAmPmValue = endAmPmValue === "AM" ? "PM" : "AM";
-  }
-
-  if (endHourValue === 0) {
-    endHourValue = 12;
-  }
-
-  endHour.value = endHourValue;
-  endMinute.value = endMinuteValue;
-  endAmPm.value = endAmPmValue;
+  const endTime = addMinutes(startHour.value, startMinute.value, startAmPm.value, 30);
+  endHour.value = endTime.hour;
+  endMinute.value = endTime.minute;
+  endAmPm.value = endTime.amPm;
 
   allDay.value = false;
   location.value = "";
@@ -452,27 +863,10 @@ function updateEndTime() {
     return;
 
   if (startDate.value.toDate(getLocalTimeZone()).getTime() === endDate.value.toDate(getLocalTimeZone()).getTime() && isStartTimeAfterEndTime()) {
-    let endHourValue = startHour.value;
-    let endMinuteValue = startMinute.value + 30;
-    let endAmPmValue = startAmPm.value;
-
-    if (endMinuteValue >= 60) {
-      endMinuteValue -= 60;
-      endHourValue += 1;
-    }
-
-    if (endHourValue > 12) {
-      endHourValue -= 12;
-      endAmPmValue = endAmPmValue === "AM" ? "PM" : "AM";
-    }
-
-    if (endHourValue === 0) {
-      endHourValue = 12;
-    }
-
-    endHour.value = endHourValue;
-    endMinute.value = endMinuteValue;
-    endAmPm.value = endAmPmValue;
+    const endTime = addMinutes(startHour.value, startMinute.value, startAmPm.value, 30);
+    endHour.value = endTime.hour;
+    endMinute.value = endTime.minute;
+    endAmPm.value = endTime.amPm;
   }
 }
 
@@ -481,39 +875,23 @@ function updateStartTime() {
     return;
 
   if (startDate.value.toDate(getLocalTimeZone()).getTime() === endDate.value.toDate(getLocalTimeZone()).getTime() && isEndTimeBeforeStartTime()) {
-    let startHourValue = endHour.value;
-    let startMinuteValue = endMinute.value - 30;
-    let startAmPmValue = endAmPm.value;
-
-    if (startMinuteValue < 0) {
-      startMinuteValue += 60;
-      startHourValue -= 1;
-    }
-
-    if (startHourValue < 1) {
-      startHourValue += 12;
-      startAmPmValue = startAmPmValue === "AM" ? "PM" : "AM";
-    }
-
-    if (startHourValue === 0) {
-      startHourValue = 12;
-    }
-
-    startHour.value = startHourValue;
-    startMinute.value = startMinuteValue;
-    startAmPm.value = startAmPmValue;
+    const startTime = subtractMinutes(endHour.value, endMinute.value, endAmPm.value, 30);
+    startHour.value = startTime.hour;
+    startMinute.value = startTime.minute;
+    startAmPm.value = startTime.amPm;
   }
 }
 
 function isStartTimeAfterEndTime(): boolean {
-  const startTime24 = startAmPm.value === "PM" && startHour.value !== 12 ? startHour.value + 12 : startHour.value === 12 && startAmPm.value === "AM" ? 0 : startHour.value;
-  const endTime24 = endAmPm.value === "PM" && endHour.value !== 12 ? endHour.value + 12 : endHour.value === 12 && endAmPm.value === "AM" ? 0 : endHour.value;
-
-  const startMinutes = startTime24 * 60 + startMinute.value;
-  const endMinutes = endTime24 * 60 + endMinute.value;
-
   if (startDate.value.toDate(getLocalTimeZone()).getTime() === endDate.value.toDate(getLocalTimeZone()).getTime()) {
-    return startMinutes > endMinutes;
+    return isTimeAfter(
+      startHour.value,
+      startMinute.value,
+      startAmPm.value,
+      endHour.value,
+      endMinute.value,
+      endAmPm.value,
+    );
   }
 
   return false;
@@ -537,113 +915,23 @@ function toggleRecurrenceDay(day: number) {
 }
 
 function parseICalEvent(icalData: ICalEvent | null): void {
-  if (!icalData || icalData.type !== "VEVENT") {
-    resetRecurrenceFields();
-    return;
-  }
-
-  try {
-    const event = icalData;
-
-    const rrule = event.rrule;
-    if (rrule) {
-      isRecurring.value = true;
-
-      const freq = rrule.freq?.toLowerCase();
-      if (freq && ["daily", "weekly", "monthly", "yearly"].includes(freq)) {
-        recurrenceType.value = freq as "daily" | "weekly" | "monthly" | "yearly";
-      }
-
-      recurrenceInterval.value = rrule.interval || 1;
-
-      const dayNames = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-
-      if (recurrenceType.value === "weekly" && rrule.byday) {
-        recurrenceDays.value = rrule.byday.map((day: string) => dayNames.indexOf(day)).filter((day: number) => day !== -1);
-      }
-
-      if (recurrenceType.value === "monthly" && rrule.byday) {
-        const bydayStr = Array.isArray(rrule.byday) ? rrule.byday[0] : rrule.byday;
-        if (bydayStr) {
-          const weekMatch = bydayStr.match(/^(-?\d+)([A-Z]{2})$/);
-          if (weekMatch) {
-            const week = Number.parseInt(weekMatch[1] || "1", 10);
-            const dayCode = weekMatch[2] || "SU";
-            const dayIndex = dayNames.indexOf(dayCode);
-
-            if (dayIndex !== -1) {
-              recurrenceMonthlyType.value = "weekday";
-              recurrenceMonthlyWeekday.value = { week, day: dayIndex };
-            }
-          }
-        }
-      }
-
-      if (recurrenceType.value === "yearly" && rrule.byday && rrule.bymonth) {
-        const bydayStr = Array.isArray(rrule.byday) ? rrule.byday[0] : rrule.byday;
-        if (bydayStr) {
-          const weekMatch = bydayStr.match(/^(-?\d+)([A-Z]{2})$/);
-          if (weekMatch) {
-            const week = Number.parseInt(weekMatch[1] || "1", 10);
-            const dayCode = weekMatch[2] || "SU";
-            const dayIndex = dayNames.indexOf(dayCode);
-
-            if (dayIndex !== -1) {
-              recurrenceYearlyType.value = "weekday";
-              const month = Array.isArray(rrule.bymonth) ? (rrule.bymonth[0] || 1) - 1 : (rrule.bymonth || 1) - 1;
-              recurrenceYearlyWeekday.value = { week, day: dayIndex, month };
-            }
-          }
-        }
-      }
-
-      if (rrule.count) {
-        recurrenceEndType.value = "count";
-        recurrenceCount.value = rrule.count;
-      }
-      else if (rrule.until) {
-        recurrenceEndType.value = "until";
-        const untilICal = ical.Time.fromString(rrule.until, "UTC");
-        if (untilICal) {
-          const untilDate = untilICal.toJSDate();
-          recurrenceUntil.value = new CalendarDate(
-            untilDate.getUTCFullYear(),
-            untilDate.getUTCMonth() + 1,
-            untilDate.getUTCDate(),
-          );
-        }
-      }
-      else {
-        recurrenceEndType.value = "never";
-      }
-    }
-    else {
-      resetRecurrenceFields();
-    }
-  }
-  catch (err) {
-    consola.error("Error parsing iCal event:", err);
-    resetRecurrenceFields();
-  }
+  parseRecurrenceFromICal(icalData, recurrenceState);
 }
 
 function resetRecurrenceFields(): void {
-  isRecurring.value = false;
-  recurrenceType.value = "weekly";
-  recurrenceInterval.value = 1;
-  recurrenceEndType.value = "never";
-  recurrenceCount.value = 10;
-  recurrenceUntil.value = new CalendarDate(2025, 12, 31);
-  recurrenceDays.value = [];
-  recurrenceMonthlyType.value = "day";
-  recurrenceMonthlyWeekday.value = { week: 1, day: 1 };
-  recurrenceYearlyType.value = "day";
-  recurrenceYearlyWeekday.value = { week: 1, day: 1, month: 0 };
+  resetRecurrenceFieldsComposable(recurrenceState);
 }
 
 function generateICalEvent(start: Date, end: Date): ICalEvent {
-  const startTime = ical.Time.fromJSDate(start, true);
-  const endTime = ical.Time.fromJSDate(end, true);
+  const adjustedStart = adjustStartDateForRecurrenceDays(start, recurrenceDays.value);
+  let adjustedEnd = end;
+  if (adjustedStart.getTime() !== start.getTime()) {
+    const daysDiff = Math.round((adjustedStart.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+    adjustedEnd = new Date(end.getTime() + daysDiff * 24 * 60 * 60 * 1000);
+  }
+
+  const startTime = ical.Time.fromJSDate(adjustedStart, true);
+  const endTime = ical.Time.fromJSDate(adjustedEnd, true);
 
   const event: ICalEvent = {
     type: "VEVENT",
@@ -667,94 +955,107 @@ function generateICalEvent(start: Date, end: Date): ICalEvent {
       : undefined,
   };
 
-  if (isRecurring.value) {
-    const rruleObj: ICalEvent["rrule"] = {
-      freq: recurrenceType.value.toUpperCase(),
-      ...(recurrenceInterval.value > 1 && { interval: recurrenceInterval.value }),
-    };
-
-    const dayNames = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-
-    if (recurrenceDays.value.length > 0) {
-      const startDay = start.getUTCDay();
-      const sortedDays = [...recurrenceDays.value].sort((a, b) => {
-        const relativeA = a >= startDay ? a - startDay : 7 - startDay + a;
-        const relativeB = b >= startDay ? b - startDay : 7 - startDay + b;
-        return relativeA - relativeB;
-      });
-
-      const firstDay = sortedDays[0] ?? startDay;
-      if (startDay !== firstDay) {
-        const daysToAdd = firstDay >= startDay
-          ? firstDay - startDay
-          : 7 - startDay + firstDay;
-
-        start = new Date(start.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-        end = new Date(end.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-
-        event.dtstart = ical.Time.fromJSDate(start, true).toString();
-        event.dtend = ical.Time.fromJSDate(end, true).toString();
-      }
-    }
-
-    if (recurrenceType.value === "weekly" && recurrenceDays.value.length > 0) {
-      rruleObj.byday = recurrenceDays.value
-        .map(day => dayNames[day] || "SU")
-        .filter((day): day is string => Boolean(day));
-    }
-
-    if (recurrenceType.value === "monthly" && recurrenceMonthlyType.value === "weekday") {
-      const week = recurrenceMonthlyWeekday.value.week;
-      const day = dayNames[recurrenceMonthlyWeekday.value.day];
-      rruleObj.byday = [`${week}${day}`];
-    }
-
-    if (recurrenceType.value === "yearly" && recurrenceYearlyType.value === "weekday") {
-      const week = recurrenceYearlyWeekday.value.week;
-      const day = dayNames[recurrenceYearlyWeekday.value.day];
-      const month = recurrenceYearlyWeekday.value.month + 1;
-      rruleObj.byday = [`${week}${day}`];
-      rruleObj.bymonth = [month];
-    }
-
-    if (recurrenceEndType.value === "count") {
-      rruleObj.count = recurrenceCount.value;
-    }
-    else if (recurrenceEndType.value === "until" && recurrenceUntil.value) {
-      const untilDate = recurrenceUntil.value.toDate(getLocalTimeZone());
-      if (untilDate) {
-        const endOfDay = new Date(untilDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        const untilICal = ical.Time.fromJSDate(endOfDay, true);
-        rruleObj.until = untilICal.toString();
-      }
-    }
-
-    event.rrule = rruleObj;
+  const rrule = generateRecurrenceRule(recurrenceState, adjustedStart);
+  if (rrule) {
+    event.rrule = rrule;
   }
 
   return event;
 }
 
-function handleSave() {
+function getIntegrationCapabilities(integration: Integration | null | undefined): string[] {
+  if (!integration)
+    return [];
+  const config = integrationRegistry.get(`${integration.type}:${integration.service}`);
+  return config?.capabilities || [];
+}
+
+function hasCapability(integration: Integration | null | undefined, capability: string): boolean {
+  const capabilities = getIntegrationCapabilities(integration);
+  return capabilities.includes(capability);
+}
+
+function getIntegrationCapabilitiesById(integrationId: string | null): string[] {
+  if (!integrationId || !props.integrations)
+    return [];
+  const integration = props.integrations.find(i => i.id === integrationId);
+  return getIntegrationCapabilities(integration);
+}
+
+function getSelectedSourceCalendars(): SourceCalendar[] | undefined {
+  if (props.event?.sourceCalendars?.length) {
+    if (hasEditableSourceCalendars.value) {
+      return props.event.sourceCalendars.filter((cal) => {
+        const key = `${cal.integrationId}-${cal.calendarId}`;
+        return cal.canEdit ? selectedEditableCalendars.value.has(key) : true;
+      });
+    }
+    return props.event.sourceCalendars;
+  }
+
+  if (!selectedIntegrationId.value || selectedIntegrationId.value === "local" || !props.integrations)
+    return undefined;
+
+  const integration = props.integrations.find(i => i.id === selectedIntegrationId.value);
+  if (!integration)
+    return undefined;
+
+  const capabilities = getIntegrationCapabilitiesById(integration.id);
+  const hasEditEvents = capabilities.includes("edit_events");
+
+  if (selectedIntegrationConfig.value?.supportsSelectCalendars && selectedCalendarId.value) {
+    const calendar = selectedIntegrationConfig.value.calendars.find(c => c.id === selectedCalendarId.value);
+    if (!calendar)
+      return undefined;
+    const accessRole = hasEditEvents && calendar.accessRole === "write" ? "write" : "read";
+    return [{
+      integrationId: integration.id,
+      integrationName: integration.name || integration.service,
+      calendarId: calendar.id,
+      calendarName: calendar.name,
+      accessRole,
+      canEdit: accessRole === "write",
+    }];
+  }
+
+  const accessRole = hasEditEvents ? "write" : "read";
+  return [{
+    integrationId: integration.id,
+    integrationName: integration.name || integration.service,
+    calendarId: selectedCalendarId.value || integration.id,
+    calendarName: selectedCalendarId.value || integration.name,
+    accessRole,
+    canEdit: accessRole === "write",
+  }];
+}
+
+function toggleCalendarSelection(calendar: SourceCalendar) {
+  const key = `${calendar.integrationId}-${calendar.calendarId}`;
+  if (selectedEditableCalendars.value.has(key)) {
+    selectedEditableCalendars.value.delete(key);
+  }
+  else {
+    selectedEditableCalendars.value.add(key);
+  }
+}
+
+function validateEventData(): string | null {
   if (!canAdd.value && !props.event) {
-    error.value = "This integration does not support creating new events";
-    return;
+    return "This integration does not support creating new events";
   }
 
   if (!canEdit.value && props.event) {
-    error.value = "This integration does not support editing events";
-    return;
+    return "This integration does not support editing events";
   }
 
   if (!startDate.value || !endDate.value) {
-    error.value = "Invalid date selection";
-    return;
+    return "Invalid date selection";
   }
 
-  let start: Date;
-  let end: Date;
+  return null;
+}
 
+function convertFormToEventDates(): { start: Date; end: Date } | null {
   try {
     if (allDay.value) {
       const startUTC = new Date(Date.UTC(
@@ -777,118 +1078,136 @@ function handleSave() {
         0,
       ));
 
-      start = startUTC;
-      end = endUTC;
-    }
-    else {
-      const startLocal = startDate.value.toDate(getLocalTimeZone());
-      const endLocal = endDate.value.toDate(getLocalTimeZone());
-
-      const startHours24 = startAmPm.value === "PM" && startHour.value !== 12 ? startHour.value + 12 : startHour.value === 12 && startAmPm.value === "AM" ? 0 : startHour.value;
-      const endHours24 = endAmPm.value === "PM" && endHour.value !== 12 ? endHour.value + 12 : endHour.value === 12 && endAmPm.value === "AM" ? 0 : endHour.value;
-
-      if (
-        startHours24 < StartHour
-        || startHours24 > EndHour
-        || endHours24 < StartHour
-        || endHours24 > EndHour
-      ) {
-        error.value = `Selected time must be between ${StartHour}:00 and ${EndHour}:00`;
-        return;
-      }
-
-      startLocal.setHours(startHours24, startMinute.value, 0, 0);
-      endLocal.setHours(endHours24, endMinute.value, 0, 0);
-
-      const browserTimezone = getBrowserTimezone();
-      const timezone = browserTimezone ? ical.TimezoneService.get(browserTimezone) : null;
-
-      if (timezone) {
-        const startICal = ical.Time.fromJSDate(startLocal, true);
-        const endICal = ical.Time.fromJSDate(endLocal, true);
-
-        const startLocalICal = startICal.convertToZone(timezone);
-        const endLocalICal = endICal.convertToZone(timezone);
-
-        const startUTC = startLocalICal.convertToZone(ical.TimezoneService.get("UTC"));
-        const endUTC = endLocalICal.convertToZone(ical.TimezoneService.get("UTC"));
-
-        start = startUTC.toJSDate();
-        end = endUTC.toJSDate();
-      }
-      else {
-        const startICal = ical.Time.fromJSDate(startLocal, false)
-          .convertToZone(ical.TimezoneService.get("UTC"));
-        const endICal = ical.Time.fromJSDate(endLocal, false)
-          .convertToZone(ical.TimezoneService.get("UTC"));
-        start = startICal.toJSDate();
-        end = endICal.toJSDate();
-      }
+      return { start: startUTC, end: endUTC };
     }
 
-    const startDateOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-    const endDateOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const startLocal = startDate.value.toDate(getLocalTimeZone());
+    const endLocal = endDate.value.toDate(getLocalTimeZone());
 
-    if (isBefore(endDateOnly, startDateOnly)) {
-      error.value = "End date cannot be before start date";
-      return;
+    const startHours24 = convert12To24(startHour.value, startAmPm.value);
+    const endHours24 = convert12To24(endHour.value, endAmPm.value);
+
+    if (
+      startHours24 < StartHour
+      || startHours24 > EndHour
+      || endHours24 < StartHour
+      || endHours24 > EndHour
+    ) {
+      error.value = `Selected time must be between ${StartHour}:00 and ${EndHour}:00`;
+      return null;
     }
 
-    const eventTitle = title.value.trim() ? title.value : "(no title)";
+    startLocal.setHours(startHours24, startMinute.value, 0, 0);
+    endLocal.setHours(endHours24, endMinute.value, 0, 0);
 
-    const selectedUserObjects = users.value
-      .filter(user => selectedUsers.value.includes(user.id))
-      .map(user => ({
-        id: user.id,
-        name: user.name,
-        avatar: user.avatar,
-        color: user.color,
-      }));
+    const browserTimezone = getBrowserTimezone();
+    const timezone = browserTimezone ? ical.TimezoneService.get(browserTimezone) : null;
 
-    const icalEvent = generateICalEvent(start, end);
+    if (timezone) {
+      const startICal = ical.Time.fromJSDate(startLocal, true);
+      const endICal = ical.Time.fromJSDate(endLocal, true);
 
-    if (isRecurring.value && recurrenceDays.value.length > 0) {
-      const startDay = start.getUTCDay();
-      const sortedDays = [...recurrenceDays.value].sort((a, b) => {
-        const relativeA = a >= startDay ? a - startDay : 7 - startDay + a;
-        const relativeB = b >= startDay ? b - startDay : 7 - startDay + b;
-        return relativeA - relativeB;
-      });
+      const startLocalICal = startICal.convertToZone(timezone);
+      const endLocalICal = endICal.convertToZone(timezone);
 
-      const firstDay = sortedDays[0] ?? startDay;
-      if (startDay !== firstDay) {
-        const daysToAdd = firstDay >= startDay
-          ? firstDay - startDay
-          : 7 - startDay + firstDay;
+      const startUTC = startLocalICal.convertToZone(ical.TimezoneService.get("UTC"));
+      const endUTC = endLocalICal.convertToZone(ical.TimezoneService.get("UTC"));
 
-        start = new Date(start.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-        end = new Date(end.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-      }
+      return { start: startUTC.toJSDate(), end: endUTC.toJSDate() };
     }
 
-    const isExpandedEvent = props.event?.id?.includes("-");
-    const eventId = isExpandedEvent ? props.event?.id.split("-")[0] : props.event?.id || "";
-
-    const eventData: CalendarEvent = {
-      id: eventId || "",
-      title: eventTitle,
-      description: description.value,
-      start,
-      end,
-      allDay: allDay.value,
-      location: location.value,
-      color: props.event?.color || "sky",
-      users: selectedUserObjects,
-      ical_event: icalEvent,
-    };
-
-    emit("save", eventData);
+    const startICal = ical.Time.fromJSDate(startLocal, false)
+      .convertToZone(ical.TimezoneService.get("UTC"));
+    const endICal = ical.Time.fromJSDate(endLocal, false)
+      .convertToZone(ical.TimezoneService.get("UTC"));
+    return { start: startICal.toJSDate(), end: endICal.toJSDate() };
   }
   catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    consola.error("Calendar Event Dialog: Error converting dates in handleSave:", errorMessage);
+    consola.error("Calendar Event Dialog: Error converting dates:", errorMessage);
     error.value = "Failed to process event dates. Please try again.";
+    return null;
   }
+}
+
+function adjustRecurrenceDates(start: Date, end: Date): { start: Date; end: Date } {
+  if (!isRecurring.value || recurrenceDays.value.length === 0) {
+    return { start, end };
+  }
+
+  const adjustedStart = adjustStartDateForRecurrenceDays(start, recurrenceDays.value);
+  if (adjustedStart.getTime() !== start.getTime()) {
+    const daysDiff = Math.round((adjustedStart.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+    return {
+      start: adjustedStart,
+      end: new Date(end.getTime() + daysDiff * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  return { start, end };
+}
+
+function buildEventData(start: Date, end: Date): CalendarEvent {
+  const eventTitle = title.value.trim() ? title.value : "(no title)";
+
+  const selectedUserObjects = users.value
+    .filter(user => selectedUsers.value.includes(user.id))
+    .map(user => ({
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      color: user.color,
+    }));
+
+  const icalEvent = generateICalEvent(start, end);
+  const sourceCalendars = getSelectedSourceCalendars();
+
+  const isExpandedEvent = props.event?.id?.includes("-");
+  const eventId = isExpandedEvent ? props.event?.id.split("-")[0] : props.event?.id || "";
+
+  return {
+    id: eventId || "",
+    title: eventTitle,
+    description: description.value,
+    start,
+    end,
+    allDay: allDay.value,
+    location: location.value,
+    color: props.event?.color || DEFAULT_LOCAL_EVENT_COLOR,
+    users: selectedUserObjects,
+    ical_event: icalEvent,
+    ...((selectedIntegrationId.value && selectedIntegrationId.value !== "local") && { integrationId: selectedIntegrationId.value }),
+    ...((selectedCalendarId.value && selectedIntegrationId.value !== "local") && { calendarId: selectedCalendarId.value }),
+    ...(props.event?.integrationId && { integrationId: props.event.integrationId }),
+    ...(props.event?.calendarId && { calendarId: props.event.calendarId }),
+    ...(sourceCalendars && sourceCalendars.length > 0 && { sourceCalendars }),
+  };
+}
+
+function handleSave() {
+  const validationError = validateEventData();
+  if (validationError) {
+    error.value = validationError;
+    return;
+  }
+
+  const dates = convertFormToEventDates();
+  if (!dates) {
+    return;
+  }
+
+  const startDateOnly = new Date(dates.start.getFullYear(), dates.start.getMonth(), dates.start.getDate());
+  const endDateOnly = new Date(dates.end.getFullYear(), dates.end.getMonth(), dates.end.getDate());
+
+  if (isBefore(endDateOnly, startDateOnly)) {
+    error.value = "End date cannot be before start date";
+    return;
+  }
+
+  const adjustedDates = adjustRecurrenceDates(dates.start, dates.end);
+  const eventData = buildEventData(adjustedDates.start, adjustedDates.end);
+
+  emit("save", eventData);
 }
 
 function handleDelete() {
@@ -897,9 +1216,31 @@ function handleDelete() {
     return;
   }
 
-  if (props.event?.id) {
-    emit("delete", props.event.id);
+  if (isReadOnly.value) {
+    error.value = "No calendars selected for deletion";
+    return;
   }
+
+  if (!props.event?.id) {
+    return;
+  }
+
+  const sourceCalendars = getSelectedSourceCalendars();
+
+  if (hasEditableSourceCalendars.value && (!sourceCalendars || sourceCalendars.length === 0)) {
+    error.value = "No calendars selected for deletion";
+    return;
+  }
+
+  const isExpandedEvent = props.event.id.includes("-");
+  const eventId = isExpandedEvent ? props.event.id.split("-")[0] : props.event.id;
+
+  if (!eventId) {
+    error.value = "Invalid event ID";
+    return;
+  }
+
+  emit("delete", eventId);
 }
 </script>
 
@@ -930,8 +1271,115 @@ function handleDelete() {
         <div v-if="error" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
           {{ error }}
         </div>
-        <div v-if="isReadOnly" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm">
-          This event cannot be edited. {{ integrationServiceName || 'This integration' }} does not support editing events.
+        <div v-if="!hasEditableSourceCalendars && eventSourceCalendars.length > 0" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm">
+          This event cannot be edited. No connected calendars allow edits for this event.
+        </div>
+        <div v-if="hasEditableSourceCalendars && editableSourceCalendars.length < eventSourceCalendars.length" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm">
+          This event can be edited. {{ editableSourceCalendars.length }} of {{ eventSourceCalendars.length }} connected calendars support editing.
+        </div>
+        <div v-if="showCalendarPicker" class="space-y-2">
+          <label class="block text-sm font-medium text-highlighted">Calendar</label>
+          <USelect
+            :items="calendarPickerOptions"
+            option-attribute="label"
+            value-attribute="value"
+            placeholder="Select calendar"
+            class="w-full"
+            :model-value="selectedIntegrationId || undefined"
+            @update:model-value="selectedIntegrationId = $event || null"
+          />
+          <USelect
+            v-if="selectedIntegrationConfig?.supportsSelectCalendars && integrationCalendarOptions.length > 0"
+            :items="integrationCalendarOptions"
+            option-attribute="label"
+            value-attribute="value"
+            placeholder="Select specific calendar"
+            class="w-full mt-2"
+            :model-value="selectedCalendarId || undefined"
+            @update:model-value="selectedCalendarId = $event || null"
+          />
+        </div>
+        <div v-if="calendarAccordionItems.length" class="space-y-2">
+          <UAccordion :items="calendarAccordionItems">
+            <template #body>
+              <div class="space-y-1">
+                <div
+                  v-for="calendar in enrichedSourceCalendars"
+                  :key="`${calendar.integrationId}-${calendar.calendarId}`"
+                  class="flex items-center justify-between rounded-md border border-default px-3 py-2 text-sm"
+                >
+                  <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <template v-if="supportsUserSelection(calendar) && calendar.eventUsers && calendar.eventUsers.length > 1">
+                      <UAvatarGroup size="sm">
+                        <UAvatar
+                          v-for="user in calendar.eventUsers"
+                          :key="user.id"
+                          :src="user.avatar || undefined"
+                          :alt="user.name || ''"
+                          size="sm"
+                          :ui="{
+                            root: user.avatar ? '' : 'ring-0 border-0 shadow-none',
+                            image: 'object-cover',
+                            fallback: user.avatar ? '' : 'ring-0 border-0 shadow-none',
+                          }"
+                          :style="user.avatar ? undefined : { backgroundColor: user.color || calendar.displayColor }"
+                        >
+                          <template v-if="!user.avatar" #fallback>
+                            <UIcon name="i-lucide-user" class="h-4 w-4" />
+                          </template>
+                        </UAvatar>
+                      </UAvatarGroup>
+                    </template>
+                    <template v-else-if="supportsUserSelection(calendar) && calendar.eventUsers && calendar.eventUsers.length === 1 && calendar.eventUsers[0]">
+                      <UAvatar
+                        :src="calendar.eventUsers[0]?.avatar || undefined"
+                        :alt="calendar.eventUsers[0]?.name || ''"
+                        size="sm"
+                        :ui="{
+                          root: calendar.eventUsers[0]?.avatar ? '' : 'ring-0 border-0 shadow-none',
+                          image: 'object-cover',
+                          fallback: calendar.eventUsers[0]?.avatar ? '' : 'ring-0 border-0 shadow-none',
+                        }"
+                        :style="calendar.eventUsers[0]?.avatar ? undefined : { backgroundColor: calendar.eventUsers[0]?.color || calendar.displayColor }"
+                      >
+                        <template v-if="!calendar.eventUsers[0]?.avatar" #fallback>
+                          <UIcon name="i-lucide-user" class="h-4 w-4" />
+                        </template>
+                      </UAvatar>
+                    </template>
+                    <UAvatar
+                      v-else
+                      :src="calendar.user?.avatar || undefined"
+                      :alt="calendar.user?.name || ''"
+                      size="sm"
+                      :ui="{
+                        root: calendar.user ? '' : 'ring-0 border-0 shadow-none',
+                        image: 'object-cover',
+                        fallback: calendar.user ? '' : 'ring-0 border-0 shadow-none',
+                      }"
+                      :style="calendar.user ? undefined : { backgroundColor: calendar.displayColor }"
+                    >
+                      <template v-if="!calendar.user" #fallback>
+                        <UIcon name="i-lucide-calendar" class="h-4 w-4" />
+                      </template>
+                    </UAvatar>
+                    <span class="truncate">
+                      {{ calendar.calendarName }}
+                    </span>
+                  </div>
+                  <UButton
+                    :icon="calendar.canEdit ? 'i-lucide-pencil' : 'i-lucide-pencil-off'"
+                    :color="calendar.canEdit && selectedEditableCalendars.has(`${calendar.integrationId}-${calendar.calendarId}`) ? 'primary' : 'neutral'"
+                    variant="ghost"
+                    size="sm"
+                    :disabled="!calendar.canEdit"
+                    :aria-label="calendar.canEdit ? (selectedEditableCalendars.has(`${calendar.integrationId}-${calendar.calendarId}`) ? 'Deselect calendar for editing' : 'Select calendar for editing') : 'Read only calendar'"
+                    @click="calendar.canEdit && toggleCalendarSelection(calendar)"
+                  />
+                </div>
+              </div>
+            </template>
+          </UAccordion>
         </div>
         <div class="space-y-2">
           <label class="block text-sm font-medium text-highlighted">Title</label>
@@ -1296,6 +1744,18 @@ function handleDelete() {
             <div class="text-sm text-muted mb-2">
               {{ event?.id ? 'Edit users for this event:' : 'Select users for this event:' }}
             </div>
+            <div v-if="showLockedUserMessage" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm mb-2">
+              Users for this event are based on integration settings and can be changed in the <NuxtLink to="/settings" class="text-primary">
+                settings
+                page
+              </NuxtLink>.
+            </div>
+            <div v-if="showMixedUserMessage" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm mb-2">
+              User selection only affects supported calendars. Other calendars users are based on integration settings and can be changed in the <NuxtLink to="/settings" class="text-primary">
+                settings
+                page
+              </NuxtLink>.
+            </div>
             <div class="flex flex-wrap gap-2">
               <UButton
                 v-for="user in users"
@@ -1304,7 +1764,7 @@ function handleDelete() {
                 size="sm"
                 class="p-1"
                 :class="selectedUsers.includes(user.id) ? 'ring-2 ring-primary-500' : ''"
-                :disabled="isReadOnly"
+                :disabled="isReadOnly || !allowsUserSelection"
                 @click="selectedUsers.includes(user.id) ? selectedUsers = selectedUsers.filter(id => id !== user.id) : selectedUsers.push(user.id)"
               >
                 <UAvatar
@@ -1324,7 +1784,7 @@ function handleDelete() {
       </div>
       <div class="flex justify-between p-4 border-t border-default">
         <UButton
-          v-if="event?.id && canDelete"
+          v-if="event?.id && canDelete && !isReadOnly"
           color="error"
           variant="ghost"
           icon="i-lucide-trash"
@@ -1332,7 +1792,7 @@ function handleDelete() {
         >
           Delete
         </UButton>
-        <div class="flex gap-2" :class="{ 'ml-auto': !event?.id || !canDelete }">
+        <div class="flex gap-2" :class="{ 'ml-auto': !event?.id || !canDelete || isReadOnly }">
           <UButton
             color="neutral"
             variant="ghost"
