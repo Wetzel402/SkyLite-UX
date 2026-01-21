@@ -214,7 +214,7 @@ model HomeSettings {
   countdownEventId      String?
 
   // Data refresh settings
-  refreshInterval       Float    @default(1.0)  // hours between widget data refreshes
+  refreshInterval       Float    @default(6.0)  // hours between widget data refreshes
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

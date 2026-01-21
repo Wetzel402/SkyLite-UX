@@ -1014,18 +1014,18 @@ async function handleRemoveAlbum(albumId: string) {
               <div class="space-y-2 pl-4">
                 <div class="flex items-center justify-between">
                   <label class="text-sm font-medium text-highlighted">Refresh Every</label>
-                  <span class="text-sm text-muted">{{ homeSettings?.refreshInterval ?? 1.0 }} hour{{ (homeSettings?.refreshInterval ?? 1.0) !== 1 ? 's' : '' }}</span>
+                  <span class="text-sm text-muted">{{ homeSettings?.refreshInterval ?? 6.0 }} hour{{ (homeSettings?.refreshInterval ?? 6.0) !== 1 ? 's' : '' }}</span>
                 </div>
                 <input
                   type="range"
-                  :value="homeSettings?.refreshInterval ?? 1.0"
-                  min="0.25"
-                  max="6"
-                  step="0.25"
+                  :value="homeSettings?.refreshInterval ?? 6.0"
+                  min="1"
+                  max="12"
+                  step="1"
                   class="w-full"
                   @change="updateHomeSettingsComposable({ refreshInterval: Number(($event.target as HTMLInputElement).value) })"
                 >
-                <p class="text-xs text-muted">Choose between 15 minutes (0.25h) and 6 hours</p>
+                <p class="text-xs text-muted">Choose between 1 and 12 hours</p>
               </div>
             </div>
 

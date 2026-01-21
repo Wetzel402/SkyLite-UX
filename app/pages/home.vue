@@ -223,7 +223,7 @@ onMounted(async () => {
   setInterval(updateClock, 1000);
 
   // Calculate refresh interval in milliseconds (convert hours to ms)
-  const refreshIntervalMs = (homeSettings.value?.refreshInterval || 1.0) * 3600000;
+  const refreshIntervalMs = (homeSettings.value?.refreshInterval || 6.0) * 3600000;
 
   // Fetch weather if enabled
   if (homeSettings.value?.weatherEnabled && homeSettings.value.latitude && homeSettings.value.longitude) {

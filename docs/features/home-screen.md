@@ -186,9 +186,9 @@ Go to **Settings** → **Home Page** to configure all widgets:
    - Choose temperature unit (Celsius/Fahrenheit)
 
 3. **Data Refresh Interval**
-   - Set how often data widgets refresh (0.25-6 hours)
+   - Set how often data widgets refresh (1-12 hours)
    - Applies to: weather, events, tasks, and menu
-   - Default: 1 hour
+   - Default: 6 hours
 
 4. **Widget Visibility**
    - Clock: Enable/disable display
@@ -206,17 +206,17 @@ Widgets automatically refresh to keep data current:
 |--------|------------------|
 | Clock | 1 second (fixed) |
 | Photos | Configured transition speed |
-| Weather | Configurable (default: 1 hour) |
-| Events | Configurable (default: 1 hour) |
-| Tasks | Configurable (default: 1 hour) |
-| Menu | Configurable (default: 1 hour) |
+| Weather | Configurable (default: 6 hours) |
+| Events | Configurable (default: 6 hours) |
+| Tasks | Configurable (default: 6 hours) |
+| Menu | Configurable (default: 6 hours) |
 
 ### Configuring Refresh Interval
 
 Data widgets (weather, events, tasks, menu) share a common refresh interval that can be configured in **Settings** → **Home Page** → **Data Refresh Interval**.
 
-- **Range**: 15 minutes (0.25 hours) to 6 hours
-- **Default**: 1 hour
+- **Range**: 1 to 12 hours (hourly increments)
+- **Default**: 6 hours
 - **Purpose**: Controls how frequently the home screen fetches new data from APIs
 
 Shorter intervals provide more up-to-date information but increase API calls and network usage. Longer intervals reduce load but data may be less current.
