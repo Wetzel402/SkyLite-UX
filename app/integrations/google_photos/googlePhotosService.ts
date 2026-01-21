@@ -27,7 +27,7 @@ export class GooglePhotosService implements IntegrationService {
   async testConnection(): Promise<boolean> {
     // Test if access token exists
     try {
-      const integration = await $fetch(`/api/integrations/${this.integrationId}`);
+      const integration = await $fetch<{ settings?: Record<string, unknown> }>(`/api/integrations/${this.integrationId}`);
       const hasToken = !!(integration.settings as { accessToken?: string })?.accessToken;
 
       this.status = {

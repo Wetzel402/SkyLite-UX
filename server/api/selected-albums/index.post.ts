@@ -33,7 +33,7 @@ const albumSchema = z.object({
   coverPhotoUrl: z
     .string()
     .url()
-    .refine((url) => !url || isValidGooglePhotosUrl(url), {
+    .refine((url: string) => !url || isValidGooglePhotosUrl(url), {
       message: "URL must be a valid Google Photos URL",
     })
     .optional(),

@@ -35,17 +35,17 @@ export default defineEventHandler(async (event) => {
 
     return settings;
   }
-  catch (error) {
+  catch (error: unknown) {
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,
-        message: `Invalid request body: ${error.message}`,
+        message: `Invalid request body: ${(error as z.ZodError).message}`,
       });
     }
 
     throw createError({
       statusCode: 500,
-      message: `Failed to update home settings: ${error}`,
+      message: `Failed to update home settings: ${error instanceof Error ? error.message : String(error)}`,
     });
   }
 });

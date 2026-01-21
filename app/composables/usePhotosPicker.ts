@@ -3,8 +3,8 @@ export const usePhotosPicker = () => {
     id: string;
     albumId: string;
     title: string;
-    coverPhotoUrl?: string;
-    mediaItemsCount?: number;
+    coverPhotoUrl?: string | null;
+    mediaItemsCount?: number | null;
   }>>([]);
 
   const loading = ref(false);

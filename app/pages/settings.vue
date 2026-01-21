@@ -926,7 +926,7 @@ async function handleRemoveAlbum(albumId: string) {
                   <UButton
                     size="sm"
                     variant="ghost"
-                    color="red"
+                    color="error"
                     icon="i-lucide-trash-2"
                     @click="handleRemoveAlbum(album.id)"
                   />
