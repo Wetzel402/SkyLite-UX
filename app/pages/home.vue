@@ -3,7 +3,7 @@
     <!-- Photo Background with Ken Burns Effect -->
     <div v-if="currentPhoto" class="absolute inset-0">
       <img
-        :src="getPhotoUrl(currentPhoto.baseUrl)"
+        :src="getPhotoUrl(currentPhoto.url)"
         :alt="currentPhoto.filename"
         class="w-full h-full object-cover transition-all duration-1000"
         :class="{ 'ken-burns': homeSettings?.kenBurnsIntensity && homeSettings.kenBurnsIntensity > 0 }"
@@ -13,6 +13,20 @@
 
     <!-- Fallback background if no photos -->
     <div v-else class="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black" />
+
+    <!-- No Albums Selected Message -->
+    <div
+      v-if="!currentPhoto && homeSettings?.photosEnabled"
+      class="absolute inset-0 flex items-center justify-center"
+    >
+      <div class="text-white text-center">
+        <h2 class="text-3xl mb-4">No Photos Selected</h2>
+        <p class="text-lg mb-6">Select photos in Settings to display in your slideshow</p>
+        <NuxtLink to="/settings" class="inline-block px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+          Go to Settings
+        </NuxtLink>
+      </div>
+    </div>
 
     <!-- Overlay Gradient for Text Readability -->
     <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40" />

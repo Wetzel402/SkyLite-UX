@@ -31,6 +31,7 @@ const { showError } = useAlertToast();
 
 const { settings, updateSettings, getSettings } = useAppSettings();
 const { homeSettings, fetchHomeSettings, updateHomeSettings: updateHomeSettingsComposable } = useHomeSettings();
+const { selectedAlbums, fetchSelectedAlbums, openPicker } = usePhotosPicker();
 const showMeals = computed({
   get() {
     return settings.value?.showMealsOnCalendar ?? false;
@@ -100,6 +101,7 @@ onMounted(async () => {
 
   await refreshNuxtData("integrations");
   await fetchHomeSettings();
+  await fetchSelectedAlbums();
 });
 
 watch(() => route.query, (query) => {
@@ -524,6 +526,25 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
   const settings = integration.settings as { needsReauth?: boolean } | undefined;
   return Boolean(settings?.needsReauth);
 }
+
+async function handleOpenPhotosPicker() {
+  try {
+    await openPicker();
+  } catch (error) {
+    consola.error('Failed to open picker:', error);
+    showError('Picker Error', 'Failed to open Google Photos picker');
+  }
+}
+
+async function handleRemoveAlbum(albumId: string) {
+  try {
+    await $fetch(`/api/selected-albums/${albumId}`, { method: 'DELETE' });
+    await fetchSelectedAlbums();
+  } catch (error) {
+    consola.error('Failed to remove album:', error);
+    showError('Remove Album Failed', 'Failed to remove album');
+  }
+}
 </script>
 
 <template>
@@ -871,6 +892,50 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                 @change="updateHomeSettingsComposable({ kenBurnsIntensity: Number(($event.target as HTMLInputElement).value) })"
               >
               <p class="text-xs text-muted">Zoom and pan effect strength (0 = off, 2 = maximum)</p>
+            </div>
+
+            <!-- Album Selection -->
+            <div v-if="homeSettings?.photosEnabled" class="space-y-3 pt-4 border-t border-muted">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-highlighted">Selected Photos</label>
+                <UButton
+                  size="sm"
+                  icon="i-lucide-plus"
+                  @click="handleOpenPhotosPicker"
+                >
+                  Select Photos
+                </UButton>
+              </div>
+
+              <!-- Selected Photos List -->
+              <div v-if="selectedAlbums.length > 0" class="space-y-2">
+                <div
+                  v-for="album in selectedAlbums"
+                  :key="album.id"
+                  class="flex items-center gap-3 p-3 bg-muted rounded-lg border border-default"
+                >
+                  <img
+                    v-if="album.coverPhotoUrl"
+                    :src="`/api/integrations/google_photos/proxy-image?photoId=${encodeURIComponent(album.albumId)}`"
+                    class="w-12 h-12 rounded object-cover"
+                    :alt="album.title"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium text-highlighted truncate">{{ album.title }}</div>
+                  </div>
+                  <UButton
+                    size="sm"
+                    variant="ghost"
+                    color="red"
+                    icon="i-lucide-trash-2"
+                    @click="handleRemoveAlbum(album.id)"
+                  />
+                </div>
+              </div>
+
+              <div v-else class="text-sm text-muted p-3 bg-muted rounded-lg border border-default">
+                No photos selected. Click "Select Photos" to choose from your Google Photos.
+              </div>
             </div>
 
             <!-- Weather Settings -->

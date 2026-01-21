@@ -10,103 +10,86 @@ permalink: /integrations/photos/
 
 Photo integrations allow you to connect external photo services to Skylite UX. Photos are displayed on the Home screen as a beautiful ambient slideshow with Ken Burns effect (pan/zoom animations).
 
-## Google Photos
+## Google Photos (Photos Picker API)
 
-The Google Photos integration allows you to display photos from your Google Photos library on the Skylite UX Home screen. You can select specific albums to display, and photos will cycle through with smooth transitions and Ken Burns effects.
+The Google Photos integration uses the **Photos Picker API** to allow users to select specific albums for display on the Skylite UX Home screen. This approach is more privacy-friendly and doesn't require sensitive OAuth scopes.
+
+**Important:** As of March 31, 2025, Google deprecated the `photoslibrary.readonly` OAuth scope. The old Library API approach no longer works.
+
+### How It Works
+
+1. **User Selection**: Users click "Select Albums" in Settings
+2. **Picker Opens**: Google's Photos Picker modal displays user's albums
+3. **Albums Saved**: Selected albums are stored in the database
+4. **Display**: Home page cycles through photos from selected albums
 
 ### Capabilities
 
-- **Get albums**: List all albums from your Google Photos library
-- **Get photos**: Retrieve photos from selected albums
-- **OAuth authentication**: Secure authentication using Google OAuth
-- **Album selection**: Choose which albums to display on the Home screen
-- **Multi-user support**: Multiple users can connect their Google Photos accounts
+- **Album selection**: Choose specific albums via Google's picker interface
+- **No sensitive scopes**: Picker handles authentication automatically
+- **User control**: Explicit selection of which albums to display
+- **Privacy-friendly**: No broad access to entire photo library
 
 ### Setup Instructions
 
 #### Administrator Setup (One-Time)
 
-Before users can connect their Google Photos, an administrator must configure OAuth credentials and enable the Photos Library API.
+The Photos Picker API requires minimal setup - no special OAuth scopes or API restrictions are needed.
 
-**Note:** If you've already set up Google Calendar integration, you can reuse the same OAuth credentials. You just need to enable the Photos Library API and add the Photos scope.
-
-##### Step 1: Enable the Photos Library API
+##### Step 1: Enable the Google Picker API
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2. Select your existing project (or create a new one)
 3. Navigate to **APIs & Services > Library**
-4. Search for **"Photos Library API"**
+4. Search for **"Google Picker API"**
 5. Click on it and click **Enable**
-6. **Important**: Make sure you see "MANAGE" (not "ENABLE") after clicking - this confirms the API is enabled
 
-##### Step 2: Add the Photos OAuth Scope
+**Note:** You can reuse the same OAuth credentials that you use for Google Calendar integration. No separate credentials are needed.
 
-1. Go to **APIs & Services > OAuth consent screen**
-2. Click **Edit App**
-3. Navigate to the **Scopes** section
-4. Click **Add or Remove Scopes**
-5. Search for and add: `https://www.googleapis.com/auth/photoslibrary.readonly`
-6. Click **Update** and then **Save and Continue**
+##### Step 2: Verify OAuth Credentials (if not already configured)
 
-##### Step 2b: Add Test Users (if app is in Testing mode)
-
-The `photoslibrary.readonly` scope is a "restricted" scope. If your app's publishing status is "Testing" (not "In production"), you must add users as test users:
-
-1. On the **OAuth consent screen** page, check the "Publishing status"
-2. If it says "Testing", scroll down to the **Test users** section
-3. Click **Add Users**
-4. Add the email addresses of users who will connect their Google Photos
-5. Click **Save**
-
-**Note:** Only test users can access restricted scopes like Photos Library when the app is in Testing mode.
-
-##### Step 3: Add the Redirect URI (if not already done)
+If you haven't already configured Google OAuth credentials for Calendar:
 
 1. Go to **APIs & Services > Credentials**
-2. Click on your existing **OAuth 2.0 Client ID**
-3. Under **Authorized redirect URIs**, add:
-   - For local development: `http://localhost:3000/api/integrations/google_photos/callback`
-   - For production: `https://your-domain.com/api/integrations/google_photos/callback`
-4. Click **Save**
+2. Create an **OAuth 2.0 Client ID** (if you don't have one)
+3. Application type: **Web application**
+4. Add authorized redirect URIs:
+   - For local development: `http://localhost:3000/api/integrations/google_calendar/callback`
+   - For production: `https://your-domain.com/api/integrations/google_calendar/callback`
 
-##### Step 4: Configure Environment Variables (if not already done)
+##### Step 3: Configure Environment Variables
 
-If you haven't already configured Google OAuth for Calendar:
+Add your OAuth credentials to the environment:
 
-1. Copy the **Client ID** and **Client Secret** from your OAuth credentials
-2. Add them to your environment:
-   ```env
-   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-   GOOGLE_CLIENT_SECRET=your-client-secret
-   ```
-3. For Docker deployments, pass as environment variables:
-   ```bash
-   docker run -e GOOGLE_CLIENT_ID=xxx -e GOOGLE_CLIENT_SECRET=xxx ...
-   ```
+```env
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+```
+
+For Docker deployments:
+
+```bash
+docker run -e GOOGLE_CLIENT_ID=xxx -e GOOGLE_CLIENT_SECRET=xxx ...
+```
 
 #### User Setup
 
-Once the administrator has configured the OAuth credentials:
+##### Selecting Albums
 
-1. In Skylite UX, go to **Settings > Integrations > Add Integration**
-2. Select **Photos** as the type and **Google** as the service
-3. Give the integration a name (e.g., "My Google Photos")
-4. Click **Save** - you will be redirected to Google to sign in
-5. Sign in with your Google account and grant photo library access
-6. After authorization, you will be redirected back to Skylite UX
+1. In Skylite UX, go to **Settings**
+2. Scroll to the **Home Page** section
+3. Ensure **Photo Slideshow** is enabled
+4. Click **Select Albums** button
+5. Google's Photos Picker will open with your albums
+6. Select the albums you want to display
+7. Click **Done** in the picker
+8. Selected albums will appear in the list
 
-#### Selecting Albums
+##### Managing Albums
 
-After connecting Google Photos:
-
-1. Navigate to the **Home** page
-2. Click the **Settings** icon (gear) in the top-right corner
-3. In the **Photo Background** section, click on your connected Google Photos account
-4. The account will expand to show all your albums
-5. Check the albums you want to display on the Home screen
-6. Click **Save Album Selection**
-
-**Tip:** If you leave no albums selected, the Home screen will display your most recent photos from all albums.
+- **View selected albums**: See all selected albums with cover photos in Settings
+- **Remove albums**: Click the trash icon next to any album to remove it
+- **Add more albums**: Click "Select Albums" again to add additional albums
 
 ---
 
@@ -114,45 +97,100 @@ After connecting Google Photos:
 
 The Home screen displays your photos with several customizable features:
 
-- **Ken Burns Effect**: Photos pan and zoom smoothly for a dynamic display
-- **Transition Speed**: Adjustable from 5 to 30 seconds per photo
-- **Ken Burns Intensity**: Adjustable from subtle to dramatic movement
+- **Ken Burns Effect**: Photos pan and zoom smoothly for a dynamic display (adjustable 0-2x intensity)
+- **Transition Speed**: Adjustable from 5 to 60 seconds per photo
+- **Empty State**: Displays a message with link to settings when no albums are selected
 - **Overlay Widgets**: Display clock, weather, events, todos, meals, and countdown timers
+
+### Configuration Options
+
+Available in **Settings > Home Page**:
+
+| Setting | Description | Range |
+|---------|-------------|-------|
+| Photo Slideshow | Enable/disable photo background | On/Off |
+| Selected Albums | Albums to display | Multiple selection |
+| Transition Speed | Time between photo changes | 5-60 seconds |
+| Ken Burns Intensity | Pan/zoom effect strength | 0-2.0x (0 = off, 2 = maximum) |
 
 ### Troubleshooting
 
-- **"Google Photos not configured"**: The administrator needs to set the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables
+**"No Photos Selected" message on Home page**
+- Go to Settings > Home Page
+- Click "Select Albums"
+- Choose at least one album from the picker
 
-- **"redirect_uri_mismatch" error**: Ensure the redirect URI is correctly configured in Google Cloud Console:
-  - `http://localhost:3000/api/integrations/google_photos/callback` (development)
-  - `https://your-domain.com/api/integrations/google_photos/callback` (production)
+**Picker doesn't open**
+- Check browser console for errors
+- Ensure Google Picker API is enabled in Google Cloud Console
+- Verify `GOOGLE_CLIENT_ID` is set in environment variables
+- Try refreshing the page
 
-- **Google only asks for Calendar permission, not Photos**:
-  This means the `photoslibrary.readonly` scope is not added to your OAuth consent screen:
-  1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **OAuth consent screen**
-  2. If your app is in "Testing" mode, click **Edit App** and proceed to the **Scopes** section
-  3. If you don't see "Edit App", look for a **Scopes** section on the page
-  4. Click **Add or Remove Scopes**
-  5. In the search/filter box, paste: `https://www.googleapis.com/auth/photoslibrary.readonly`
-  6. Check the box next to it and click **Update**, then **Save and Continue**
-  7. Delete your existing Google Photos integration in Skylite UX
-  8. Re-add it - Google should now ask for Photos permission
+**Albums not saving**
+- Check browser network tab for API errors
+- Verify database migration ran successfully
+- Check server logs for errors
 
-- **"403 Forbidden" or "Permission denied" or "insufficient authentication scopes" when fetching albums**:
-  1. Verify the **Photos Library API** is enabled in Google Cloud Console → APIs & Services → Library (must show "MANAGE", not "ENABLE")
-  2. Verify the `photoslibrary.readonly` scope is added to the OAuth consent screen
-  3. **If app is in "Testing" mode**: Add your Google account email as a Test User in the OAuth consent screen
-  4. **Important**: After making any changes, you must delete and re-add the integration to get a new token with the correct permissions
+**Photos not displaying**
+- Ensure Photo Slideshow is enabled in Settings
+- Verify you have selected at least one album
+- Check that selected albums contain photos (not just videos)
+- Refresh the Home page
 
-- **"Authentication expired" or "Reauth required"**: Click on the integration in Settings and save again to re-authorize
+**"Google Picker not loaded" error**
+- Check that the Google Picker API script is loading
+- Verify there are no browser extensions blocking the script
+- Check browser console for loading errors
 
-- **No photos appearing**:
-  1. Ensure you have selected albums in the Home Settings
-  2. Verify the selected albums contain photos (not just videos)
-  3. Check that the integration is enabled in Settings > Integrations
+### Differences from Old Implementation
 
-- **Photos not updating**: The Home screen caches photos. Refresh the page or wait for the next sync cycle
+**Old (OAuth-based Library API):**
+- ❌ Required `photoslibrary.readonly` scope (deprecated March 31, 2025)
+- ❌ Needed OAuth consent screen configuration
+- ❌ Required test users for sensitive scope
+- ❌ Complex token management
+- ❌ 403 errors after deprecation date
 
-- **Server logs show "Photos scope NOT granted"**: This confirms the scope is missing from your OAuth consent screen. Follow the steps above to add it.
+**New (Photos Picker API):**
+- ✅ No sensitive scopes needed
+- ✅ Google handles authentication
+- ✅ Explicit user control over album selection
+- ✅ More privacy-friendly
+- ✅ Works after deprecation date
+- ✅ Simpler setup process
 
-- **Server logs show token has correct scope but API returns 403**: This usually means your app is in "Testing" mode and you're not listed as a test user. Go to OAuth consent screen → Test users → Add your email.
+### Privacy & Security
+
+The Photos Picker API is designed with privacy in mind:
+
+- **User consent**: Users explicitly select which albums to share
+- **No broad access**: Only selected albums are accessible
+- **Google authentication**: Picker handles auth securely
+- **No token storage**: No need to store sensitive OAuth tokens for photos
+
+### Technical Details
+
+**Database Schema:**
+
+Selected albums are stored in the `selected_albums` table with:
+- Album ID (from Google Photos)
+- Album title
+- Cover photo URL
+- Media items count
+- Display order
+
+**API Endpoints:**
+
+- `GET /api/selected-albums` - Fetch user's selected albums
+- `POST /api/selected-albums` - Save album selections
+- `DELETE /api/selected-albums/[id]` - Remove an album
+
+**Client-Side:**
+
+- `usePhotosPicker` composable - Album selection logic
+- `usePhotos` composable - Photo fetching for display
+- Google Picker plugin - Loads Picker API
+
+---
+
+For more help, see the [Troubleshooting Guide](#troubleshooting) or check the server logs for detailed error messages.

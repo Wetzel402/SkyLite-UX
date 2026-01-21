@@ -2,7 +2,8 @@ import type { GoogleCalendarSettings, ICalSettings, IntegrationConfig } from "~/
 import type { DialogField } from "~/types/ui";
 
 import { createGoogleCalendarService, handleGoogleCalendarSave } from "./google_calendar/googleCalendar";
-import { createGooglePhotosService, handleGooglePhotosSave } from "./google_photos/googlePhotos";
+import { handleGooglePhotosSave } from "./google_photos/googlePhotos";
+import { createGooglePhotosService } from "./google_photos/googlePhotosService";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
@@ -70,17 +71,11 @@ export const integrationConfigs: IntegrationConfig[] = [
     syncInterval: 10,
     customSaveHandler: handleGoogleCalendarSave,
   },
-  // ================================================
-  // Photos integration configs can support the following capabilities:
-  // - get_albums: Can list photo albums
-  // - get_photos: Can fetch photos from albums
-  // - oauth: Can authenticate using OAuth
-  // ================================================
   {
     type: "photos",
     service: "google",
     settingsFields: [],
-    capabilities: ["get_albums", "get_photos", "oauth"],
+    capabilities: ["oauth"],
     icon: "https://unpkg.com/lucide-static@latest/icons/image.svg",
     dialogFields: [],
     syncInterval: 60,
@@ -221,7 +216,7 @@ const serviceFactoryMap = {
   "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, _settings?: ICalSettings | GoogleCalendarSettings) => {
     return createGoogleCalendarService(_id);
   },
-  "photos:google": (_id: string, _apiKey: string, _baseUrl: string, _settings?: unknown) => {
+  "photos:google": (_id: string) => {
     return createGooglePhotosService(_id);
   },
   "shopping:mealie": createMealieService,

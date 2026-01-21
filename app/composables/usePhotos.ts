@@ -1,51 +1,46 @@
-import type { Integration } from "~/types/database";
-
 export const usePhotos = () => {
-  const photos = ref<Array<{ id: string; baseUrl: string; filename: string }>>([]);
+  const photos = ref<Array<{
+    id: string;
+    url: string;
+    filename: string;
+  }>>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
+  // Fetch photos from selected albums using Picker API
   const fetchPhotos = async () => {
     loading.value = true;
     error.value = null;
 
     try {
-      // First, fetch the Google Photos integration
-      const integrations = await $fetch<Integration[]>("/api/integrations");
-      const photosIntegration = integrations.find(
-        (i: Integration) => i.type === "photos" && i.service === "google" && i.enabled,
-      );
+      // Get selected albums from database
+      const response = await $fetch('/api/selected-albums');
+      const albums = response.albums || [];
 
-      if (!photosIntegration) {
-        error.value = "No Google Photos integration found. Please add one in Settings.";
+      if (albums.length === 0) {
+        error.value = 'No albums selected. Please select albums in settings.';
         photos.value = [];
         return;
       }
 
-      // Fetch photos using the integration ID
-      const response = await $fetch<{
-        photos: Array<{ id: string; baseUrl: string; filename: string }>;
-      }>("/api/integrations/google_photos/photos", {
-        query: {
-          integrationId: photosIntegration.id,
-          pageSize: 50,
-        },
-      });
-
-      photos.value = response.photos || [];
-    }
-    catch (e: any) {
-      error.value = e.message || "Failed to fetch photos";
-      console.error("Error fetching photos:", e);
-      photos.value = [];
-    }
-    finally {
+      // Use proxy URLs to fetch photos with authentication
+      photos.value = albums
+        .filter((a: any) => a.coverPhotoUrl)
+        .map((a: any) => ({
+          id: a.albumId,
+          url: `/api/integrations/google_photos/proxy-image?photoId=${encodeURIComponent(a.albumId)}`,
+          filename: a.title,
+        }));
+    } catch (e: any) {
+      error.value = e.message || 'Failed to fetch photos';
+    } finally {
       loading.value = false;
     }
   };
 
-  const getPhotoUrl = (baseUrl: string, width = 1920, height = 1080) => {
-    return `${baseUrl}=w${width}-h${height}`;
+  const getPhotoUrl = (url: string, width = 1920, height = 1080) => {
+    // Photos Picker API returns full URLs, no transformation needed
+    return url;
   };
 
   return {

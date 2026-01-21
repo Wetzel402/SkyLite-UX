@@ -217,3 +217,16 @@ model HomeSettings {
 
   @@map("home_settings")
 }
+
+model SelectedAlbum {
+  id          String   @id @default(cuid())
+  albumId     String   @unique // Google Photos album ID from picker
+  title       String   // Album title
+  coverPhotoUrl String? // Album cover photo URL
+  mediaItemsCount Int?  // Number of photos in album
+  order       Int      @default(0)  // Display order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("selected_albums")
+}
