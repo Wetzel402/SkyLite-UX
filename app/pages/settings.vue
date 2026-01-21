@@ -1023,7 +1023,7 @@ async function handleRemoveAlbum(albumId: string) {
                   max="12"
                   step="1"
                   class="w-full"
-                  @change="updateHomeSettingsComposable({ refreshInterval: Number(($event.target as HTMLInputElement).value) })"
+                  @input="updateHomeSettingsComposable({ refreshInterval: Number(($event.target as HTMLInputElement).value) })"
                 >
                 <p class="text-xs text-muted">Choose between 1 and 12 hours</p>
               </div>
