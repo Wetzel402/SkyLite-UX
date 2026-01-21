@@ -17,6 +17,7 @@ const emit = defineEmits<{
   (e: "save", integration: CreateIntegrationInput): void;
   (e: "delete", integrationId: string): void;
   (e: "test-connection", integration: CreateIntegrationInput): void;
+  (e: "open"): void;
 }>();
 
 const show = ref(false);
@@ -28,11 +29,11 @@ const enabled = ref(true);
 const error = ref<string | null>(null);
 const isSaving = ref(false);
 
-const settingsData = ref<Record<string, string | string[] | boolean>>({});
+const settingsData = ref<Record<string, any>>({});
 
 // OAuth flow state
-const isOAuthFlow = computed(() => service.value === "google-calendar" && !props.integration?.id);
-const oauthStep = ref<"init" | "select-calendars" | "complete">("init");
+const isOAuthFlow = computed(() => (service.value === "google-calendar" || service.value === "google-photos") && !props.integration?.id);
+const oauthStep = ref<"init" | "select-calendars" | "select-albums" | "complete">("init");
 const tempOAuthTokens = ref<{
   accessToken: string;
   refreshToken: string;
@@ -90,17 +91,33 @@ onMounted(() => {
   // Check URL params for OAuth callback
   if (typeof window !== "undefined") {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("oauth_success") === "true" && urlParams.get("service") === "google-calendar") {
+    const oauthService = urlParams.get("service");
+
+    if (urlParams.get("oauth_success") === "true" && (oauthService === "google-calendar" || oauthService === "google-photos")) {
       tempOAuthTokens.value = {
         accessToken: urlParams.get("access_token") || "",
         refreshToken: urlParams.get("refresh_token") || "",
         tokenExpiry: urlParams.get("token_expiry") || "",
       };
-      oauthStep.value = "select-calendars";
 
-      // Set service to google-calendar
-      type.value = "calendar";
-      service.value = "google-calendar";
+      if (oauthService === "google-calendar") {
+        oauthStep.value = "select-calendars";
+        type.value = "calendar";
+        // Use nextTick to ensure watcher doesn't reset service
+        nextTick(() => {
+          service.value = "google-calendar";
+        });
+      }
+      else if (oauthService === "google-photos") {
+        oauthStep.value = "complete";
+        type.value = "photos";
+        // Use nextTick to ensure watcher doesn't reset service
+        nextTick(() => {
+          service.value = "google-photos";
+        });
+      }
+
+      emit("open");
 
       // Clean URL
       window.history.replaceState({}, "", "/settings");
@@ -108,9 +125,32 @@ onMounted(() => {
   }
 });
 
-function handleCalendarsSelected(calendarIds: string[]) {
-  settingsData.value.selectedCalendars = calendarIds;
+function handleCalendarsSelected(calendars: { id: string; summary: string; color?: string }[]) {
+  settingsData.value.selectedCalendars = calendars.map(c => c.id);
+
+  // Store metadata for easier display later
+  settingsData.value.calendarMetadata = calendars.reduce((acc, cal) => {
+    acc[cal.id] = { summary: cal.summary, color: cal.color };
+    return acc;
+  }, {} as Record<string, { summary: string; color?: string }>);
+
   oauthStep.value = "complete";
+}
+
+function handleAlbumsSelected(albums: { id: string; title: string }[]) {
+  settingsData.value.selectedAlbums = albums.map(a => a.id);
+
+  // Store metadata for easier display later
+  settingsData.value.albumMetadata = albums.reduce((acc, album) => {
+    acc[album.id] = { title: album.title };
+    return acc;
+  }, {} as Record<string, { title: string }>);
+
+  oauthStep.value = "complete";
+}
+
+function handleImmichAlbumsSelected(albumIds: string[]) {
+  settingsData.value.selectedAlbums = albumIds;
 }
 
 watch(() => props.isOpen, async (isOpen) => {
@@ -145,7 +185,7 @@ function initializeSettingsData() {
 
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen) {
-    if (availableTypes.value.length > 0) {
+    if (availableTypes.value.length > 0 && !type.value) {
       const firstType = availableTypes.value[0];
       if (firstType) {
         type.value = firstType.value;
@@ -258,7 +298,7 @@ async function handleSave() {
     return;
   }
 
-  // For OAuth flows (Google Calendar), check OAuth completion
+  // For OAuth flows (Google Calendar or Google Photos), check OAuth completion
   if (service.value === "google-calendar" && !props.integration?.id) {
     if (oauthStep.value !== "complete" || !tempOAuthTokens.value) {
       error.value = "Please complete the OAuth flow and select calendars";
@@ -271,7 +311,14 @@ async function handleSave() {
     }
   }
 
-  if (!props.integration?.id && service.value !== "google-calendar") {
+  if (service.value === "google-photos" && !props.integration?.id) {
+    if (oauthStep.value !== "complete" || !tempOAuthTokens.value) {
+      error.value = "Please complete the OAuth flow";
+      return;
+    }
+  }
+
+  if (!props.integration?.id && service.value !== "google-calendar" && service.value !== "google-photos") {
     const missingFields = settingsFields.value
       .filter(field => field.required && !settingsData.value[field.key]?.toString().trim())
       .map(field => field.label);
@@ -317,8 +364,8 @@ async function handleSave() {
       updatedAt: new Date(),
     } as any;
 
-    // Handle OAuth tokens for Google Calendar
-    if (service.value === "google-calendar" && !props.integration?.id && tempOAuthTokens.value) {
+    // Handle OAuth tokens for Google Calendar or Google Photos
+    if ((service.value === "google-calendar" || service.value === "google-photos") && !props.integration?.id && tempOAuthTokens.value) {
       integrationData.accessToken = tempOAuthTokens.value.accessToken;
       integrationData.refreshToken = tempOAuthTokens.value.refreshToken;
       integrationData.tokenExpiry = new Date(Number(tempOAuthTokens.value.tokenExpiry));
@@ -454,7 +501,7 @@ function handleDelete() {
         </div>
 
         <!-- Google Calendar OAuth Flow -->
-        <template v-if="isOAuthFlow">
+        <template v-if="isOAuthFlow && service === 'google-calendar'">
           <settingsGoogleCalendarOAuth v-if="oauthStep === 'init'" />
           <settingsGoogleCalendarSelector
             v-else-if="oauthStep === 'select-calendars' && tempOAuthTokens"
@@ -466,6 +513,22 @@ function handleDelete() {
           <div v-else-if="oauthStep === 'complete'" class="bg-success/10 text-success rounded-md px-3 py-2 text-sm flex items-center gap-2">
             <UIcon name="i-lucide-check-circle" class="h-4 w-4" />
             Calendars selected successfully. Click Save to complete setup.
+          </div>
+        </template>
+
+        <!-- Google Photos OAuth Flow -->
+        <template v-else-if="isOAuthFlow && service === 'google-photos'">
+          <settingsGooglePhotosOAuth v-if="oauthStep === 'init'" />
+          <settingsGooglePhotosAlbumSelector
+            v-else-if="oauthStep === 'select-albums' && tempOAuthTokens"
+            :access-token="tempOAuthTokens.accessToken"
+            :refresh-token="tempOAuthTokens.refreshToken"
+            :token-expiry="tempOAuthTokens.tokenExpiry"
+            @albums-selected="handleAlbumsSelected"
+          />
+          <div v-else-if="oauthStep === 'complete'" class="bg-success/10 text-success rounded-md px-3 py-2 text-sm flex items-center gap-2">
+            <UIcon name="i-lucide-check-circle" class="h-4 w-4" />
+            Albums selected successfully. Click Save to complete setup.
           </div>
         </template>
 
@@ -547,6 +610,25 @@ function handleDelete() {
           </div>
         </div>
       </form>
+
+      <!-- Google Photos Import UI (Only for existing/saved integrations) -->
+      <div v-if="service === 'google-photos' && integration?.id" class="p-4 border-t border-default bg-muted/5">
+        <settingsGooglePhotosAlbumSelector
+          :integration-id="integration.id"
+          :access-token="integration.accessToken || ''"
+          :refresh-token="integration.refreshToken || ''"
+          :token-expiry="integration.tokenExpiry ? String(integration.tokenExpiry) : ''"
+        />
+      </div>
+
+      <!-- Immich Album Selector UI (Only for existing/saved Immich integrations) -->
+      <div v-if="service === 'immich' && integration?.id" class="p-4 border-t border-default bg-muted/5">
+        <settingsImmichAlbumSelector
+          :integration-id="integration.id"
+          :selected-albums="(settingsData.selectedAlbums as string[]) || []"
+          @albums-selected="handleImmichAlbumsSelected"
+        />
+      </div>
 
       <div class="flex justify-between p-4 border-t border-default">
         <UButton

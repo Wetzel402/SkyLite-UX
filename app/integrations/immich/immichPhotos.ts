@@ -1,7 +1,18 @@
 import type { IntegrationService, IntegrationStatus } from "~/types/integrations";
 
-export interface ImmichSettings {
+export type ImmichSettings = {
   selectedAlbums?: string[];
+};
+
+export interface ImmichAlbum {
+  id: string;
+  title: string;
+  description: string;
+  assetCount: number;
+  thumbnailAssetId: string | null;
+  shared: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
