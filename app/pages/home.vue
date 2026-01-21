@@ -222,28 +222,31 @@ onMounted(async () => {
   updateClock();
   setInterval(updateClock, 1000);
 
+  // Calculate refresh interval in milliseconds (convert hours to ms)
+  const refreshIntervalMs = (homeSettings.value?.refreshInterval || 1.0) * 3600000;
+
   // Fetch weather if enabled
   if (homeSettings.value?.weatherEnabled && homeSettings.value.latitude && homeSettings.value.longitude) {
     await fetchWeather();
-    setInterval(fetchWeather, 600000); // Update every 10 minutes
+    setInterval(fetchWeather, refreshIntervalMs);
   }
 
   // Fetch upcoming events
   if (homeSettings.value?.eventsEnabled) {
     await fetchUpcomingEvents();
-    setInterval(fetchUpcomingEvents, 300000); // Update every 5 minutes
+    setInterval(fetchUpcomingEvents, refreshIntervalMs);
   }
 
   // Fetch today's tasks
   if (homeSettings.value?.todosEnabled) {
     await fetchTodaysTasks();
-    setInterval(fetchTodaysTasks, 300000); // Update every 5 minutes
+    setInterval(fetchTodaysTasks, refreshIntervalMs);
   }
 
   // Fetch today's menu (replaces single meal)
   if (homeSettings.value?.mealsEnabled) {
     await fetchTodaysMenu();
-    setInterval(fetchTodaysMenu, 300000); // Update every 5 minutes
+    setInterval(fetchTodaysMenu, refreshIntervalMs);
   }
 });
 

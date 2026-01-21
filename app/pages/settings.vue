@@ -1001,6 +1001,34 @@ async function handleRemoveAlbum(albumId: string) {
               </div>
             </div>
 
+            <!-- Data Refresh Interval -->
+            <div class="pt-4 border-t border-muted space-y-3">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Data Refresh Interval
+                </p>
+                <p class="text-sm text-muted">
+                  How often widgets fetch new data (weather, events, tasks, meals)
+                </p>
+              </div>
+              <div class="space-y-2 pl-4">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-medium text-highlighted">Refresh Every</label>
+                  <span class="text-sm text-muted">{{ homeSettings?.refreshInterval ?? 1.0 }} hour{{ (homeSettings?.refreshInterval ?? 1.0) !== 1 ? 's' : '' }}</span>
+                </div>
+                <input
+                  type="range"
+                  :value="homeSettings?.refreshInterval ?? 1.0"
+                  min="0.25"
+                  max="6"
+                  step="0.25"
+                  class="w-full"
+                  @change="updateHomeSettingsComposable({ refreshInterval: Number(($event.target as HTMLInputElement).value) })"
+                >
+                <p class="text-xs text-muted">Choose between 15 minutes (0.25h) and 6 hours</p>
+              </div>
+            </div>
+
             <!-- Widget Visibility -->
             <div class="pt-4 border-t border-muted">
               <h3 class="text-sm font-medium text-highlighted mb-3">

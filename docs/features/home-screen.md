@@ -177,40 +177,49 @@ Go to **Settings** → **Home Page** to configure all widgets:
 1. **Photo Slideshow**
    - Enable/disable slideshow
    - Select Google Photos albums
-   - Adjust transition speed
-   - Set Ken Burns intensity
+   - Adjust transition speed (5-60 seconds)
+   - Set Ken Burns intensity (0-2x)
 
-2. **Clock Widget**
-   - Enable/disable display
-
-3. **Weather Widget**
+2. **Weather Widget**
    - Enable/disable widget
    - Set location (latitude/longitude)
-   - Choose temperature unit
+   - Choose temperature unit (Celsius/Fahrenheit)
 
-4. **Today's Menu**
-   - Enable/disable widget
+3. **Data Refresh Interval**
+   - Set how often data widgets refresh (0.25-6 hours)
+   - Applies to: weather, events, tasks, and menu
+   - Default: 1 hour
 
-5. **Upcoming Events**
-   - Enable/disable widget
-
-6. **Today's Tasks**
-   - Enable/disable widget
+4. **Widget Visibility**
+   - Clock: Enable/disable display
+   - Events: Enable/disable widget
+   - Todos: Enable/disable widget
+   - Meals: Enable/disable widget
 
 ---
 
 ## Auto-Refresh Intervals
 
-Widgets automatically refresh at these intervals:
+Widgets automatically refresh to keep data current:
 
 | Widget | Refresh Interval |
 |--------|------------------|
-| Clock | 1 second |
+| Clock | 1 second (fixed) |
 | Photos | Configured transition speed |
-| Weather | 10 minutes |
-| Events | 5 minutes |
-| Tasks | 5 minutes |
-| Menu | 5 minutes |
+| Weather | Configurable (default: 1 hour) |
+| Events | Configurable (default: 1 hour) |
+| Tasks | Configurable (default: 1 hour) |
+| Menu | Configurable (default: 1 hour) |
+
+### Configuring Refresh Interval
+
+Data widgets (weather, events, tasks, menu) share a common refresh interval that can be configured in **Settings** → **Home Page** → **Data Refresh Interval**.
+
+- **Range**: 15 minutes (0.25 hours) to 6 hours
+- **Default**: 1 hour
+- **Purpose**: Controls how frequently the home screen fetches new data from APIs
+
+Shorter intervals provide more up-to-date information but increase API calls and network usage. Longer intervals reduce load but data may be less current.
 
 ---
 
