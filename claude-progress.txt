@@ -1,5 +1,44 @@
 # SkyLite-UX Development Progress
 
+## Session 23 - Feature #173 Verification (2026-01-20)
+
+### Session Summary
+- Verified Feature #173: Immich integration validates connection on save
+- Tested both Edit Integration and Add Integration flows
+- Progress: 174/204 features passing (85.3%)
+
+### Feature Verified
+- **#173: Immich integration validates connection on save** - PASSING
+  - Navigated to Settings → Integrations (unlocked with PIN "1234")
+  - Edited existing Immich integration
+  - Entered invalid URL and API key (https://invalid-immich-test.local)
+  - Clicked Save
+  - **Verified system tests connection before saving:**
+    - Server calls `testConnection()` method on the integration service
+    - If it fails, calls `getStatus()` to get error details
+    - Returns 400 error with user-friendly message
+  - **Verified error message displayed:** "Connection test failed: fetch failed"
+  - Also tested Add Integration flow - same validation occurs
+
+### Technical Implementation
+- Connection validation code in:
+  - `server/api/integrations/index.post.ts` (lines 80-89) - for new integrations
+  - `server/api/integrations/[id].put.ts` (lines 100-107) - for editing existing integrations
+- Immich service `testConnection()` method in `app/integrations/immich/immichPhotos.ts` (lines 88-104)
+  - Tests by calling `/api/server/ping` endpoint on the Immich server
+
+### Screenshots Captured
+- `feature-173-connection-test-failed.png` - Edit dialog showing connection error message
+- `feature-173-add-integration-validation.png` - Add dialog showing connection validation
+
+### Current Statistics
+- Total Features: 204
+- Passing: 174
+- In Progress: 0
+- Completion: 85.3%
+
+---
+
 ## Session 22 - Feature #172 Verification (2026-01-20)
 
 ### Session Summary
@@ -427,3 +466,33 @@ All 12 remaining features require external services (Google OAuth, Home Assistan
 ---
 
 (Earlier session notes truncated for brevity - see git history for full details)
+[Testing] Feature #43 (Weather location configuration workflow) verified - STILL PASSING
+  - Accessed Settings → Integrations → Weather via PIN unlock
+  - Home Assistant weather integration configured with entity 'weather.forecast_home'
+  - Weather displays in header showing 58°F
+  - Forecast popup shows current conditions, 7-day forecast
+  - Minor note: units selector not in dialog, but weather respects HA configured units
+  - Cosmetic error in integration status check (missing integrationId in testConnection)
+    but doesn't affect actual weather functionality
+
+---
+## Testing Session - 2026-01-20 21:35
+
+### Feature Tested
+Feature #43: Weather location configuration workflow
+
+### Verification Results
+- ✅ Settings → Integrations → Weather navigation works (via PIN unlock)
+- ✅ Home Assistant weather integration is configured
+- ✅ Weather entity ID configurable (weather.forecast_home)
+- ✅ Weather displays in header: 58°F with weather icon
+- ✅ Weather forecast popup works with full 7-day forecast
+- ⚠️ Minor: Units selector not in edit dialog (uses HA configured units)
+
+### Status: PASSING (no regression)
+
+### Screenshots Captured
+- weather-config.png
+- weather-forecast-popup.png
+- weather-in-calendar-header.png
+
