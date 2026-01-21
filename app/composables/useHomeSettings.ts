@@ -26,6 +26,11 @@ export const useHomeSettings = () => {
     loading.value = true;
     error.value = null;
 
+    // Optimistic update - update local state immediately
+    if (homeSettings.value) {
+      homeSettings.value = { ...homeSettings.value, ...updates };
+    }
+
     try {
       const response = await $fetch<HomeSettings>("/api/home-settings", {
         method: "PUT",
@@ -36,6 +41,8 @@ export const useHomeSettings = () => {
     catch (e: any) {
       error.value = e.message || "Failed to update home settings";
       console.error("Error updating home settings:", e);
+      // Revert optimistic update on error by refetching
+      await fetchHomeSettings();
     }
     finally {
       loading.value = false;
