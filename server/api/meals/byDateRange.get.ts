@@ -1,4 +1,5 @@
 import { addDays } from "date-fns";
+import { consola } from "consola";
 
 import type { MealWithDate } from "~/types/database";
 
@@ -17,13 +18,18 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
       });
     }
 
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    // Parse dates as UTC to avoid timezone issues
+    // Input format: YYYY-MM-DD
+    const [startYear, startMonth, startDay] = startDateStr.split('-').map(Number);
+    const [endYear, endMonth, endDay] = endDateStr.split('-').map(Number);
+
+    const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59, 999));
 
     if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
       throw createError({
         statusCode: 400,
-        message: "Invalid date format. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z)",
+        message: "Invalid date format. Use YYYY-MM-DD format",
       });
     }
 
@@ -52,8 +58,30 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
         // dayOfWeek: 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
         const mealDate = addDays(mealPlan.weekStart, meal.dayOfWeek);
 
+        // Normalize to UTC midnight for comparison
+        const mealDateUTC = new Date(Date.UTC(
+          mealDate.getFullYear(),
+          mealDate.getMonth(),
+          mealDate.getDate(),
+          0, 0, 0, 0,
+        ));
+
+        const startDateUTC = new Date(Date.UTC(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          0, 0, 0, 0,
+        ));
+
+        const endDateUTC = new Date(Date.UTC(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          23, 59, 59, 999,
+        ));
+
         // Check if meal falls within the requested range
-        if (mealDate >= startDate && mealDate <= endDate) {
+        if (mealDateUTC >= startDateUTC && mealDateUTC <= endDateUTC) {
           mealsWithDates.push({
             ...meal,
             calculatedDate: mealDate,

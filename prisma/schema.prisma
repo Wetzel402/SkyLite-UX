@@ -209,6 +209,7 @@ model HomeSettings {
   eventsEnabled         Boolean  @default(true)
   todosEnabled          Boolean  @default(true)
   mealsEnabled          Boolean  @default(true)
+  menuEnabled           Boolean  @default(true)
   countdownEnabled      Boolean  @default(false)
   countdownEventId      String?
 
