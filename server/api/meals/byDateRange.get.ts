@@ -26,6 +26,13 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
     // Check if it's an ISO 8601 format (contains 'T')
     if (startDateStr.includes('T')) {
       startDate = new Date(startDateStr);
+      // Normalize to start of day in UTC
+      startDate = new Date(Date.UTC(
+        startDate.getUTCFullYear(),
+        startDate.getUTCMonth(),
+        startDate.getUTCDate(),
+        0, 0, 0, 0
+      ));
     } else {
       // Parse YYYY-MM-DD format explicitly as UTC
       const startParts = startDateStr.split('-').map(Number);
@@ -43,6 +50,13 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
 
     if (endDateStr.includes('T')) {
       endDate = new Date(endDateStr);
+      // Normalize to end of day in UTC for inclusive range
+      endDate = new Date(Date.UTC(
+        endDate.getUTCFullYear(),
+        endDate.getUTCMonth(),
+        endDate.getUTCDate(),
+        23, 59, 59, 999
+      ));
     } else {
       // Parse YYYY-MM-DD format explicitly as UTC
       const endParts = endDateStr.split('-').map(Number);
@@ -92,23 +106,23 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
 
         // Normalize to UTC midnight for comparison
         const mealDateUTC = new Date(Date.UTC(
-          mealDate.getFullYear(),
-          mealDate.getMonth(),
-          mealDate.getDate(),
+          mealDate.getUTCFullYear(),
+          mealDate.getUTCMonth(),
+          mealDate.getUTCDate(),
           0, 0, 0, 0,
         ));
 
         const startDateUTC = new Date(Date.UTC(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
+          startDate.getUTCFullYear(),
+          startDate.getUTCMonth(),
+          startDate.getUTCDate(),
           0, 0, 0, 0,
         ));
 
         const endDateUTC = new Date(Date.UTC(
-          endDate.getFullYear(),
-          endDate.getMonth(),
-          endDate.getDate(),
+          endDate.getUTCFullYear(),
+          endDate.getUTCMonth(),
+          endDate.getUTCDate(),
           23, 59, 59, 999,
         ));
 
