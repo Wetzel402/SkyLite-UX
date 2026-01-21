@@ -1,5 +1,43 @@
 # SkyLite-UX Development Progress
 
+## Session 22 - Feature #172 Verification (2026-01-20)
+
+### Session Summary
+- Verified Feature #172: User can add Immich integration with URL and API key
+- Tested the complete flow via browser automation
+- Progress: 173/204 features passing (84.8%)
+
+### Feature Verified
+- **#172: User can add Immich integration with URL and API key** - PASSING
+  - Navigated to Settings → Integrations (unlocked with PIN)
+  - Clicked "Add Integration" button
+  - Selected Integration Type: "Photos"
+  - Selected Service: "Immich"
+  - Verified form shows all required fields:
+    - Integration Name (optional)
+    - Immich Server URL (required, placeholder: "https://immich.local")
+    - API Key (required, password field with show/hide toggle)
+    - Albums selection (for screensaver)
+    - Enable integration checkbox
+  - Tested entering test values in all fields
+  - Verified existing Immich integration can be edited
+  - Verified Immich integration is saved in database
+  - Screenshots taken documenting the UI flow
+
+### Screenshots Captured
+- `feature-172-immich-in-photos-tab.png` - Immich visible in Photos tab
+- `feature-172-immich-edit-dialog.png` - Edit dialog for existing Immich integration
+- `feature-172-add-immich-dialog-with-url-and-api-key.png` - Add dialog with all fields
+- `feature-172-immich-form-filled.png` - Form with test data entered
+
+### Current Statistics
+- Total Features: 204
+- Passing: 173
+- In Progress: 0
+- Completion: 84.8%
+
+---
+
 ## Session 21 - YOLO Mode (2026-01-19)
 
 ### Session Summary
