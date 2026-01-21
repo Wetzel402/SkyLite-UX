@@ -1,5 +1,52 @@
 # SkyLite-UX Development Progress
 
+## Session 24 - Feature #180 Implementation (2026-01-20)
+
+### Session Summary
+- Implemented Feature #180: User can fetch and view available Immich albums
+- Created server API endpoint and UI component for Immich album selection
+- Progress: 175/204 features passing (85.8%)
+
+### Feature Implemented
+- **#180: User can fetch and view available Immich albums** - PASSING
+  - Created server API endpoint at `/api/integrations/immich/albums.get.ts`
+  - Created Vue component `settingsImmichAlbumSelector.vue` with:
+    - Album list with checkboxes for selection
+    - Photo count display for each album
+    - Shared album indicator
+    - Select All / Clear buttons
+    - Loading and error states
+  - Integrated album selector into `settingsIntegrationDialog.vue`
+  - Added `ImmichAlbum` type to `immichPhotos.ts`
+
+### Technical Implementation
+- **Server API Endpoint** (`server/api/integrations/immich/albums.get.ts`):
+  - Fetches albums from Immich API using `GET /api/albums`
+  - Requires `integrationId` query parameter
+  - Decrypts API key using shared encryption utilities
+  - Returns standardized album objects with id, title, assetCount, shared status
+  - Proper error handling for invalid credentials, server errors
+
+- **Vue Component** (`app/components/settings/settingsImmichAlbumSelector.vue`):
+  - Props: `integrationId`, `selectedAlbums`
+  - Emits: `albumsSelected` with array of selected album IDs
+  - Features: multi-select, Select All, Clear, loading state, empty state
+
+### Screenshots Captured
+- `feature-180-immich-album-selector.png` - Edit Integration dialog showing album selector section
+
+### Commits Made
+- `72cbc35` - feat: Add Immich album selector UI for screensaver settings (Feature #180)
+- `e0c8066` - fix: Correct import path for decryptToken in Immich albums endpoint
+
+### Current Statistics
+- Total Features: 204
+- Passing: 175
+- In Progress: 0
+- Completion: 85.8%
+
+---
+
 ## Session 23 - Feature #173 Verification (2026-01-20)
 
 ### Session Summary
@@ -495,4 +542,34 @@ Feature #43: Weather location configuration workflow
 - weather-config.png
 - weather-forecast-popup.png
 - weather-in-calendar-header.png
+
+
+---
+## Testing Session - 2026-01-20 21:43
+
+### Feature Tested
+Feature #121: Overdue chores identified correctly
+
+### Verification Steps
+1. ✅ Created chore due yesterday (2026-01-19) - "Test Overdue Chore"
+2. ✅ Viewed chores list at /chores
+3. ✅ Verified overdue visual indicator - red "Overdue" badge + red border on card
+4. ✅ Created chore due tomorrow (2026-01-21) - "Test Future Chore"
+5. ✅ Verified NOT marked as overdue - shows "Due 1/20/2026" in neutral badge
+
+### Regression Found & Fixed
+During testing, discovered app was crashing with server error:
+- **Issue**: Broken import path in server/api/integrations/immich/albums.get.ts
+- **Error**: "Could not resolve ~/server/integrations/google-calendar/oauth"
+- **Cause**: The ~ alias in server files resolves to app/ not project root
+- **Fix**: Changed to relative import "../../../integrations/google-calendar/oauth"
+- **Commit**: e0c8066 - fix: Correct import path for decryptToken in Immich albums endpoint
+
+### Test Cleanup
+- Deleted test chores after verification
+
+### Status: PASSING (no regression in Feature #121)
+
+### Screenshots
+- chores-overdue-verification.png - Shows overdue vs future due date display
 
