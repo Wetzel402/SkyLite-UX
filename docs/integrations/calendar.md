@@ -10,6 +10,8 @@ permalink: /integrations/calendar/
 
 Calendar integrations allow you to connect external calendar services to Skylite UX. You can view events from multiple calendars in a unified view, and depending on the integration, create, edit, and delete events.
 
+**Home Screen Integration**: Events from connected calendars also appear in the "Upcoming Events" widget on the Home Screen, showing the next 5 upcoming events with smart date formatting.
+
 ## General Setup
 
 1. In Skylite UX, go to **Settings > Integrations > Add Integration**

@@ -26,11 +26,21 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 
 ## Features
 
-- **Home Screen** - Beautiful ambient display with Google Photos slideshow (Ken Burns effect), weather, clock, and daily overview widgets
+### Home Screen (Screensaver)
+Beautiful ambient display perfect for a family command center:
+- **Photo Slideshow** - Google Photos integration with Ken Burns effect
+- **Interactive Widgets** - All widgets are clickable and navigate to their pages
+- **Today's Menu** - Shows all meals planned for today with meal type icons (🍳🥗🍽️)
+- **7-Day Weather Forecast** - Current conditions plus daily forecasts
+- **Upcoming Events** - Next 5 events from Google Calendar with smart date formatting
+- **Today's Tasks** - Tasks due today or without due dates
+- **Adaptive Backgrounds** - Semi-transparent backgrounds ensure text readability on all photos
+
+### Other Features
 - **Family Calendar** - Unified calendar with Google Calendar integration
 - **Todo Lists** - Organize tasks with due dates and priorities
 - **Shopping Lists** - Collaborative shopping lists with integration support
-- **Meal Planning** - Plan your meals for the week (Not yet implemented)
+- **Meal Planning** - Plan your meals for the week with breakfast, lunch, and dinner
 - **User Management** - Multi-user support with individual profiles
 
 ## Installation

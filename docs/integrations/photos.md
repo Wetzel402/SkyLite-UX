@@ -14,6 +14,12 @@ Photo integrations allow you to connect external photo services to Skylite UX. P
 
 The Google Photos integration uses the **Photos Picker API** to allow users to select specific albums for display on the Skylite UX Home screen. This approach is more privacy-friendly and doesn't require sensitive OAuth scopes.
 
+**Home Screen Features**:
+- Photos display with smooth Ken Burns effect (pan and zoom animation)
+- Configurable transition speed (5-60 seconds)
+- Adjustable animation intensity (0.5x - 2.0x)
+- Semi-transparent text overlays ensure widget readability on all photos
+
 **Important:** As of March 31, 2025, Google deprecated the `photoslibrary.readonly` OAuth scope. The old Library API approach no longer works.
 
 ### How It Works
