@@ -1,11 +1,25 @@
 import { consola } from "consola";
 
-export default defineEventHandler(async (event) => {
+interface WeatherResponse {
+  temperature: number;
+  weatherCode: number;
+  weatherDescription: string;
+  daily: Array<{
+    date: string;
+    tempMax: number;
+    tempMin: number;
+    weatherCode: number;
+    weatherDescription: string;
+  }>;
+}
+
+export default defineEventHandler(async (event): Promise<WeatherResponse> => {
   const query = getQuery(event);
   const { latitude, longitude } = query;
 
-  // Validate coordinates
-  if (!latitude || !longitude) {
+  // Validate coordinates (accept 0 as valid value)
+  if (latitude === undefined || latitude === null || latitude === "" ||
+      longitude === undefined || longitude === null || longitude === "") {
     throw createError({
       statusCode: 400,
       message: "Latitude and longitude are required",
@@ -41,7 +55,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Call Open-Meteo API (free, no API key needed)
-    const weather = await $fetch<any>("https://api.open-meteo.com/v1/forecast", {
+    const weather: any = await $fetch("https://api.open-meteo.com/v1/forecast", {
       query: {
         latitude: lat,
         longitude: lng,
@@ -51,6 +65,7 @@ export default defineEventHandler(async (event) => {
         timezone: "auto",
         forecast_days: 7,
       },
+      timeout: 10000, // 10 second timeout
     });
 
     // WMO Weather interpretation codes to descriptions

@@ -50,7 +50,8 @@ export default defineEventHandler(async (_event) => {
         status: response.status,
         statusText: response.statusText,
         error: errorText,
-        accessToken: settings.accessToken?.substring(0, 20) + '...',
+        hasAccessToken: !!settings.accessToken,
+        tokenLength: settings.accessToken?.length,
       });
       throw createError({
         statusCode: response.status,

@@ -36,10 +36,14 @@
       <!-- Top Row: Clock & Weather -->
       <div class="flex justify-between items-start">
         <!-- Clock Widget -->
-        <div v-if="homeSettings?.clockEnabled" class="text-white bg-black/30 backdrop-blur-sm rounded-lg p-4">
+        <NuxtLink
+          v-if="homeSettings?.clockEnabled"
+          to="/settings"
+          class="text-white bg-black/30 backdrop-blur-sm hover:bg-black/40 rounded-lg p-4 transition-colors cursor-pointer block"
+        >
           <div class="text-6xl font-light">{{ currentTime }}</div>
           <div class="text-2xl mt-2">{{ currentDate }}</div>
-        </div>
+        </NuxtLink>
 
         <!-- Weather Widget -->
         <NuxtLink
@@ -54,7 +58,7 @@
           <!-- Weekly Forecast -->
           <div v-if="weather.daily" class="mt-6 flex gap-4 justify-end">
             <div
-              v-for="(day, index) in weather.daily.slice(1, 6)"
+              v-for="(day, index) in weather.daily.slice(1, 8)"
               :key="day.date"
               class="flex flex-col items-center"
             >
@@ -89,13 +93,14 @@
         </NuxtLink>
 
         <!-- Fallback: Show "No meals planned" if meals enabled but empty -->
-        <div
+        <NuxtLink
           v-else-if="homeSettings?.mealsEnabled && todaysMenu.length === 0"
-          class="text-white bg-black/30 backdrop-blur-sm rounded-lg p-4"
+          to="/mealPlanner"
+          class="text-white bg-black/30 backdrop-blur-sm hover:bg-black/40 rounded-lg p-4 transition-colors cursor-pointer block"
         >
           <h3 class="text-lg font-semibold mb-2">Today's Menu</h3>
           <p class="text-sm opacity-60">No meals planned for today</p>
-        </div>
+        </NuxtLink>
       </div>
 
       <!-- Bottom Row: Upcoming Events & Todos -->
@@ -161,6 +166,9 @@ const todaysTasks = ref<Array<{ id: string; title: string }>>([]);
 const todaysMeal = ref<string | null>(null);
 const todaysMenu = ref<Array<{ id: string; name: string; mealType: string }>>([]);
 
+// Store interval IDs for cleanup
+const intervals = ref<NodeJS.Timeout[]>([]);
+
 const currentPhoto = computed(() => photos.value[currentPhotoIndex.value]);
 
 const kenBurnsStyle = computed(() => {
@@ -208,7 +216,7 @@ const getWeatherIconForCode = (code: number): string => {
 const getDayName = (dateStr: string, daysFromNow: number): string => {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const date = new Date(dateStr);
-  return days[date.getDay()];
+  return days[date.getDay()] || "Sun";
 };
 
 // Fetch photos and settings on mount
@@ -220,7 +228,7 @@ onMounted(async () => {
 
   startSlideshow();
   updateClock();
-  setInterval(updateClock, 1000);
+  intervals.value.push(setInterval(updateClock, 1000));
 
   // Calculate refresh interval in milliseconds (convert hours to ms)
   const refreshIntervalMs = (homeSettings.value?.refreshInterval || 6.0) * 3600000;
@@ -228,26 +236,31 @@ onMounted(async () => {
   // Fetch weather if enabled
   if (homeSettings.value?.weatherEnabled && homeSettings.value.latitude && homeSettings.value.longitude) {
     await fetchWeather();
-    setInterval(fetchWeather, refreshIntervalMs);
+    intervals.value.push(setInterval(fetchWeather, refreshIntervalMs));
   }
 
   // Fetch upcoming events
   if (homeSettings.value?.eventsEnabled) {
     await fetchUpcomingEvents();
-    setInterval(fetchUpcomingEvents, refreshIntervalMs);
+    intervals.value.push(setInterval(fetchUpcomingEvents, refreshIntervalMs));
   }
 
   // Fetch today's tasks
   if (homeSettings.value?.todosEnabled) {
     await fetchTodaysTasks();
-    setInterval(fetchTodaysTasks, refreshIntervalMs);
+    intervals.value.push(setInterval(fetchTodaysTasks, refreshIntervalMs));
   }
 
   // Fetch today's menu (replaces single meal)
   if (homeSettings.value?.mealsEnabled) {
     await fetchTodaysMenu();
-    setInterval(fetchTodaysMenu, refreshIntervalMs);
+    intervals.value.push(setInterval(fetchTodaysMenu, refreshIntervalMs));
   }
+});
+
+// Clear all intervals on unmount
+onUnmounted(() => {
+  intervals.value.forEach(interval => clearInterval(interval));
 });
 
 const startSlideshow = () => {
@@ -257,9 +270,9 @@ const startSlideshow = () => {
 
   const transitionSpeed = (homeSettings.value?.photoTransitionSpeed || 10000);
 
-  setInterval(() => {
+  intervals.value.push(setInterval(() => {
     currentPhotoIndex.value = (currentPhotoIndex.value + 1) % photos.value.length;
-  }, transitionSpeed);
+  }, transitionSpeed));
 };
 
 const updateClock = () => {

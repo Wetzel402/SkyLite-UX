@@ -1,6 +1,32 @@
 import { consola } from "consola";
 import prisma from "~/lib/prisma";
 
+// Allowed Google Photos domains for SSRF protection
+const ALLOWED_DOMAINS = [
+  "lh3.googleusercontent.com",
+  "photos.google.com",
+  "photospicker.googleapis.com",
+  "lh4.googleusercontent.com",
+  "lh5.googleusercontent.com",
+  "lh6.googleusercontent.com",
+];
+
+function isValidGooglePhotosUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      ALLOWED_DOMAINS.some(
+        (domain) =>
+          parsed.hostname === domain || parsed.hostname.endsWith("." + domain)
+      )
+    );
+  }
+  catch {
+    return false;
+  }
+}
+
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
@@ -52,8 +78,17 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Fetch the image with OAuth token
+    // Validate URL to prevent SSRF attacks
     const imageUrl = photo.coverPhotoUrl;
+    if (!isValidGooglePhotosUrl(imageUrl)) {
+      consola.error("Invalid image URL domain:", imageUrl);
+      throw createError({
+        statusCode: 400,
+        message: "Invalid image URL domain",
+      });
+    }
+
+    // Fetch the image with OAuth token
     const response = await fetch(imageUrl, {
       headers: {
         "Authorization": `Bearer ${settings.accessToken}`,

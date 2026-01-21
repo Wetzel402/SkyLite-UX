@@ -46,6 +46,10 @@ export class GooglePhotosService implements IntegrationService {
     }
   }
 
+  async validate(): Promise<boolean> {
+    return await this.testConnection();
+  }
+
   async getCapabilities(): Promise<string[]> {
     return ["oauth"];
   }

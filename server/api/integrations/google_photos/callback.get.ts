@@ -15,6 +15,22 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // Verify CSRF state parameter
+  const storedState = getCookie(event, "google_photos_oauth_state");
+
+  if (!state || !storedState || state !== storedState) {
+    // Clear the cookie
+    deleteCookie(event, "google_photos_oauth_state");
+
+    throw createError({
+      statusCode: 403,
+      message: "Invalid state parameter - possible CSRF attack",
+    });
+  }
+
+  // Clear the state cookie after verification
+  deleteCookie(event, "google_photos_oauth_state");
+
   // Get OAuth config
   const oauthConfig = getGoogleOAuthConfig();
   if (!oauthConfig) {
@@ -48,9 +64,29 @@ export default defineEventHandler(async (event) => {
       expiryDate: tokens.expiry_date,
     });
 
-    // Create or update integration
-    const integration = await prisma.integration.create({
-      data: {
+    // Find existing integration
+    const existing = await prisma.integration.findFirst({
+      where: {
+        type: "photos",
+        service: "google",
+      },
+    });
+
+    // Create or update integration using upsert
+    const integration = await prisma.integration.upsert({
+      where: {
+        id: existing?.id || "",
+      },
+      update: {
+        enabled: true,
+        settings: {
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expiryDate: tokens.expiry_date,
+          scope: tokens.scope,
+        },
+      },
+      create: {
         name: "Google Photos",
         type: "photos",
         service: "google",

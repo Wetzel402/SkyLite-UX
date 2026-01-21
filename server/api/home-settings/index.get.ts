@@ -1,24 +1,27 @@
 import prisma from "~/lib/prisma";
+import consola from "consola";
 
 export default defineEventHandler(async () => {
   try {
-    // Get or create singleton HomeSettings
-    let settings = await prisma.homeSettings.findUnique({
+    consola.info("Fetching home settings");
+
+    // Use atomic upsert to get or create singleton HomeSettings
+    const settings = await prisma.homeSettings.upsert({
       where: { singletonId: 1 },
+      update: {},
+      create: { singletonId: 1 },
     });
 
-    if (!settings) {
-      settings = await prisma.homeSettings.create({
-        data: { singletonId: 1 },
-      });
-    }
-
+    consola.success("Home settings fetched successfully");
     return settings;
   }
-  catch (error) {
+  catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    consola.error("Failed to fetch home settings:", errorMessage);
+
     throw createError({
       statusCode: 500,
-      message: `Failed to fetch home settings: ${error}`,
+      message: `Failed to fetch home settings: ${errorMessage}`,
     });
   }
 });
