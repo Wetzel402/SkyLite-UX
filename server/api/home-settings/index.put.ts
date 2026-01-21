@@ -13,8 +13,10 @@ const updateSchema = z.object({
   eventsEnabled: z.boolean().optional(),
   todosEnabled: z.boolean().optional(),
   mealsEnabled: z.boolean().optional(),
+  menuEnabled: z.boolean().optional(),
   countdownEnabled: z.boolean().optional(),
   countdownEventId: z.string().optional().nullable(),
+  refreshInterval: z.number().optional(),
 });
 
 export default defineEventHandler(async (event) => {
