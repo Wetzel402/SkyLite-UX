@@ -38,14 +38,11 @@ export default defineEventHandler(async (event) => {
     redirectUri,
   );
 
-  // Generate authorization URL with basic Google scopes
-  // Photos Picker API doesn't have its own OAuth scope - it works with any valid access token
+  // Generate authorization URL with Photos Picker API scope
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: [
-      "openid",
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/photospicker.mediaitems.readonly",
     ],
     prompt: "consent",
     state, // Include state parameter for CSRF protection
