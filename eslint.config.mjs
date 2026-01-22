@@ -40,6 +40,12 @@ export default withNuxt(antfu({
         /docker-compose\.yml$/i,
         /-docker-compose\.yml$/i,
         /clear-completed\.post\.ts$/i,
+        // API routes use kebab-case by Nuxt convention
+        /access-token\.get\.ts$/i,
+        /create-picker-session\.post\.ts$/i,
+        /get-picker-media\.get\.ts$/i,
+        /proxy-image\.get\.ts$/i,
+        /home-screen\.md$/i,
       ],
     }],
   },
