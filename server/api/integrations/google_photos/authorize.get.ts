@@ -38,11 +38,11 @@ export default defineEventHandler(async (event) => {
     redirectUri,
   );
 
-  // Generate authorization URL with Photos Library scope
+  // Generate authorization URL with Photos Picker scope
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: [
-      "https://www.googleapis.com/auth/photoslibrary.readonly",
+      "https://www.googleapis.com/auth/photospicker",
     ],
     prompt: "consent",
     state, // Include state parameter for CSRF protection
