@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
     if (error && typeof error === "object" && "statusCode" in error) {
       consola.error("Access token request denied", {
         statusCode: error.statusCode,
-        message: error.message,
+        message: "message" in error ? error.message : "Unknown error",
       });
       throw error;
     }
