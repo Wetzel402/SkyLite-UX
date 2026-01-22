@@ -38,7 +38,7 @@ export const usePhotos = () => {
     }
   };
 
-  const getPhotoUrl = (url: string, width = 1920, height = 1080) => {
+  const getPhotoUrl = (url: string, _width = 1920, _height = 1080) => {
     // Photos Picker API returns full URLs, no transformation needed
     return url;
   };

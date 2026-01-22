@@ -1,4 +1,5 @@
 import { consola } from "consola";
+import { Buffer } from "node:buffer";
 import prisma from "~/lib/prisma";
 
 // Allowed Google Photos domains for SSRF protection

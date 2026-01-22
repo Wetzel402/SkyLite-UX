@@ -213,7 +213,7 @@ const getWeatherIconForCode = (code: number): string => {
 };
 
 // Helper function to get day name from date
-const getDayName = (dateStr: string, daysFromNow: number): string => {
+const getDayName = (dateStr: string, _daysFromNow: number): string => {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const date = new Date(dateStr);
   return days[date.getDay()] || "Sun";
@@ -382,27 +382,6 @@ const fetchTodaysTasks = async () => {
   }
   catch (error) {
     console.error("Failed to fetch tasks:", error);
-  }
-};
-
-const fetchTodaysMeal = async () => {
-  try {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-    // Fetch meals for today
-    const response = await $fetch<any[]>(`/api/meals/byDateRange`, {
-      query: {
-        startDate: today,
-        endDate: today,
-      },
-    });
-
-    // Get dinner meal if exists
-    const dinner = response.find((meal: any) => meal.mealType === 'DINNER');
-    todaysMeal.value = dinner?.name || null;
-  }
-  catch (error) {
-    console.error("Failed to fetch meal:", error);
   }
 };
 

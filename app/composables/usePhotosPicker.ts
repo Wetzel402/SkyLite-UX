@@ -24,19 +24,6 @@ export const usePhotosPicker = () => {
     }
   };
 
-  // Get access token from server
-  const getAccessToken = async () => {
-    try {
-      const response = await $fetch<{ accessToken: string }>('/api/integrations/google_photos/access-token');
-      return response.accessToken;
-    } catch (e: any) {
-      if (e.statusCode === 404) {
-        throw new Error('Please connect your Google Photos account in Settings → Integrations first');
-      }
-      throw new Error('Failed to get Google Photos access token');
-    }
-  };
-
   // Open Google Photos Picker
   const openPicker = async () => {
     if (typeof window === 'undefined') {
@@ -104,9 +91,6 @@ export const usePhotosPicker = () => {
             });
 
             if (mediaItems && mediaItems.length > 0) {
-              console.log('Processing media items:', mediaItems);
-              console.log('First item full structure:', JSON.stringify(mediaItems[0], null, 2));
-
               // Store individual photos (not albums)
               // Photos Picker API returns the URL inside mediaFile object
               // Store the baseUrl - we'll proxy it through our server
@@ -120,8 +104,6 @@ export const usePhotosPicker = () => {
                   mediaItemsCount: 1, // Always 1 for individual photos
                 };
               });
-
-              console.log('Mapped photos:', photos);
 
               // Save to database
               await $fetch('/api/selected-albums', {
@@ -147,8 +129,6 @@ export const usePhotosPicker = () => {
             return;
           }
 
-          console.log('Received message from picker:', event.data);
-
           // Process picker completion
           // Google might send different message formats, so we'll try to detect completion
           if (event.data) {
@@ -163,7 +143,6 @@ export const usePhotosPicker = () => {
         focusHandler = () => {
           setTimeout(() => {
             if (pickerWindow.closed) {
-              console.log('Picker window closed, processing...');
               processPicker();
             }
           }, 500);
