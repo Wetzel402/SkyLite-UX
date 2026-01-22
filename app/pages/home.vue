@@ -163,7 +163,6 @@ const weather = ref<{
 } | null>(null);
 const upcomingEvents = ref<CalendarEvent[]>([]);
 const todaysTasks = ref<Array<{ id: string; title: string }>>([]);
-const todaysMeal = ref<string | null>(null);
 const todaysMenu = ref<Array<{ id: string; name: string; mealType: string }>>([]);
 
 // Store interval IDs for cleanup
