@@ -186,3 +186,49 @@ model AppSettings {
 
   @@map("app_settings")
 }
+
+model HomeSettings {
+  id                    String   @id @default(cuid())
+  singletonId           Int      @unique @default(1) // Ensures only one settings row exists
+
+  // Photo display settings
+  photosEnabled         Boolean  @default(true)
+  photoTransitionSpeed  Int      @default(10000)  // milliseconds between transitions
+  kenBurnsIntensity     Float    @default(1.0)    // 0.5-2.0 scale factor for effect
+
+  // Weather settings
+  weatherEnabled        Boolean  @default(true)
+  latitude              Float?
+  longitude             Float?
+  temperatureUnit       String   @default("celsius")  // celsius | fahrenheit
+
+  // Widget visibility
+  clockEnabled          Boolean  @default(true)
+  eventsEnabled         Boolean  @default(true)
+  todosEnabled          Boolean  @default(true)
+  mealsEnabled          Boolean  @default(true)
+  menuEnabled           Boolean  @default(true)
+  countdownEnabled      Boolean  @default(false)
+  countdownEventId      String?
+
+  // Data refresh settings
+  refreshInterval       Float    @default(6.0)  // hours between widget data refreshes
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("home_settings")
+}
+
+model SelectedAlbum {
+  id          String   @id @default(cuid())
+  albumId     String   @unique // Google Photos album ID from picker
+  title       String   // Album title
+  coverPhotoUrl String? // Album cover photo URL
+  mediaItemsCount Int?  // Number of photos in album
+  order       Int      @default(0)  // Display order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("selected_albums")
+}

@@ -2,6 +2,8 @@ import type { GoogleCalendarSettings, ICalSettings, IntegrationConfig } from "~/
 import type { DialogField } from "~/types/ui";
 
 import { createGoogleCalendarService, handleGoogleCalendarSave } from "./google_calendar/googleCalendar";
+import { handleGooglePhotosSave } from "./google_photos/googlePhotos";
+import { createGooglePhotosService } from "./google_photos/googlePhotosService";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
@@ -68,6 +70,16 @@ export const integrationConfigs: IntegrationConfig[] = [
     dialogFields: [],
     syncInterval: 10,
     customSaveHandler: handleGoogleCalendarSave,
+  },
+  {
+    type: "photos",
+    service: "google",
+    settingsFields: [],
+    capabilities: ["oauth"],
+    icon: "https://unpkg.com/lucide-static@latest/icons/image.svg",
+    dialogFields: [],
+    syncInterval: 60,
+    customSaveHandler: handleGooglePhotosSave,
   },
   // ================================================
   // Meal integration configs can support the following list-level capabilities:
@@ -203,6 +215,9 @@ const serviceFactoryMap = {
   },
   "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, _settings?: ICalSettings | GoogleCalendarSettings) => {
     return createGoogleCalendarService(_id);
+  },
+  "photos:google": (_id: string) => {
+    return createGooglePhotosService(_id);
   },
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,

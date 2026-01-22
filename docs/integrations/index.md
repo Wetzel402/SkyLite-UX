@@ -15,6 +15,10 @@ Skylite UX supports integrations with various external and self-hosted services 
 
 Connect your calendars to view and manage events from external sources. Calendar integrations support reading events and, depending on the service, may also support creating, editing, and deleting events.
 
+### Photos Integrations
+
+Connect your photo libraries to display beautiful ambient slideshows on the Home screen. Photos integrations support selecting specific albums and displaying photos with Ken Burns effect (pan/zoom animations).
+
 ### Shopping Integrations
 
 Shopping integrations allow you to add and check items on your shopping lists from connected services and keep them synchronized.

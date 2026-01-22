@@ -1,4 +1,5 @@
 import { addDays } from "date-fns";
+import { consola } from "consola";
 
 import type { MealWithDate } from "~/types/database";
 
@@ -17,13 +18,64 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
       });
     }
 
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    // Parse dates as UTC to avoid timezone issues
+    // Accept both YYYY-MM-DD format and ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)
+    let startDate: Date;
+    let endDate: Date;
+
+    // Check if it's an ISO 8601 format (contains 'T')
+    if (startDateStr.includes('T')) {
+      startDate = new Date(startDateStr);
+      // Normalize to start of day in UTC
+      startDate = new Date(Date.UTC(
+        startDate.getUTCFullYear(),
+        startDate.getUTCMonth(),
+        startDate.getUTCDate(),
+        0, 0, 0, 0
+      ));
+    } else {
+      // Parse YYYY-MM-DD format explicitly as UTC
+      const startParts = startDateStr.split('-').map(Number);
+
+      if (startParts.length !== 3) {
+        throw createError({
+          statusCode: 400,
+          message: "Invalid date format. Use YYYY-MM-DD or ISO 8601 format",
+        });
+      }
+
+      const [startYear, startMonth, startDay] = startParts as [number, number, number];
+      startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0));
+    }
+
+    if (endDateStr.includes('T')) {
+      endDate = new Date(endDateStr);
+      // Normalize to end of day in UTC for inclusive range
+      endDate = new Date(Date.UTC(
+        endDate.getUTCFullYear(),
+        endDate.getUTCMonth(),
+        endDate.getUTCDate(),
+        23, 59, 59, 999
+      ));
+    } else {
+      // Parse YYYY-MM-DD format explicitly as UTC
+      const endParts = endDateStr.split('-').map(Number);
+
+      if (endParts.length !== 3) {
+        throw createError({
+          statusCode: 400,
+          message: "Invalid date format. Use YYYY-MM-DD or ISO 8601 format",
+        });
+      }
+
+      const [endYear, endMonth, endDay] = endParts as [number, number, number];
+      endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59, 999));
+    }
 
     if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
       throw createError({
         statusCode: 400,
-        message: "Invalid date format. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z)",
+        message: "Invalid date format. Use YYYY-MM-DD or ISO 8601 format",
       });
     }
 
@@ -52,8 +104,30 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
         // dayOfWeek: 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
         const mealDate = addDays(mealPlan.weekStart, meal.dayOfWeek);
 
+        // Normalize to UTC midnight for comparison
+        const mealDateUTC = new Date(Date.UTC(
+          mealDate.getUTCFullYear(),
+          mealDate.getUTCMonth(),
+          mealDate.getUTCDate(),
+          0, 0, 0, 0,
+        ));
+
+        const startDateUTC = new Date(Date.UTC(
+          startDate.getUTCFullYear(),
+          startDate.getUTCMonth(),
+          startDate.getUTCDate(),
+          0, 0, 0, 0,
+        ));
+
+        const endDateUTC = new Date(Date.UTC(
+          endDate.getUTCFullYear(),
+          endDate.getUTCMonth(),
+          endDate.getUTCDate(),
+          23, 59, 59, 999,
+        ));
+
         // Check if meal falls within the requested range
-        if (mealDate >= startDate && mealDate <= endDate) {
+        if (mealDateUTC >= startDateUTC && mealDateUTC <= endDateUTC) {
           mealsWithDates.push({
             ...meal,
             calculatedDate: mealDate,

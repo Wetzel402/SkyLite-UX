@@ -83,7 +83,20 @@ export type GoogleCalendarSettings = {
   calendars?: CalendarConfig[];
 };
 
-export type IntegrationSettings = ICalSettings | GoogleCalendarSettings;
+export type GooglePhotosSettings = {
+  accessToken?: string;
+  tokenExpiry?: number;
+  selectedAlbums?: string[]; // Album IDs
+  needsReauth?: boolean;
+};
+
+export type ShoppingSettings = Record<string, unknown>;
+
+export type IntegrationSettings =
+  | ICalSettings
+  | GoogleCalendarSettings
+  | GooglePhotosSettings
+  | ShoppingSettings;
 
 export const integrationRegistry = new Map<string, IntegrationConfig>();
 

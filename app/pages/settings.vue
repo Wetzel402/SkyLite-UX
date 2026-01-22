@@ -34,6 +34,8 @@ const isDark = computed({
 const { showError } = useAlertToast();
 
 const { settings, updateSettings, getSettings } = useAppSettings();
+const { homeSettings, fetchHomeSettings, updateHomeSettings: updateHomeSettingsComposable } = useHomeSettings();
+const { selectedAlbums, fetchSelectedAlbums, openPicker } = usePhotosPicker();
 const showMeals = computed({
   get() {
     return settings.value?.showMealsOnCalendar ?? false;
@@ -102,6 +104,8 @@ onMounted(async () => {
   }
 
   await refreshNuxtData("integrations");
+  await fetchHomeSettings();
+  await fetchSelectedAlbums();
 });
 
 watch(() => route.query, (query) => {
@@ -526,6 +530,25 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
   const settings = integration.settings as { needsReauth?: boolean } | undefined;
   return Boolean(settings?.needsReauth);
 }
+
+async function handleOpenPhotosPicker() {
+  try {
+    await openPicker();
+  } catch (error) {
+    consola.error('Failed to open picker:', error);
+    showError('Picker Error', 'Failed to open Google Photos picker');
+  }
+}
+
+async function handleRemoveAlbum(albumId: string) {
+  try {
+    await $fetch(`/api/selected-albums/${albumId}`, { method: 'DELETE' });
+    await fetchSelectedAlbums();
+  } catch (error) {
+    consola.error('Failed to remove album:', error);
+    showError('Remove Album Failed', 'Failed to remove album');
+  }
+}
 </script>
 
 <template>
@@ -809,6 +832,250 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                 size="xl"
                 aria-label="Toggle notifications"
               />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-default rounded-lg shadow-sm border border-default p-6 mb-6">
+          <h2 class="text-lg font-semibold text-highlighted mb-4">
+            Home Page
+          </h2>
+          <div class="space-y-4">
+            <!-- Enable Photos -->
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Photo Slideshow
+                </p>
+                <p class="text-sm text-muted">
+                  Display photos from Google Photos
+                </p>
+              </div>
+              <USwitch
+                :model-value="homeSettings?.photosEnabled ?? true"
+                color="primary"
+                checked-icon="i-lucide-image"
+                unchecked-icon="i-lucide-x"
+                size="xl"
+                aria-label="Toggle photo slideshow"
+                @update:model-value="updateHomeSettingsComposable({ photosEnabled: $event })"
+              />
+            </div>
+
+            <!-- Transition Speed -->
+            <div v-if="homeSettings?.photosEnabled" class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-highlighted">Transition Speed</label>
+                <span class="text-sm text-muted">{{ (homeSettings?.photoTransitionSpeed ?? 10000) / 1000 }}s</span>
+              </div>
+              <input
+                type="range"
+                :value="homeSettings?.photoTransitionSpeed ?? 10000"
+                min="5000"
+                max="60000"
+                step="5000"
+                class="w-full"
+                @change="updateHomeSettingsComposable({ photoTransitionSpeed: Number(($event.target as HTMLInputElement).value) })"
+              >
+              <p class="text-xs text-muted">Time between photo transitions (5-60 seconds)</p>
+            </div>
+
+            <!-- Ken Burns Intensity -->
+            <div v-if="homeSettings?.photosEnabled" class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-highlighted">Ken Burns Effect</label>
+                <span class="text-sm text-muted">{{ homeSettings?.kenBurnsIntensity ?? 1.0 }}x</span>
+              </div>
+              <input
+                type="range"
+                :value="homeSettings?.kenBurnsIntensity ?? 1.0"
+                min="0"
+                max="2"
+                step="0.1"
+                class="w-full"
+                @change="updateHomeSettingsComposable({ kenBurnsIntensity: Number(($event.target as HTMLInputElement).value) })"
+              >
+              <p class="text-xs text-muted">Zoom and pan effect strength (0 = off, 2 = maximum)</p>
+            </div>
+
+            <!-- Album Selection -->
+            <div v-if="homeSettings?.photosEnabled" class="space-y-3 pt-4 border-t border-muted">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-highlighted">Selected Photos</label>
+                <UButton
+                  size="sm"
+                  icon="i-lucide-plus"
+                  @click="handleOpenPhotosPicker"
+                >
+                  Select Photos
+                </UButton>
+              </div>
+
+              <!-- Selected Photos List -->
+              <div v-if="selectedAlbums.length > 0" class="space-y-2">
+                <div
+                  v-for="album in selectedAlbums"
+                  :key="album.id"
+                  class="flex items-center gap-3 p-3 bg-muted rounded-lg border border-default"
+                >
+                  <img
+                    v-if="album.coverPhotoUrl"
+                    :src="`/api/integrations/google_photos/proxy-image?photoId=${encodeURIComponent(album.albumId)}`"
+                    class="w-12 h-12 rounded object-cover"
+                    :alt="album.title"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium text-highlighted truncate">{{ album.title }}</div>
+                  </div>
+                  <UButton
+                    size="sm"
+                    variant="ghost"
+                    color="error"
+                    icon="i-lucide-trash-2"
+                    @click="handleRemoveAlbum(album.id)"
+                  />
+                </div>
+              </div>
+
+              <div v-else class="text-sm text-muted p-3 bg-muted rounded-lg border border-default">
+                No photos selected. Click "Select Photos" to choose from your Google Photos.
+              </div>
+            </div>
+
+            <!-- Weather Settings -->
+            <div class="pt-4 border-t border-muted">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="font-medium text-highlighted">
+                    Weather Widget
+                  </p>
+                  <p class="text-sm text-muted">
+                    Show current weather conditions
+                  </p>
+                </div>
+                <USwitch
+                  :model-value="homeSettings?.weatherEnabled ?? true"
+                  color="primary"
+                  checked-icon="i-lucide-cloud"
+                  unchecked-icon="i-lucide-x"
+                  size="xl"
+                  aria-label="Toggle weather widget"
+                  @update:model-value="updateHomeSettingsComposable({ weatherEnabled: $event })"
+                />
+              </div>
+
+              <div v-if="homeSettings?.weatherEnabled" class="space-y-3 pl-4">
+                <div>
+                  <label class="text-sm font-medium text-highlighted">Latitude</label>
+                  <input
+                    type="number"
+                    :value="homeSettings?.latitude ?? ''"
+                    step="0.0001"
+                    placeholder="41.8781"
+                    class="w-full mt-1 px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                    @blur="updateHomeSettingsComposable({ latitude: Number(($event.target as HTMLInputElement).value) })"
+                  >
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-highlighted">Longitude</label>
+                  <input
+                    type="number"
+                    :value="homeSettings?.longitude ?? ''"
+                    step="0.0001"
+                    placeholder="-87.6298"
+                    class="w-full mt-1 px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                    @blur="updateHomeSettingsComposable({ longitude: Number(($event.target as HTMLInputElement).value) })"
+                  >
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-highlighted">Temperature Unit</label>
+                  <select
+                    :value="homeSettings?.temperatureUnit ?? 'celsius'"
+                    class="w-full mt-1 px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                    @change="updateHomeSettingsComposable({ temperatureUnit: ($event.target as HTMLSelectElement).value })"
+                  >
+                    <option value="celsius">
+                      Celsius (°C)
+                    </option>
+                    <option value="fahrenheit">
+                      Fahrenheit (°F)
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Refresh Interval -->
+            <div class="pt-4 border-t border-muted space-y-3">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Data Refresh Interval
+                </p>
+                <p class="text-sm text-muted">
+                  How often widgets fetch new data (weather, events, tasks, meals)
+                </p>
+              </div>
+              <div class="space-y-2 pl-4">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-medium text-highlighted">Refresh Every</label>
+                  <span class="text-sm text-muted">{{ homeSettings?.refreshInterval ?? 6.0 }} hour{{ (homeSettings?.refreshInterval ?? 6.0) !== 1 ? 's' : '' }}</span>
+                </div>
+                <input
+                  type="range"
+                  :value="homeSettings?.refreshInterval ?? 6.0"
+                  min="1"
+                  max="12"
+                  step="1"
+                  class="w-full"
+                  @input="updateHomeSettingsComposable({ refreshInterval: Number(($event.target as HTMLInputElement).value) })"
+                >
+                <p class="text-xs text-muted">Choose between 1 and 12 hours</p>
+              </div>
+            </div>
+
+            <!-- Widget Visibility -->
+            <div class="pt-4 border-t border-muted">
+              <h3 class="text-sm font-medium text-highlighted mb-3">
+                Visible Widgets
+              </h3>
+              <div class="space-y-2 pl-4">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Clock</label>
+                  <USwitch
+                    :model-value="homeSettings?.clockEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ clockEnabled: $event })"
+                  />
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Events</label>
+                  <USwitch
+                    :model-value="homeSettings?.eventsEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ eventsEnabled: $event })"
+                  />
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Todos</label>
+                  <USwitch
+                    :model-value="homeSettings?.todosEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ todosEnabled: $event })"
+                  />
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-highlighted">Meals</label>
+                  <USwitch
+                    :model-value="homeSettings?.mealsEnabled ?? true"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ mealsEnabled: $event })"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

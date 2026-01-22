@@ -74,11 +74,24 @@ Skylite UX was conceived as an open source, self-hosted alternative to commercia
 - Add, edit, or check items on your shopping lists
 - Collaborative list management
 
-### Meals (Not yet implemented)
+### Home Screen
 
-- View upcoming and past meals for your family in the month, week, day, or agenda views
-- Add breakfast, lunch, dinner, and sides to your meal plan
-- Edit or delete meals from your meal plan
+![Home Screen]({{ '/assets/images/screenshots/home.png' | relative_url }})
+
+- Beautiful ambient display with Google Photos slideshow
+- Interactive widgets showing weather, events, tasks, and meals
+- Today's Menu widget with meal type icons (🍳 breakfast, 🥗 lunch, 🍽️ dinner)
+- 7-day weather forecast with current conditions
+- Upcoming events from Google Calendar
+- Ken Burns effect on photo transitions
+- Adaptive backgrounds for text readability
+
+### Meal Planning
+
+- Plan meals for the week with breakfast, lunch, and dinner
+- View meals in calendar or week view
+- Today's Menu displays on home screen
+- Add, edit, or delete meals from your meal plan
 
 ### Users
 
