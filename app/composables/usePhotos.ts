@@ -38,8 +38,14 @@ export const usePhotos = () => {
     }
   };
 
-  const getPhotoUrl = (url: string, _width = 1920, _height = 1080) => {
-    // Photos Picker API returns full URLs, no transformation needed
+  const getPhotoUrl = (url: string, width = 1920, height = 1080) => {
+    // Add width and height parameters for high-resolution images
+    if (url.includes('/api/integrations/google_photos/proxy-image')) {
+      const urlObj = new URL(url, window.location.origin);
+      urlObj.searchParams.set('width', width.toString());
+      urlObj.searchParams.set('height', height.toString());
+      return urlObj.toString();
+    }
     return url;
   };
 

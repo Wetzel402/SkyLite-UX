@@ -25,3 +25,6 @@ tmpclaude-*
 !.env.example
 
 /app/generated/prisma
+
+# Prisma database files
+prisma/data/

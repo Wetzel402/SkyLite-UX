@@ -3,7 +3,7 @@
     <!-- Photo Background with Ken Burns Effect -->
     <div v-if="currentPhoto" class="absolute inset-0">
       <img
-        :src="getPhotoUrl(currentPhoto.url)"
+        :src="getPhotoUrl(currentPhoto.url, 1920, 1080)"
         :alt="currentPhoto.filename"
         class="w-full h-full object-cover transition-all duration-1000"
         :class="{ 'ken-burns': homeSettings?.kenBurnsIntensity && homeSettings.kenBurnsIntensity > 0 }"

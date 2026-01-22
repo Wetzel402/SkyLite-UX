@@ -32,6 +32,8 @@ export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
     const photoId = query.photoId as string;
+    const width = Number(query.width) || 1920;
+    const height = Number(query.height) || 1080;
 
     if (!photoId) {
       throw createError({
@@ -80,7 +82,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Validate URL to prevent SSRF attacks
-    const imageUrl = photo.coverPhotoUrl;
+    let imageUrl = photo.coverPhotoUrl;
     if (!isValidGooglePhotosUrl(imageUrl)) {
       consola.error("Invalid image URL domain:", imageUrl);
       throw createError({
@@ -88,6 +90,10 @@ export default defineEventHandler(async (event) => {
         message: "Invalid image URL domain",
       });
     }
+
+    // Append size parameters to get high-resolution image
+    // Google Photos baseUrls accept =w{width}-h{height} parameters
+    imageUrl = `${imageUrl}=w${width}-h${height}`;
 
     // Fetch the image with OAuth token
     const response = await fetch(imageUrl, {
