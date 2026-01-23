@@ -623,7 +623,11 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
 
 async function handleOpenPhotosPicker() {
   try {
-    await openPicker();
+    const result = await openPicker();
+    // result is null if user closed picker without selecting anything - this is fine
+    if (result === null) {
+      consola.info("User closed picker without selecting photos");
+    }
   }
   catch (error) {
     consola.error("Failed to open picker:", error);

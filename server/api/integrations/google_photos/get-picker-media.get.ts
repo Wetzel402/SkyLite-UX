@@ -103,6 +103,15 @@ export default defineEventHandler(async (event) => {
 
       if (!response.ok) {
         const errorText = await response.text();
+
+        // Check if this is a "user hasn't picked items" error (expected when picker is closed without selection)
+        if (response.status === 400 && errorText.includes("PENDING_USER_ACTION")) {
+          consola.info("User closed picker without selecting photos");
+          return {
+            mediaItems: [],
+          };
+        }
+
         consola.error("Failed to get media items:", {
           status: response.status,
           statusText: response.statusText,
