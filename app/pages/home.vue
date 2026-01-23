@@ -200,24 +200,35 @@ async function fetchWeather() {
 
 async function fetchUpcomingEvents() {
   try {
-    // First, get the Google Calendar integration ID
+    // Get all enabled Google Calendar integrations (multiple accounts)
     const integrations = await $fetch<any[]>("/api/integrations");
-    const googleCalendarIntegration = integrations.find(
+    const googleCalendarIntegrations = integrations.filter(
       (i: any) => i.type === "calendar" && i.service === "google" && i.enabled,
     );
 
-    if (!googleCalendarIntegration) {
+    if (googleCalendarIntegrations.length === 0) {
       upcomingEvents.value = [];
       return;
     }
 
-    // Fetch events from Google Calendar
-    const response = await $fetch<{ events: CalendarEvent[] }>(
-      `/api/integrations/google_calendar/events?integrationId=${googleCalendarIntegration.id}`,
+    // Fetch events from all Google Calendar integrations in parallel
+    const eventPromises = googleCalendarIntegrations.map(integration =>
+      $fetch<{ events: CalendarEvent[] }>(
+        `/api/integrations/google_calendar/events?integrationId=${integration.id}`,
+      ).catch(error => {
+        console.error(`Failed to fetch events from integration ${integration.id}:`, error);
+        return { events: [] };
+      }),
     );
 
+    const responses = await Promise.all(eventPromises);
+
+    // Merge all events from all integrations
+    const allEvents = responses.flatMap(response => response.events);
+
+    // Filter for upcoming events and sort by start time
     const now = new Date();
-    const upcoming = response.events
+    const upcoming = allEvents
       .filter(event => new Date(event.start) > now)
       .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
