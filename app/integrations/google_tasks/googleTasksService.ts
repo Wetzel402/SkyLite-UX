@@ -51,11 +51,12 @@ export async function handleGoogleTasksSave(
     return false;
   }
 
-  // Redirect to OAuth authorize endpoint
+  // Redirect to OAuth authorize endpoint (only in browser)
   if (typeof window !== "undefined") {
     window.location.href = "/api/integrations/google_tasks/authorize";
+    return true; // Indicate we handled the save
   }
 
-  // Return true to indicate we handled the save
-  return true;
+  // Can't redirect in SSR/non-browser environment
+  return false;
 }
