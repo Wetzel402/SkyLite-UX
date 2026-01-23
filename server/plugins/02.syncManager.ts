@@ -141,6 +141,14 @@ async function performIntegrationSync(
       case "todo":
         data = await (service as ServerTodoIntegrationService).getTodos();
         break;
+      case "tasks":
+        // Tasks integrations are fetch-on-demand, not synced
+        consola.debug(`Sync Manager: Skipping sync for tasks integration (fetch-on-demand)`);
+        return;
+      case "photos":
+        // Photos integrations don't sync data, they're server-side only
+        consola.debug(`Sync Manager: Skipping sync for photos integration (server-side only)`);
+        return;
       default:
         consola.warn(`Sync Manager: Unknown integration type: ${integration.type}`);
         return;
@@ -241,6 +249,10 @@ export async function sendCachedSyncData(event: H3Event, integrationId: string, 
       case "todo":
         data = await (service as ServerTodoIntegrationService).getTodos();
         break;
+      case "tasks":
+      case "photos":
+        // Tasks and photos integrations are fetch-on-demand, not synced
+        return;
     }
 
     if (data) {

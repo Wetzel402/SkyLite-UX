@@ -1,4 +1,5 @@
 import { consola } from "consola";
+
 import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
@@ -46,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
     const response = await fetch(url, {
       headers: {
-        "Authorization": `Bearer ${settings.accessToken}`,
+        Authorization: `Bearer ${settings.accessToken}`,
       },
     });
 

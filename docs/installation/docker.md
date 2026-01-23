@@ -22,6 +22,7 @@ Skylite UX supports two database backends. **SQLite is the default** and recomme
 ### SQLite (Default - Recommended)
 
 SQLite runs inside the same container - no external database needed. Perfect for:
+
 - Single-user or family deployments
 - Raspberry Pi or low-resource devices
 - Simple self-hosted setups
@@ -67,11 +68,15 @@ docker run -d \
   -p 3000:3000 \
   -v ~/skylite-data:/data \
   -e NUXT_PUBLIC_TZ=America/Chicago \
+  -e GOOGLE_CLIENT_ID=your_client_id \
+  -e GOOGLE_CLIENT_SECRET=your_client_secret \
   --name skylite-ux \
   y3knik/skylite-ux:beta
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+> **Note:** Google OAuth credentials are optional but required for Google Calendar, Photos, and Tasks integrations.
 
 ---
 
@@ -87,6 +92,9 @@ services:
     environment:
       - NUXT_PUBLIC_TZ=America/Chicago
       - NUXT_PUBLIC_LOG_LEVEL=warn
+      # Google OAuth (optional - required for Calendar, Photos, Tasks)
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
     volumes:
       - ./data:/data
     ports:
@@ -104,6 +112,9 @@ services:
       - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite
       - NUXT_PUBLIC_TZ=America/Chicago
       - NUXT_PUBLIC_LOG_LEVEL=warn
+      # Google OAuth (optional - required for Calendar, Photos, Tasks)
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
     depends_on:
       skylite-ux-db:
         condition: service_healthy
@@ -144,16 +155,16 @@ volumes:
 
 ### Required
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable         | Description   | Example                            |
+| ---------------- | ------------- | ---------------------------------- |
 | `NUXT_PUBLIC_TZ` | Your timezone | `America/Chicago`, `Europe/London` |
 
 ### Database
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | Database connection string | `file:/data/skylite.db` (SQLite) |
-| `PRISMA_ACCEPT_DATA_LOSS` | Allow destructive schema changes on startup | `false` |
+| Variable                  | Description                                 | Default                          |
+| ------------------------- | ------------------------------------------- | -------------------------------- |
+| `DATABASE_URL`            | Database connection string                  | `file:/data/skylite.db` (SQLite) |
+| `PRISMA_ACCEPT_DATA_LOSS` | Allow destructive schema changes on startup | `false`                          |
 
 **DATABASE_URL formats:**
 
@@ -172,19 +183,37 @@ When set to `true`, allows Prisma to apply destructive schema changes automatica
 
 ### Application
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NUXT_PUBLIC_LOG_LEVEL` | Logging level | `info` |
+| Variable                | Description   | Default |
+| ----------------------- | ------------- | ------- |
+| `NUXT_PUBLIC_LOG_LEVEL` | Logging level | `info`  |
 
 Valid log levels: `debug`, `info`, `warn`, `error`
 
-### Google Calendar Integration
+### Google Integrations
 
-To enable Google Calendar integration, add these environment variables:
+To enable Google integrations (Calendar, Photos, Tasks), add these environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
+| Variable               | Description                     |
+| ---------------------- | ------------------------------- |
+| `GOOGLE_CLIENT_ID`     | Your Google OAuth Client ID     |
 | `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
 
-See the [Google Calendar integration documentation](/integrations/calendar/#google-calendar) for setup instructions.
+**Setup steps:**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or select existing)
+3. Enable APIs:
+   - Google Calendar API
+   - Google Tasks API
+   - Google Photos Library API
+4. Create OAuth 2.0 Client ID (Web application)
+5. Add authorized redirect URIs (use `http://` for local/dev, `https://` for production):
+   - `http://localhost:3000/api/integrations/google_calendar/callback` (or `https://your-domain.com/api/integrations/google_calendar/callback` for production)
+   - `http://localhost:3000/api/integrations/google_tasks/callback` (or `https://your-domain.com/api/integrations/google_tasks/callback` for production)
+   - `http://localhost:3000/api/integrations/google_photos/callback` (coming soon - add if you want to preconfigure)
+
+See the integration documentation for more details:
+
+- [Google Calendar](/integrations/calendar/#google-calendar)
+- [Google Tasks](/integrations/google-tasks/)
+- Google Photos (coming soon)

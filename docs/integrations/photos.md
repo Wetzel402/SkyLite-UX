@@ -15,6 +15,7 @@ Photo integrations allow you to connect external photo services to Skylite UX. P
 The Google Photos integration uses the **Photos Picker API** to allow users to select specific albums for display on the Skylite UX Home screen. This approach is more privacy-friendly and doesn't require sensitive OAuth scopes.
 
 **Home Screen Features**:
+
 - Photos display with smooth Ken Burns effect (pan and zoom animation)
 - Configurable transition speed (5-60 seconds)
 - Adjustable animation intensity (0.5x - 2.0x)
@@ -112,38 +113,43 @@ The Home screen displays your photos with several customizable features:
 
 Available in **Settings > Home Page**:
 
-| Setting | Description | Range |
-|---------|-------------|-------|
-| Photo Slideshow | Enable/disable photo background | On/Off |
-| Selected Albums | Albums to display | Multiple selection |
-| Transition Speed | Time between photo changes | 5-60 seconds |
-| Ken Burns Intensity | Pan/zoom effect strength | 0-2.0x (0 = off, 2 = maximum) |
+| Setting             | Description                     | Range                         |
+| ------------------- | ------------------------------- | ----------------------------- |
+| Photo Slideshow     | Enable/disable photo background | On/Off                        |
+| Selected Albums     | Albums to display               | Multiple selection            |
+| Transition Speed    | Time between photo changes      | 5-60 seconds                  |
+| Ken Burns Intensity | Pan/zoom effect strength        | 0-2.0x (0 = off, 2 = maximum) |
 
 ### Troubleshooting
 
 **"No Photos Selected" message on Home page**
+
 - Go to Settings > Home Page
 - Click "Select Albums"
 - Choose at least one album from the picker
 
 **Picker doesn't open**
+
 - Check browser console for errors
 - Ensure Google Picker API is enabled in Google Cloud Console
 - Verify `GOOGLE_CLIENT_ID` is set in environment variables
 - Try refreshing the page
 
 **Albums not saving**
+
 - Check browser network tab for API errors
 - Verify database migration ran successfully
 - Check server logs for errors
 
 **Photos not displaying**
+
 - Ensure Photo Slideshow is enabled in Settings
 - Verify you have selected at least one album
 - Check that selected albums contain photos (not just videos)
 - Refresh the Home page
 
 **"Google Picker not loaded" error**
+
 - Check that the Google Picker API script is loading
 - Verify there are no browser extensions blocking the script
 - Check browser console for loading errors
@@ -151,6 +157,7 @@ Available in **Settings > Home Page**:
 ### Differences from Old Implementation
 
 **Old (OAuth-based Library API):**
+
 - ❌ Required `photoslibrary.readonly` scope (deprecated March 31, 2025)
 - ❌ Needed OAuth consent screen configuration
 - ❌ Required test users for sensitive scope
@@ -158,6 +165,7 @@ Available in **Settings > Home Page**:
 - ❌ 403 errors after deprecation date
 
 **New (Photos Picker API):**
+
 - ✅ No sensitive scopes needed
 - ✅ Google handles authentication
 - ✅ Explicit user control over album selection
@@ -179,6 +187,7 @@ The Photos Picker API is designed with privacy in mind:
 **Database Schema:**
 
 Selected albums are stored in the `selected_albums` table with:
+
 - Album ID (from Google Photos)
 - Album title
 - Cover photo URL

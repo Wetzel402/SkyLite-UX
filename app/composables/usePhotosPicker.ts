@@ -1,4 +1,4 @@
-export const usePhotosPicker = () => {
+export function usePhotosPicker() {
   const selectedAlbums = ref<Array<{
     id: string;
     albumId: string;
@@ -15,37 +15,39 @@ export const usePhotosPicker = () => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await $fetch('/api/selected-albums');
+      const response = await $fetch("/api/selected-albums");
       selectedAlbums.value = response.albums || [];
-    } catch (e: any) {
-      error.value = e.message || 'Failed to fetch selected albums';
-    } finally {
+    }
+    catch (e: any) {
+      error.value = e.message || "Failed to fetch selected albums";
+    }
+    finally {
       loading.value = false;
     }
   };
 
   // Open Google Photos Picker
   const openPicker = async () => {
-    if (typeof window === 'undefined') {
-      throw new Error('Picker can only be opened in browser');
+    if (typeof window === "undefined") {
+      throw new TypeError("Picker can only be opened in browser");
     }
 
     try {
       // Step 1: Create a picker session via server
       const { sessionId, pickerUri } = await $fetch<{ sessionId: string; pickerUri: string }>(
-        '/api/integrations/google_photos/create-picker-session',
-        { method: 'POST' },
+        "/api/integrations/google_photos/create-picker-session",
+        { method: "POST" },
       );
 
       // Step 2: Open the picker in a popup window
       const pickerWindow = window.open(
         pickerUri,
-        'GooglePhotosPicker',
-        'width=800,height=600,resizable=yes,scrollbars=yes',
+        "GooglePhotosPicker",
+        "width=800,height=600,resizable=yes,scrollbars=yes",
       );
 
       if (!pickerWindow) {
-        throw new Error('Failed to open picker window. Please allow popups for this site.');
+        throw new Error("Failed to open picker window. Please allow popups for this site.");
       }
 
       // Step 3: Listen for postMessage from picker
@@ -57,10 +59,10 @@ export const usePhotosPicker = () => {
 
         const cleanup = () => {
           if (messageListener) {
-            window.removeEventListener('message', messageListener);
+            window.removeEventListener("message", messageListener);
           }
           if (focusHandler) {
-            window.removeEventListener('focus', focusHandler);
+            window.removeEventListener("focus", focusHandler);
           }
           if (timeout) {
             clearTimeout(timeout);
@@ -68,7 +70,8 @@ export const usePhotosPicker = () => {
         };
 
         const processPicker = async () => {
-          if (hasProcessed) return;
+          if (hasProcessed)
+            return;
           hasProcessed = true;
           cleanup();
 
@@ -78,13 +81,13 @@ export const usePhotosPicker = () => {
 
             // Step 4: Retrieve selected media items
             const { mediaItems } = await $fetch<{ mediaItems: any[] }>(
-              '/api/integrations/google_photos/get-picker-media',
+              "/api/integrations/google_photos/get-picker-media",
               {
                 query: { sessionId },
               },
             ).catch((err) => {
               // If no items were selected, that's okay
-              if (err.statusCode === 400 && err.message?.includes('PENDING_USER_ACTION')) {
+              if (err.statusCode === 400 && err.message?.includes("PENDING_USER_ACTION")) {
                 return { mediaItems: [] };
               }
               throw err;
@@ -106,18 +109,20 @@ export const usePhotosPicker = () => {
               });
 
               // Save to database
-              await $fetch('/api/selected-albums', {
-                method: 'POST',
+              await $fetch("/api/selected-albums", {
+                method: "POST",
                 body: { albums: photos }, // API expects 'albums' but we're storing photos
               });
 
               await fetchSelectedAlbums();
               resolve(photos);
-            } else {
+            }
+            else {
               // No items selected
               resolve(null);
             }
-          } catch (e) {
+          }
+          catch (e) {
             reject(e);
           }
         };
@@ -125,7 +130,7 @@ export const usePhotosPicker = () => {
         // Listen for postMessage from picker
         messageListener = (event: MessageEvent) => {
           // Check if message is from Google Photos
-          if (event.origin !== 'https://photos.google.com') {
+          if (event.origin !== "https://photos.google.com") {
             return;
           }
 
@@ -136,7 +141,7 @@ export const usePhotosPicker = () => {
           }
         };
 
-        window.addEventListener('message', messageListener);
+        window.addEventListener("message", messageListener);
 
         // Wait for user to manually close the picker window
         // Check only when they might close it (on window focus)
@@ -148,21 +153,22 @@ export const usePhotosPicker = () => {
           }, 500);
         };
 
-        window.addEventListener('focus', focusHandler);
+        window.addEventListener("focus", focusHandler);
 
         // Timeout after 10 minutes
         timeout = setTimeout(() => {
           cleanup();
-          window.removeEventListener('focus', focusHandler);
+          window.removeEventListener("focus", focusHandler);
           if (!pickerWindow.closed) {
             pickerWindow.close();
           }
           if (!hasProcessed) {
-            reject(new Error('Picker timeout - session expired'));
+            reject(new Error("Picker timeout - session expired"));
           }
         }, 10 * 60 * 1000);
       });
-    } catch (e: any) {
+    }
+    catch (e: any) {
       throw new Error(`Failed to open picker: ${e.message || e}`);
     }
   };
@@ -174,4 +180,4 @@ export const usePhotosPicker = () => {
     fetchSelectedAlbums,
     openPicker,
   };
-};
+}

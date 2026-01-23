@@ -4,6 +4,7 @@ import type { DialogField } from "~/types/ui";
 import { createGoogleCalendarService, handleGoogleCalendarSave } from "./google_calendar/googleCalendar";
 import { handleGooglePhotosSave } from "./google_photos/googlePhotos";
 import { createGooglePhotosService } from "./google_photos/googlePhotosService";
+import { createGoogleTasksService } from "./google_tasks/googleTasksService";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
@@ -199,10 +200,18 @@ export const integrationConfigs: IntegrationConfig[] = [
   },
   // ================================================
   // TODO integration configs can support the following list-level capabilities:
+  // - get_tasks: Can get tasks from the service
+  // - oauth: Can authenticate using OAuth
   // ================================================
-  // TODO: Add TODO integration configs
-  // TODO: Define TODO capabilities
-  // ================================================
+  {
+    type: "tasks",
+    service: "google",
+    settingsFields: [],
+    capabilities: ["get_tasks", "oauth"],
+    icon: "https://unpkg.com/lucide-static@latest/icons/list-todo.svg",
+    dialogFields: [],
+    syncInterval: 0, // Fetch-on-demand, not synced
+  },
 ];
 
 const serviceFactoryMap = {
@@ -221,6 +230,9 @@ const serviceFactoryMap = {
   },
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,
+  "tasks:google": (_id: string) => {
+    return createGoogleTasksService(_id);
+  },
 } as const;
 
 const fieldFilters = {

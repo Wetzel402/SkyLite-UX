@@ -1,0 +1,58 @@
+import { consola } from "consola";
+
+import prisma from "~/lib/prisma";
+
+import { GoogleTasksServerService } from "../../../integrations/google_tasks";
+import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
+
+export default defineEventHandler(async () => {
+  const integration = await prisma.integration.findFirst({
+    where: {
+      type: "tasks",
+      service: "google",
+      enabled: true,
+    },
+  });
+
+  if (!integration || !integration.apiKey) {
+    return { tasks: [] };
+  }
+
+  const oauthConfig = getGoogleOAuthConfig();
+  if (!oauthConfig) {
+    return { tasks: [] };
+  }
+
+  // Normalize settings to handle null/undefined
+  const settings = (integration.settings ?? {}) as { accessToken?: string; tokenExpiry?: number };
+
+  const service = new GoogleTasksServerService(
+    oauthConfig.clientId,
+    oauthConfig.clientSecret,
+    integration.apiKey,
+    settings.accessToken,
+    settings.tokenExpiry,
+    integration.id,
+    async (integrationId, accessToken, expiry) => {
+      await prisma.integration.update({
+        where: { id: integrationId },
+        data: {
+          settings: {
+            ...settings,
+            accessToken,
+            tokenExpiry: expiry,
+          },
+        },
+      });
+    },
+  );
+
+  try {
+    const tasks = await service.getAllTasks();
+    return { tasks };
+  }
+  catch (error: any) {
+    consola.error("Failed to fetch Google Tasks:", error);
+    return { tasks: [] };
+  }
+});

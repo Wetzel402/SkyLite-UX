@@ -17,14 +17,14 @@ This document provides a comprehensive overview of the Skylight (SkyLite UX) arc
 
 ### Core Features
 
-| Feature | Description |
-|---------|-------------|
-| **Calendar** | View and manage family events with day, week, and month views |
-| **Todo Lists** | Track tasks for family members with priority and due dates |
-| **Shopping Lists** | Collaborative shopping list management |
-| **Meal Planning** | Weekly meal planning with breakfast, lunch, and dinner |
-| **Weather Widget** | Real-time weather display on the dashboard |
-| **Photo Backgrounds** | Dynamic backgrounds from Google Photos |
+| Feature               | Description                                                   |
+| --------------------- | ------------------------------------------------------------- |
+| **Calendar**          | View and manage family events with day, week, and month views |
+| **Todo Lists**        | Track tasks for family members with priority and due dates    |
+| **Shopping Lists**    | Collaborative shopping list management                        |
+| **Meal Planning**     | Weekly meal planning with breakfast, lunch, and dinner        |
+| **Weather Widget**    | Real-time weather display on the dashboard                    |
+| **Photo Backgrounds** | Dynamic backgrounds from Google Photos                        |
 
 ---
 
@@ -85,44 +85,44 @@ flowchart TB
 
 ### Frontend Technologies
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Nuxt** | 4.0.1 | Vue meta-framework with SSR |
-| **Vue.js** | 3.5.13 | Reactive UI framework |
-| **Vue Router** | 4.5.0 | Client-side routing |
-| **TypeScript** | 5.8.2 | Type-safe JavaScript |
-| **Pinia** | 3.0.1 | State management |
-| **Nuxt UI** | 3.1.2 | Component library |
-| **Tailwind CSS** | - | Utility-first CSS |
-| **VueUse** | 10.9.0 | Vue composition utilities |
-| **date-fns** | 3.3.1 | Date manipulation |
-| **ical.js** | 2.2.0 | iCalendar parsing |
+| Technology       | Version | Purpose                     |
+| ---------------- | ------- | --------------------------- |
+| **Nuxt**         | 4.0.1   | Vue meta-framework with SSR |
+| **Vue.js**       | 3.5.13  | Reactive UI framework       |
+| **Vue Router**   | 4.5.0   | Client-side routing         |
+| **TypeScript**   | 5.8.2   | Type-safe JavaScript        |
+| **Pinia**        | 3.0.1   | State management            |
+| **Nuxt UI**      | 3.1.2   | Component library           |
+| **Tailwind CSS** | -       | Utility-first CSS           |
+| **VueUse**       | 10.9.0  | Vue composition utilities   |
+| **date-fns**     | 3.3.1   | Date manipulation           |
+| **ical.js**      | 2.2.0   | iCalendar parsing           |
 
 ### Backend Technologies
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Nitro** | - | Server runtime (Nuxt built-in) |
-| **Node.js** | 20 | JavaScript runtime |
-| **Prisma** | 6.9.0 | Database ORM |
-| **googleapis** | 170.0.0 | Google API client |
-| **consola** | 3.4.2 | Logging |
+| Technology     | Version | Purpose                        |
+| -------------- | ------- | ------------------------------ |
+| **Nitro**      | -       | Server runtime (Nuxt built-in) |
+| **Node.js**    | 20      | JavaScript runtime             |
+| **Prisma**     | 6.9.0   | Database ORM                   |
+| **googleapis** | 170.0.0 | Google API client              |
+| **consola**    | 3.4.2   | Logging                        |
 
 ### Database
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **PostgreSQL** | 16 | Primary relational database |
-| **Prisma** | 6.9.0 | Schema management & migrations |
+| Technology     | Version | Purpose                        |
+| -------------- | ------- | ------------------------------ |
+| **PostgreSQL** | 16      | Primary relational database    |
+| **Prisma**     | 6.9.0   | Schema management & migrations |
 
 ### DevTools
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **Vite** | 6.3.5 | Build tool |
-| **ESLint** | 9.27.0 | Code linting |
-| **Prettier** | 3.5.2 | Code formatting |
-| **vue-tsc** | 2.2.10 | TypeScript checking |
+| Tool         | Version | Purpose             |
+| ------------ | ------- | ------------------- |
+| **Vite**     | 6.3.5   | Build tool          |
+| **ESLint**   | 9.27.0  | Code linting        |
+| **Prettier** | 3.5.2   | Code formatting     |
+| **vue-tsc**  | 2.2.10  | TypeScript checking |
 
 ---
 
@@ -157,23 +157,23 @@ flowchart TB
 
 ### Frontend Structure (`app/`)
 
-| Directory | Purpose |
-|-----------|---------|
-| `pages/` | Route pages (home, calendar, toDoLists, shoppingLists, mealPlanner, settings) |
-| `components/` | Vue components organized by feature (calendar, global, home, shopping, mealPlanner, settings) |
-| `composables/` | 22 Vue 3 Composition API hooks for business logic |
-| `plugins/` | App initialization (logging, appInit, syncManager) |
-| `integrations/` | Client-side integration service definitions |
-| `types/` | Shared TypeScript type definitions |
+| Directory       | Purpose                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| `pages/`        | Route pages (home, calendar, toDoLists, shoppingLists, mealPlanner, settings)                 |
+| `components/`   | Vue components organized by feature (calendar, global, home, shopping, mealPlanner, settings) |
+| `composables/`  | 22 Vue 3 Composition API hooks for business logic                                             |
+| `plugins/`      | App initialization (logging, appInit, syncManager)                                            |
+| `integrations/` | Client-side integration service definitions                                                   |
+| `types/`        | Shared TypeScript type definitions                                                            |
 
 ### Backend Structure (`server/`)
 
-| Directory | Purpose |
-|-----------|---------|
-| `api/` | RESTful API endpoints with file-based routing |
-| `integrations/` | Server-side integration implementations |
-| `plugins/` | Server initialization (logging, syncManager) |
-| `utils/` | Utilities (Google OAuth config, RRule parsing, sanitization) |
+| Directory       | Purpose                                                      |
+| --------------- | ------------------------------------------------------------ |
+| `api/`          | RESTful API endpoints with file-based routing                |
+| `integrations/` | Server-side integration implementations                      |
+| `plugins/`      | Server initialization (logging, syncManager)                 |
+| `utils/`        | Utilities (Google OAuth config, RRule parsing, sanitization) |
 
 ---
 
@@ -269,19 +269,19 @@ erDiagram
 
 ### Data Models
 
-| Model | Purpose |
-|-------|---------|
-| **User** | User accounts with profile (name, email, avatar, color) |
-| **TodoColumn** | Todo list containers per user |
-| **Todo** | Individual task items with priority and due dates |
-| **CalendarEvent** | Calendar events with recurrence (iCal format) |
-| **CalendarEventUser** | Many-to-many relationship for event participants |
-| **ShoppingList** | Shopping list containers |
-| **ShoppingListItem** | Individual shopping items with quantity/units |
-| **MealPlan** | Weekly meal plan containers |
-| **Meal** | Individual meals (breakfast/lunch/dinner) |
-| **Integration** | External service configurations (OAuth tokens, API keys) |
-| **AppSettings** | Global application settings (singleton) |
+| Model                 | Purpose                                                  |
+| --------------------- | -------------------------------------------------------- |
+| **User**              | User accounts with profile (name, email, avatar, color)  |
+| **TodoColumn**        | Todo list containers per user                            |
+| **Todo**              | Individual task items with priority and due dates        |
+| **CalendarEvent**     | Calendar events with recurrence (iCal format)            |
+| **CalendarEventUser** | Many-to-many relationship for event participants         |
+| **ShoppingList**      | Shopping list containers                                 |
+| **ShoppingListItem**  | Individual shopping items with quantity/units            |
+| **MealPlan**          | Weekly meal plan containers                              |
+| **Meal**              | Individual meals (breakfast/lunch/dinner)                |
+| **Integration**       | External service configurations (OAuth tokens, API keys) |
+| **AppSettings**       | Global application settings (singleton)                  |
 
 ---
 
@@ -318,13 +318,13 @@ flowchart LR
 
 ### Integration Capabilities
 
-| Integration | Auth Method | Capabilities |
-|-------------|-------------|--------------|
-| **Google Calendar** | OAuth 2.0 | Read/Write events, multiple calendars, color support |
-| **Google Photos** | OAuth 2.0 | Album fetching, dynamic photo backgrounds |
-| **iCal Feeds** | URL-based | Read-only calendar import, RFC 5545 compliant |
-| **Mealie** | API Key | Shopping list sync (Add/Clear/Edit) |
-| **Tandoor** | API Key | Shopping list sync (Add/Edit) |
+| Integration         | Auth Method | Capabilities                                         |
+| ------------------- | ----------- | ---------------------------------------------------- |
+| **Google Calendar** | OAuth 2.0   | Read/Write events, multiple calendars, color support |
+| **Google Photos**   | OAuth 2.0   | Album fetching, dynamic photo backgrounds            |
+| **iCal Feeds**      | URL-based   | Read-only calendar import, RFC 5545 compliant        |
+| **Mealie**          | API Key     | Shopping list sync (Add/Clear/Edit)                  |
+| **Tandoor**         | API Key     | Shopping list sync (Add/Edit)                        |
 
 ---
 
@@ -350,6 +350,7 @@ flowchart TB
 ### Docker Configuration
 
 **Container: skylite-ux**
+
 - Base image: Node.js 20
 - Build: Multi-stage Dockerfile
 - Exposed port: 3000
@@ -357,6 +358,7 @@ flowchart TB
 - Health check enabled
 
 **Container: postgres**
+
 - Image: postgres:16
 - Internal port: 5432
 - Persistent volume: postgres-data
@@ -364,11 +366,11 @@ flowchart TB
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `GOOGLE_CLIENT_ID` | No | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | No | Google OAuth client secret |
+| Variable               | Required | Description                  |
+| ---------------------- | -------- | ---------------------------- |
+| `DATABASE_URL`         | Yes      | PostgreSQL connection string |
+| `GOOGLE_CLIENT_ID`     | No       | Google OAuth client ID       |
+| `GOOGLE_CLIENT_SECRET` | No       | Google OAuth client secret   |
 
 ---
 
@@ -376,17 +378,17 @@ flowchart TB
 
 The application exposes 71+ RESTful API endpoints organized by resource.
 
-| Resource | Base Path | Operations |
-|----------|-----------|------------|
-| **Calendar Events** | `/api/calendar-events` | CRUD, recurrence expansion |
-| **Users** | `/api/users` | CRUD, profile management |
-| **Todo Columns** | `/api/todo-columns` | CRUD, reordering |
-| **Todos** | `/api/todos` | CRUD, completion toggle |
-| **Shopping Lists** | `/api/shopping-lists` | CRUD, item management |
-| **Meal Plans** | `/api/meal-plans` | CRUD, meal assignment |
-| **Integrations** | `/api/integrations/*` | OAuth flows, sync operations |
-| **App Settings** | `/api/app-settings` | Get/Update global settings |
-| **Home Settings** | `/api/home-settings` | Dashboard widget config |
+| Resource            | Base Path              | Operations                   |
+| ------------------- | ---------------------- | ---------------------------- |
+| **Calendar Events** | `/api/calendar-events` | CRUD, recurrence expansion   |
+| **Users**           | `/api/users`           | CRUD, profile management     |
+| **Todo Columns**    | `/api/todo-columns`    | CRUD, reordering             |
+| **Todos**           | `/api/todos`           | CRUD, completion toggle      |
+| **Shopping Lists**  | `/api/shopping-lists`  | CRUD, item management        |
+| **Meal Plans**      | `/api/meal-plans`      | CRUD, meal assignment        |
+| **Integrations**    | `/api/integrations/*`  | OAuth flows, sync operations |
+| **App Settings**    | `/api/app-settings`    | Get/Update global settings   |
+| **Home Settings**   | `/api/home-settings`   | Dashboard widget config      |
 
 ---
 
@@ -424,16 +426,16 @@ sequenceDiagram
 
 ## Architecture Summary
 
-| Aspect | Details |
-|--------|---------|
-| **Architecture Type** | Monolithic Full-Stack |
-| **Rendering** | Server-Side Rendered (SSR) |
-| **Language** | TypeScript (full stack) |
-| **Frontend** | Nuxt 4, Vue 3, Pinia, Tailwind CSS |
-| **Backend** | Nitro, Node.js 20 |
-| **Database** | PostgreSQL 16 with Prisma ORM |
-| **Deployment** | Docker with Docker Compose |
-| **Real-time** | WebSocket-based sync system |
+| Aspect                | Details                            |
+| --------------------- | ---------------------------------- |
+| **Architecture Type** | Monolithic Full-Stack              |
+| **Rendering**         | Server-Side Rendered (SSR)         |
+| **Language**          | TypeScript (full stack)            |
+| **Frontend**          | Nuxt 4, Vue 3, Pinia, Tailwind CSS |
+| **Backend**           | Nitro, Node.js 20                  |
+| **Database**          | PostgreSQL 16 with Prisma ORM      |
+| **Deployment**        | Docker with Docker Compose         |
+| **Real-time**         | WebSocket-based sync system        |
 
 ### Design Principles
 

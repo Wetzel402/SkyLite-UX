@@ -1,5 +1,4 @@
 import { addDays } from "date-fns";
-import { consola } from "consola";
 
 import type { MealWithDate } from "~/types/database";
 
@@ -24,18 +23,22 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
     let endDate: Date;
 
     // Check if it's an ISO 8601 format (contains 'T')
-    if (startDateStr.includes('T')) {
+    if (startDateStr.includes("T")) {
       startDate = new Date(startDateStr);
       // Normalize to start of day in UTC
       startDate = new Date(Date.UTC(
         startDate.getUTCFullYear(),
         startDate.getUTCMonth(),
         startDate.getUTCDate(),
-        0, 0, 0, 0
+        0,
+        0,
+        0,
+        0,
       ));
-    } else {
+    }
+    else {
       // Parse YYYY-MM-DD format explicitly as UTC
-      const startParts = startDateStr.split('-').map(Number);
+      const startParts = startDateStr.split("-").map(Number);
 
       if (startParts.length !== 3) {
         throw createError({
@@ -48,18 +51,22 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
       startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0));
     }
 
-    if (endDateStr.includes('T')) {
+    if (endDateStr.includes("T")) {
       endDate = new Date(endDateStr);
       // Normalize to end of day in UTC for inclusive range
       endDate = new Date(Date.UTC(
         endDate.getUTCFullYear(),
         endDate.getUTCMonth(),
         endDate.getUTCDate(),
-        23, 59, 59, 999
+        23,
+        59,
+        59,
+        999,
       ));
-    } else {
+    }
+    else {
       // Parse YYYY-MM-DD format explicitly as UTC
-      const endParts = endDateStr.split('-').map(Number);
+      const endParts = endDateStr.split("-").map(Number);
 
       if (endParts.length !== 3) {
         throw createError({
@@ -109,21 +116,30 @@ export default defineEventHandler(async (event): Promise<MealWithDate[]> => {
           mealDate.getUTCFullYear(),
           mealDate.getUTCMonth(),
           mealDate.getUTCDate(),
-          0, 0, 0, 0,
+          0,
+          0,
+          0,
+          0,
         ));
 
         const startDateUTC = new Date(Date.UTC(
           startDate.getUTCFullYear(),
           startDate.getUTCMonth(),
           startDate.getUTCDate(),
-          0, 0, 0, 0,
+          0,
+          0,
+          0,
+          0,
         ));
 
         const endDateUTC = new Date(Date.UTC(
           endDate.getUTCFullYear(),
           endDate.getUTCMonth(),
           endDate.getUTCDate(),
-          23, 59, 59, 999,
+          23,
+          59,
+          59,
+          999,
         ));
 
         // Check if meal falls within the requested range

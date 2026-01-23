@@ -19,6 +19,10 @@
 #     environment:
 #       - NUXT_PUBLIC_TZ=America/Chicago
 #       - NUXT_PUBLIC_LOG_LEVEL=warn
+#       # Google OAuth Configuration (required for Google Calendar, Photos, and Tasks)
+#       # Get credentials from: https://console.cloud.google.com/
+#       - GOOGLE_CLIENT_ID=
+#       - GOOGLE_CLIENT_SECRET=
 #     volumes:
 #       - ./data:/data
 #     ports:
@@ -35,6 +39,10 @@ services:
       - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite
       - NUXT_PUBLIC_TZ=America/Chicago
       - NUXT_PUBLIC_LOG_LEVEL=warn
+      # Google OAuth Configuration (required for Google Calendar, Photos, and Tasks)
+      # Get credentials from: https://console.cloud.google.com/
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
     depends_on:
       skylite-ux-db:
         condition: service_healthy
