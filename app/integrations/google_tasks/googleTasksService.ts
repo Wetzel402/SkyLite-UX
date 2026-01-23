@@ -1,3 +1,5 @@
+import type { Integration } from "~/types/database";
+
 /**
  * Google Tasks Client Service
  *
@@ -25,4 +27,36 @@ export function createGoogleTasksService(_id: string) {
       };
     },
   };
+}
+
+/**
+ * Custom save handler for Google Tasks OAuth integration.
+ * Redirects to Google OAuth flow for new integrations or re-authentication.
+ */
+export async function handleGoogleTasksSave(
+  integrationData: Record<string, unknown>,
+  _settingsData: Record<string, unknown>,
+  isExisting: boolean,
+  originalIntegration?: Integration | null,
+): Promise<boolean> {
+  // Check if this is a new integration or needs re-authentication
+  const needsReauth = originalIntegration?.settings
+    ? (originalIntegration.settings as { needsReauth?: boolean })?.needsReauth
+    : false;
+
+  const needsOAuth = !isExisting || needsReauth;
+
+  if (!needsOAuth) {
+    // Existing integration that doesn't need re-auth, let normal save handle it
+    return false;
+  }
+
+  // Redirect to OAuth authorize endpoint (only in browser)
+  if (typeof window !== "undefined") {
+    window.location.href = "/api/integrations/google_tasks/authorize";
+    return true; // Indicate we handled the save
+  }
+
+  // Can't redirect in SSR/non-browser environment
+  return false;
 }
