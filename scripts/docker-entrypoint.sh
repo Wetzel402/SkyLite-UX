@@ -33,14 +33,9 @@ if [[ -z "$DATABASE_URL" ]] || [[ "$DATABASE_URL" == file:* ]]; then
   echo "Generating Prisma client..."
   npx prisma generate
 
-  # Push schema to database (creates tables if needed)
-  echo "Syncing database schema..."
-  if [[ "$PRISMA_ACCEPT_DATA_LOSS" == "true" ]]; then
-    echo "WARNING: PRISMA_ACCEPT_DATA_LOSS is enabled. Destructive schema changes will be applied automatically."
-    npx prisma db push --accept-data-loss
-  else
-    npx prisma db push
-  fi
+  # Run database migrations (creates tables if needed)
+  echo "Running database migrations..."
+  npx prisma migrate deploy
 
 elif [[ "$DATABASE_URL" == postgresql://* ]]; then
   echo "Database: PostgreSQL"
