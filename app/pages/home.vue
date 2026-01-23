@@ -254,7 +254,7 @@ async function fetchTodaysTasks() {
           id: `google-${task.id}`,
           title: task.title,
           description: task.notes,
-          completed: false,
+          completed: task.status === "completed",
           dueDate: task.due,
           source: "google_tasks",
         })),

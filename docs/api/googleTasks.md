@@ -262,7 +262,7 @@ All endpoints automatically handle token refresh:
 
 1. **OAuth Tokens**: Never expose OAuth credentials in client-side code
 2. **API Endpoints**: All Google API calls are made server-side
-3. **Database Storage**: Refresh tokens are stored encrypted in the database
+3. **Database Storage**: Refresh tokens are stored as plain text in Integration.apiKey and access tokens in Integration.settings.accessToken
 4. **HTTPS**: All OAuth redirects and API calls use HTTPS
 
 ---

@@ -110,7 +110,7 @@ export default defineEventHandler(async (event): Promise<WeatherResponse> => {
     });
 
     const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
-    consola.debug("Fetching weather from:", url);
+    consola.debug("Fetching weather from Open-Meteo API");
 
     // Call Open-Meteo API using native Node.js https module
     // (works around potential ofetch/undici timeout issues)

@@ -1,30 +1,5 @@
-declare global {
-  // eslint-disable-next-line ts/consistent-type-definitions
-  interface Window {
-    gapi?: any;
-    google?: {
-      picker?: {
-        PickerBuilder: new () => {
-          addView: (view: any) => any;
-          setOAuthToken: (token: string) => any;
-          setDeveloperKey: (key: string) => any;
-          setCallback: (callback: (data: any) => void) => any;
-          build: () => {
-            setVisible: (visible: boolean) => void;
-          };
-        };
-        ViewId: {
-          PHOTO_ALBUMS: any;
-          PHOTOS: any;
-          PHOTO_UPLOAD: any;
-        };
-        Action: {
-          PICKED: string;
-          CANCEL: string;
-        };
-      };
-    };
-  }
-}
+// Google Photos Picker types
+// The picker is loaded via script tag and uses postMessage API
+// No additional type definitions needed for the current implementation
 
 export {};
