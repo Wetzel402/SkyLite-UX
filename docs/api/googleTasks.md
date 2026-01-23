@@ -46,7 +46,7 @@ OAuth callback endpoint.
 
 **Example**:
 
-```
+```http
 GET /api/integrations/google_tasks/callback?code=4/0AY0e-g7...
 ```
 
@@ -129,7 +129,7 @@ Fetches all incomplete tasks from all task lists.
 ```javascript
 const response = await fetch("/api/integrations/google_tasks/all-tasks");
 const data = await response.json();
-console.log(`Found ${data.tasks.length} tasks`);
+// data.tasks contains the task list
 ```
 
 ---
@@ -205,7 +205,7 @@ Fetches short calendar events (reminders).
 ```javascript
 const response = await fetch("/api/integrations/google_calendar/reminders");
 const data = await response.json();
-console.log(`Found ${data.reminders.length} reminders`);
+// data.reminders contains the reminder list
 ```
 
 ---
@@ -220,7 +220,7 @@ const integrations = await response.json();
 const googleTasks = integrations.find(
   i => i.type === "tasks" && i.service === "google"
 );
-console.log("Google Tasks enabled:", googleTasks?.enabled);
+// Check googleTasks?.enabled to see if integration is active
 ```
 
 ---
