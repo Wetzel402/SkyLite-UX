@@ -34,6 +34,15 @@ export default defineEventHandler(async (_event) => {
       });
     }
 
+    // Guard against null/missing settings
+    if (!integration.settings) {
+      consola.error("Integration settings are missing");
+      throw createError({
+        statusCode: 401,
+        message: "Integration settings are missing. Please re-authorize the integration.",
+      });
+    }
+
     const settings = integration.settings as {
       accessToken?: string;
       refreshToken?: string;

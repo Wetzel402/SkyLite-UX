@@ -1014,7 +1014,7 @@ async function handleRemoveAlbum(albumId: string) {
                   <UButton
                     v-if="selectedPhotoIds.size > 0"
                     size="sm"
-                    color="red"
+                    color="error"
                     icon="i-lucide-trash-2"
                     @click="handleBulkDeletePhotos"
                   >
@@ -1049,7 +1049,7 @@ async function handleRemoveAlbum(albumId: string) {
                     v-if="selectedAlbums.length > 0"
                     size="xs"
                     variant="ghost"
-                    color="red"
+                    color="error"
                     @click="handleDeleteAllPhotos"
                   >
                     Delete All {{ selectedAlbums.length }} Photos

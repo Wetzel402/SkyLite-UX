@@ -79,9 +79,6 @@ export default defineEventHandler(async (event) => {
       },
     );
 
-    // Get access token (with auto-refresh)
-    const accessToken = await service.getAccessToken();
-
     // Fetch all pages of media items
     const allMediaItems: any[] = [];
     let nextPageToken: string | undefined;
@@ -89,6 +86,10 @@ export default defineEventHandler(async (event) => {
 
     do {
       pageCount++;
+
+      // Get fresh access token for each page (auto-refreshes if needed)
+      const accessToken = await service.getAccessToken();
+
       const url = nextPageToken
         ? `https://photospicker.googleapis.com/v1/mediaItems?sessionId=${sessionId}&pageToken=${nextPageToken}`
         : `https://photospicker.googleapis.com/v1/mediaItems?sessionId=${sessionId}`;
