@@ -31,7 +31,7 @@ const isDark = computed({
   },
 });
 
-const { showError } = useAlertToast();
+const { showError, showInfo } = useAlertToast();
 
 const { settings, updateSettings, getSettings } = useAppSettings();
 const { homeSettings, fetchHomeSettings, updateHomeSettings: updateHomeSettingsComposable } = useHomeSettings();
@@ -626,7 +626,7 @@ async function handleOpenPhotosPicker() {
     const result = await openPicker();
     // result is null if user closed picker without selecting anything - this is fine
     if (result === null) {
-      consola.info("User closed picker without selecting photos");
+      showInfo("No Photos Selected", "You closed the picker without selecting any photos.");
     }
   }
   catch (error) {
