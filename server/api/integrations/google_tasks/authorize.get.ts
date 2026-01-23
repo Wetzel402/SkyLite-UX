@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { google } from "googleapis";
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
@@ -23,10 +24,23 @@ export default defineEventHandler(async (event) => {
     redirectUri
   );
 
+  // Generate CSRF state token
+  const state = crypto.randomBytes(16).toString("hex");
+
+  // Store state in HttpOnly, Secure cookie with 10-minute TTL
+  setCookie(event, "google_tasks_oauth_state", state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 600, // 10 minutes
+    path: "/",
+  });
+
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: ["https://www.googleapis.com/auth/tasks"],
+    scope: ["https://www.googleapis.com/auth/tasks.readonly"],
     prompt: "consent",
+    state,
   });
 
   return sendRedirect(event, authUrl, 302);

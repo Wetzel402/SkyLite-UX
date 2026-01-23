@@ -21,7 +21,8 @@ export default defineEventHandler(async () => {
     return { tasks: [] };
   }
 
-  const settings = integration.settings as { accessToken?: string; expiryDate?: number };
+  // Normalize settings to handle null/undefined
+  const settings = (integration.settings ?? {}) as { accessToken?: string; expiryDate?: number };
 
   const service = new GoogleTasksServerService(
     oauthConfig.clientId,

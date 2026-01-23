@@ -6,11 +6,23 @@ import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const code = query.code as string;
+  const state = query.state as string;
 
   if (!code) {
     throw createError({
       statusCode: 400,
       message: "Missing authorization code",
+    });
+  }
+
+  // Verify CSRF state token
+  const storedState = getCookie(event, "google_tasks_oauth_state");
+  deleteCookie(event, "google_tasks_oauth_state");
+
+  if (!storedState || storedState !== state) {
+    throw createError({
+      statusCode: 403,
+      message: "Invalid state parameter - possible CSRF attack",
     });
   }
 
@@ -51,32 +63,48 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    const integration = await prisma.integration.upsert({
-      where: {
-        id: existing?.id || "",
-      },
-      update: {
-        enabled: true,
-        apiKey: tokens.refresh_token, // Store refresh token
-        settings: {
-          accessToken: tokens.access_token,
-          expiryDate: tokens.expiry_date,
-          scope: tokens.scope,
+    let integration;
+
+    if (existing) {
+      // Update existing integration
+      integration = await prisma.integration.update({
+        where: { id: existing.id },
+        data: {
+          enabled: true,
+          // Preserve existing refresh token if Google didn't provide a new one
+          apiKey: tokens.refresh_token ?? existing.apiKey,
+          settings: {
+            accessToken: tokens.access_token,
+            expiryDate: tokens.expiry_date,
+            scope: tokens.scope,
+          },
         },
-      },
-      create: {
-        name: "Google Tasks",
-        type: "tasks",
-        service: "google",
-        enabled: true,
-        apiKey: tokens.refresh_token,
-        settings: {
-          accessToken: tokens.access_token,
-          expiryDate: tokens.expiry_date,
-          scope: tokens.scope,
+      });
+    }
+    else {
+      // Create new integration - refresh token is required for offline access
+      if (!tokens.refresh_token) {
+        throw createError({
+          statusCode: 400,
+          message: "No refresh token received - offline access not granted",
+        });
+      }
+
+      integration = await prisma.integration.create({
+        data: {
+          name: "Google Tasks",
+          type: "tasks",
+          service: "google",
+          enabled: true,
+          apiKey: tokens.refresh_token,
+          settings: {
+            accessToken: tokens.access_token,
+            expiryDate: tokens.expiry_date,
+            scope: tokens.scope,
+          },
         },
-      },
-    });
+      });
+    }
 
     consola.success(`Google Tasks integration ${integration.id} authenticated`);
 

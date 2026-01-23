@@ -187,8 +187,8 @@ const weather = ref<{
   }>;
 } | null>(null);
 const upcomingEvents = ref<CalendarEvent[]>([]);
-const todaysTasks = ref<Array<{ id: string; title: string }>>([]);
-const todaysMenu = ref<Array<{ id: string; name: string; mealType: string }>>([]);
+const todaysTasks = ref<Array<{ id: string; title: string; dueDate?: string | Date }>>([]);
+const todaysMenu = ref<Array<{ id: string; name: string; mealType: string; dayLabel?: string }>>([]);
 
 // Store interval IDs for cleanup
 const intervals = ref<NodeJS.Timeout[]>([]);

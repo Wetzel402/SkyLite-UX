@@ -66,42 +66,69 @@ export class GoogleTasksServerService {
   }
 
   /**
-   * Fetch all task lists
+   * Fetch all task lists (with pagination)
    * @returns Array of GoogleTasksList objects
    */
   async listTaskLists(): Promise<GoogleTasksList[]> {
     await this.ensureValidToken();
-    const response = await this.tasks.tasklists.list();
-    return (response.data.items || []).map(list => ({
-      id: list.id!,
-      title: list.title!,
-      updated: list.updated,
-    }));
+
+    const allTaskLists: GoogleTasksList[] = [];
+    let pageToken: string | undefined;
+
+    do {
+      const response = await this.tasks.tasklists.list({
+        pageToken,
+      });
+
+      const items = response.data.items || [];
+      allTaskLists.push(...items.map(list => ({
+        id: list.id!,
+        title: list.title!,
+        updated: list.updated,
+      })));
+
+      pageToken = response.data.nextPageToken ?? undefined;
+    } while (pageToken);
+
+    return allTaskLists;
   }
 
   /**
-   * Fetch tasks from a specific task list
+   * Fetch tasks from a specific task list (with pagination)
    * @param taskListId - The ID of the task list
    * @returns Array of GoogleTask objects
    */
   async listTasks(taskListId: string): Promise<GoogleTask[]> {
     await this.ensureValidToken();
-    const response = await this.tasks.tasks.list({
-      tasklist: taskListId,
-      showCompleted: false, // Only fetch incomplete tasks
-      showDeleted: false,
-      showHidden: false,
-    });
-    return (response.data.items || []).map(task => ({
-      id: task.id!,
-      title: task.title!,
-      notes: task.notes,
-      status: task.status as "needsAction" | "completed",
-      due: task.due,
-      completed: task.completed,
-      updated: task.updated!,
-      taskListId,
-    }));
+
+    const allTasks: GoogleTask[] = [];
+    let pageToken: string | undefined;
+
+    do {
+      const response = await this.tasks.tasks.list({
+        tasklist: taskListId,
+        showCompleted: false, // Only fetch incomplete tasks
+        showDeleted: false,
+        showHidden: false,
+        pageToken,
+      });
+
+      const items = response.data.items || [];
+      allTasks.push(...items.map(task => ({
+        id: task.id!,
+        title: task.title!,
+        notes: task.notes,
+        status: task.status as "needsAction" | "completed",
+        due: task.due,
+        completed: task.completed,
+        updated: task.updated!,
+        taskListId,
+      })));
+
+      pageToken = response.data.nextPageToken ?? undefined;
+    } while (pageToken);
+
+    return allTasks;
   }
 
   /**

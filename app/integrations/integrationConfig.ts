@@ -210,6 +210,7 @@ export const integrationConfigs: IntegrationConfig[] = [
     capabilities: ["get_tasks", "oauth"],
     icon: "https://unpkg.com/lucide-static@latest/icons/list-todo.svg",
     dialogFields: [],
+    syncInterval: 0, // Fetch-on-demand, not synced
   },
 ];
 

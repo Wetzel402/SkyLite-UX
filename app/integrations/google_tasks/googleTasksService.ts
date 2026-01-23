@@ -9,6 +9,9 @@ export function createGoogleTasksService(_id: string) {
   return {
     async initialize() {
       // No initialization needed for read-only server-side integration
+    },
+    async validate() {
+      // Validation is handled server-side during OAuth
       return true;
     },
     async testConnection() {

@@ -67,11 +67,15 @@ docker run -d \
   -p 3000:3000 \
   -v ~/skylite-data:/data \
   -e NUXT_PUBLIC_TZ=America/Chicago \
+  -e GOOGLE_CLIENT_ID=your_client_id \
+  -e GOOGLE_CLIENT_SECRET=your_client_secret \
   --name skylite-ux \
   y3knik/skylite-ux:beta
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+> **Note:** Google OAuth credentials are optional but required for Google Calendar, Photos, and Tasks integrations.
 
 ---
 
@@ -87,6 +91,9 @@ services:
     environment:
       - NUXT_PUBLIC_TZ=America/Chicago
       - NUXT_PUBLIC_LOG_LEVEL=warn
+      # Google OAuth (optional - required for Calendar, Photos, Tasks)
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
     volumes:
       - ./data:/data
     ports:
@@ -104,6 +111,9 @@ services:
       - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite
       - NUXT_PUBLIC_TZ=America/Chicago
       - NUXT_PUBLIC_LOG_LEVEL=warn
+      # Google OAuth (optional - required for Calendar, Photos, Tasks)
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
     depends_on:
       skylite-ux-db:
         condition: service_healthy
@@ -178,13 +188,30 @@ When set to `true`, allows Prisma to apply destructive schema changes automatica
 
 Valid log levels: `debug`, `info`, `warn`, `error`
 
-### Google Calendar Integration
+### Google Integrations
 
-To enable Google Calendar integration, add these environment variables:
+To enable Google integrations (Calendar, Photos, Tasks), add these environment variables:
 
 | Variable | Description |
 |----------|-------------|
 | `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
 | `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
 
-See the [Google Calendar integration documentation](/integrations/calendar/#google-calendar) for setup instructions.
+**Setup steps:**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or select existing)
+3. Enable APIs:
+   - Google Calendar API
+   - Google Tasks API
+   - Google Photos Library API
+4. Create OAuth 2.0 Client ID (Web application)
+5. Add authorized redirect URIs:
+   - `http://your-domain:3000/api/integrations/google_calendar/callback`
+   - `http://your-domain:3000/api/integrations/google_tasks/callback`
+   - `http://your-domain:3000/api/integrations/google_photos/callback`
+
+See the integration documentation for more details:
+- [Google Calendar](/integrations/calendar/#google-calendar)
+- [Google Tasks](/integrations/google-tasks/)
+- Google Photos (coming soon)

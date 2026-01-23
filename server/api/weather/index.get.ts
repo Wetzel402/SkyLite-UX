@@ -17,11 +17,16 @@ interface WeatherResponse {
 // Helper function to make HTTPS requests with native Node.js module
 function httpsGet(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error("Request timeout"));
-    }, 30000);
+    const req = https.get(url, (res) => {
+      // Check for non-2xx status codes
+      if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+        // Drain the response to free up resources
+        res.resume();
+        clearTimeout(timeout);
+        reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        return;
+      }
 
-    https.get(url, (res) => {
       let data = "";
 
       res.on("data", (chunk) => {
@@ -34,13 +39,19 @@ function httpsGet(url: string): Promise<any> {
           resolve(JSON.parse(data));
         }
         catch (err) {
-          reject(new Error("Failed to parse response"));
+          const parseError = err instanceof Error ? err.message : String(err);
+          reject(new Error(`Failed to parse response: ${parseError}`));
         }
       });
     }).on("error", (err) => {
       clearTimeout(timeout);
       reject(err);
     });
+
+    const timeout = setTimeout(() => {
+      req.destroy();
+      reject(new Error("Request timeout"));
+    }, 30000);
   });
 }
 

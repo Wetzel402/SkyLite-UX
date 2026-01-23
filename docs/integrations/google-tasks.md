@@ -15,7 +15,7 @@ The Google Tasks integration allows you to view your Google Tasks alongside loca
 ## Setup
 
 1. Configure Google OAuth credentials in `.env`:
-   ```
+   ```env
    GOOGLE_CLIENT_ID=your_client_id
    GOOGLE_CLIENT_SECRET=your_client_secret
    ```
@@ -29,7 +29,7 @@ The Google Tasks integration allows you to view your Google Tasks alongside loca
 
 ## OAuth Scope
 
-- `https://www.googleapis.com/auth/tasks` - Read-only access to Google Tasks
+- `https://www.googleapis.com/auth/tasks.readonly` - Read-only access to Google Tasks (least privilege)
 
 ## API Endpoints
 
