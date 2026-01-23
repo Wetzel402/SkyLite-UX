@@ -96,7 +96,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
     _count: column._count ? { items: column._count.todos } : undefined,
   }));
 
-  const allColumns = [...localColumns];
+  const allColumns: TodoListWithIntegration[] = [...localColumns];
 
   // Add Google Tasks column if there are any Google Tasks
   if (googleTasks.value.length > 0) {
@@ -113,7 +113,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
         items: filteredTasks.map((task, index) => ({
           id: `google-${task.id}`,
           name: task.title,
-          checked: false,
+          checked: task.status === "completed",
           order: index,
           notes: task.notes ?? null,
           shoppingListId: 'google-tasks-virtual',
@@ -121,6 +121,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
           dueDate: task.due ? new Date(task.due) : null,
           description: task.notes ?? "",
           todoColumnId: 'google-tasks-virtual',
+          source: 'google_tasks',
         })),
         _count: { items: filteredTasks.length },
       });
@@ -150,6 +151,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
           dueDate: reminder.dueDate ? new Date(reminder.dueDate) : null,
           description: reminder.description ?? "",
           todoColumnId: 'calendar-reminders-virtual',
+          source: 'calendar_reminder',
         })),
         _count: { items: filteredReminders.length },
       });
