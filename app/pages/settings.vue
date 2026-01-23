@@ -119,11 +119,26 @@ watch(() => route.query, (query) => {
       }
     });
   }
+  if (query.success === "google_tasks_added" && query.integrationId) {
+    nextTick(async () => {
+      await refreshNuxtData("integrations");
+      // Optionally show a success message
+      consola.success("Google Tasks integration added successfully");
+    });
+  }
 }, { immediate: true });
 
 const filteredIntegrations = computed(() => {
   return (integrations.value as Integration[]).filter(integration => integration.type === activeIntegrationTab.value);
 });
+
+const googleTasksIntegration = computed(() => {
+  return (integrations.value as Integration[]).find((i: Integration) => i.type === "tasks" && i.service === "google");
+});
+
+const connectGoogleTasks = () => {
+  window.location.href = "/api/integrations/google_tasks/authorize";
+};
 
 async function handleUserSave(userData: CreateUserInput) {
   try {

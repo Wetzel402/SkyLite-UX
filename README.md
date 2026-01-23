@@ -38,10 +38,19 @@ Beautiful ambient display perfect for a family command center:
 
 ### Other Features
 - **Family Calendar** - Unified calendar with Google Calendar integration
-- **Todo Lists** - Organize tasks with due dates and priorities
+- **Todo Lists** - Organize tasks with due dates and priorities, Google Tasks integration (read-only)
 - **Shopping Lists** - Collaborative shopping lists with integration support
 - **Meal Planning** - Plan your meals for the week with breakfast, lunch, and dinner
 - **User Management** - Multi-user support with individual profiles
+
+## Integrations
+
+- **Google Photos** - Display photos from Google Photos albums in slideshow
+- **Google Calendar** - View and manage calendar events
+- **Google Tasks** - View Google Tasks alongside local todos (read-only)
+- **Weather** - Display current weather and forecast
+- **Mealie** - Meal planning integration
+- **Tandoor** - Recipe and meal planning integration
 
 ## Installation
 

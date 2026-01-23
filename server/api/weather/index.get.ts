@@ -1,4 +1,5 @@
 import { consola } from "consola";
+import https from "node:https";
 
 interface WeatherResponse {
   temperature: number;
@@ -11,6 +12,36 @@ interface WeatherResponse {
     weatherCode: number;
     weatherDescription: string;
   }>;
+}
+
+// Helper function to make HTTPS requests with native Node.js module
+function httpsGet(url: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Request timeout"));
+    }, 30000);
+
+    https.get(url, (res) => {
+      let data = "";
+
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+
+      res.on("end", () => {
+        clearTimeout(timeout);
+        try {
+          resolve(JSON.parse(data));
+        }
+        catch (err) {
+          reject(new Error("Failed to parse response"));
+        }
+      });
+    }).on("error", (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+  });
 }
 
 export default defineEventHandler(async (event): Promise<WeatherResponse> => {
@@ -54,19 +85,23 @@ export default defineEventHandler(async (event): Promise<WeatherResponse> => {
   const temperatureUnit = query.temperatureUnit as string || "celsius";
 
   try {
-    // Call Open-Meteo API (free, no API key needed)
-    const weather: any = await $fetch("https://api.open-meteo.com/v1/forecast", {
-      query: {
-        latitude: lat,
-        longitude: lng,
-        current: "temperature_2m,apparent_temperature,weather_code,is_day",
-        daily: "temperature_2m_max,temperature_2m_min,weather_code",
-        temperature_unit: temperatureUnit === "fahrenheit" ? "fahrenheit" : "celsius",
-        timezone: "auto",
-        forecast_days: 7,
-      },
-      timeout: 10000, // 10 second timeout
+    // Build query string manually
+    const params = new URLSearchParams({
+      latitude: lat.toString(),
+      longitude: lng.toString(),
+      current: "temperature_2m,apparent_temperature,weather_code,is_day",
+      daily: "temperature_2m_max,temperature_2m_min,weather_code",
+      temperature_unit: temperatureUnit === "fahrenheit" ? "fahrenheit" : "celsius",
+      timezone: "auto",
+      forecast_days: "7",
     });
+
+    const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+    consola.debug("Fetching weather from:", url);
+
+    // Call Open-Meteo API using native Node.js https module
+    // (works around potential ofetch/undici timeout issues)
+    const weather: any = await httpsGet(url);
 
     // WMO Weather interpretation codes to descriptions
     const getWeatherDescription = (code: number): string => {

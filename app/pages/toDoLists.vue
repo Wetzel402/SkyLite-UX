@@ -16,8 +16,32 @@ const { parseStableDate } = useStableDate();
 
 const { data: todoColumns } = useNuxtData<TodoColumn[]>("todo-columns");
 const { data: todos } = useNuxtData<Todo[]>("todos");
-const { updateTodo, createTodo, deleteTodo, toggleTodo, reorderTodo, clearCompleted, loading: todosLoading } = useTodos();
+const { updateTodo, createTodo, deleteTodo, toggleTodo, reorderTodo, clearCompleted, loading: todosLoading, fetchTodos } = useTodos();
 const { updateTodoColumn, createTodoColumn, deleteTodoColumn, reorderTodoColumns, loading: columnsLoading } = useTodoColumns();
+
+// Google Tasks and Calendar Reminders
+const googleTasks = ref<any[]>([]);
+const calendarReminders = ref<any[]>([]);
+
+// Fetch Google Tasks
+const fetchGoogleTasks = async () => {
+  try {
+    const response = await $fetch<{ tasks: any[] }>("/api/integrations/google_tasks/all-tasks");
+    googleTasks.value = response.tasks || [];
+  } catch {
+    googleTasks.value = [];
+  }
+};
+
+// Fetch Calendar Reminders
+const fetchCalendarReminders = async () => {
+  try {
+    const response = await $fetch<{ reminders: any[] }>("/api/integrations/google_calendar/reminders");
+    calendarReminders.value = response.reminders || [];
+  } catch {
+    calendarReminders.value = [];
+  }
+};
 
 const mutableTodoColumns = computed(() => todoColumns.value?.map(col => ({
   ...col,
@@ -45,7 +69,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
   if (!todoColumns.value || !todos.value)
     return [];
 
-  return todoColumns.value.map(column => ({
+  const localColumns = todoColumns.value.map(column => ({
     id: column.id,
     name: column.name,
     order: column.order,
@@ -67,9 +91,74 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
         dueDate: todo.dueDate,
         description: todo.description ?? "",
         todoColumnId: todo.todoColumnId || "",
+        source: 'local',
       })),
     _count: column._count ? { items: column._count.todos } : undefined,
   }));
+
+  const allColumns = [...localColumns];
+
+  // Add Google Tasks column if there are any Google Tasks
+  if (googleTasks.value.length > 0) {
+    const filteredTasks = googleTasks.value.filter(task => task.title && task.title.trim());
+    if (filteredTasks.length > 0) {
+      allColumns.push({
+        id: 'google-tasks-virtual',
+        name: 'Google Tasks',
+        order: 9999,
+        createdAt: parseStableDate(new Date(0)), // Use epoch for stable date
+        updatedAt: parseStableDate(new Date(0)),
+        isDefault: false,
+        source: "integration" as const,
+        items: filteredTasks.map((task, index) => ({
+          id: `google-${task.id}`,
+          name: task.title,
+          checked: false,
+          order: index,
+          notes: task.notes,
+          shoppingListId: 'google-tasks-virtual',
+          priority: null,
+          dueDate: task.due,
+          description: task.notes ?? "",
+          todoColumnId: 'google-tasks-virtual',
+          source: 'google_tasks',
+        })),
+        _count: { items: filteredTasks.length },
+      });
+    }
+  }
+
+  // Add Calendar Reminders column if there are any reminders
+  if (calendarReminders.value.length > 0) {
+    const filteredReminders = calendarReminders.value.filter(reminder => reminder.title && reminder.title.trim());
+    if (filteredReminders.length > 0) {
+      allColumns.push({
+        id: 'calendar-reminders-virtual',
+        name: 'Calendar Reminders',
+        order: 10000,
+        createdAt: parseStableDate(new Date(0)), // Use epoch for stable date
+        updatedAt: parseStableDate(new Date(0)),
+        isDefault: false,
+        source: "integration" as const,
+        items: filteredReminders.map((reminder, index) => ({
+          id: `calendar-${reminder.id}`,
+          name: reminder.title,
+          checked: false,
+          order: index,
+          notes: reminder.description,
+          shoppingListId: 'calendar-reminders-virtual',
+          priority: null,
+          dueDate: reminder.dueDate,
+          description: reminder.description ?? "",
+          todoColumnId: 'calendar-reminders-virtual',
+          source: 'calendar_reminder',
+        })),
+        _count: { items: filteredReminders.length },
+      });
+    }
+  }
+
+  return allColumns;
 });
 
 function openCreateTodo(todoColumnId?: string) {
@@ -519,6 +608,15 @@ async function handleToggleTodo(itemId: string, completed: boolean) {
     consola.error("Todo Lists: Failed to toggle todo:", error);
   }
 }
+
+// Fetch Google Tasks and Calendar Reminders on mount
+onMounted(async () => {
+  await Promise.all([
+    fetchTodos(),
+    fetchGoogleTasks(),
+    fetchCalendarReminders(),
+  ]);
+});
 </script>
 
 <template>
