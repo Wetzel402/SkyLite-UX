@@ -1,9 +1,9 @@
 import { consola } from "consola";
 import { Buffer } from "node:buffer";
 
-import { GooglePhotosServerService } from "~/server/integrations/google_photos";
+import { GooglePhotosServerService } from "../../../integrations/google_photos";
 import prisma from "~/lib/prisma";
-import { getGoogleOAuthConfig } from "~/server/utils/googleOAuthConfig";
+import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 // Allowed Google Photos domains for SSRF protection
 const ALLOWED_DOMAINS = [
