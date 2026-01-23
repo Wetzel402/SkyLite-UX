@@ -132,14 +132,6 @@ const filteredIntegrations = computed(() => {
   return (integrations.value as Integration[]).filter(integration => integration.type === activeIntegrationTab.value);
 });
 
-const googleTasksIntegration = computed(() => {
-  return (integrations.value as Integration[]).find((i: Integration) => i.type === "tasks" && i.service === "google");
-});
-
-const connectGoogleTasks = () => {
-  window.location.href = "/api/integrations/google_tasks/authorize";
-};
-
 async function handleUserSave(userData: CreateUserInput) {
   try {
     if (selectedUser.value?.id) {

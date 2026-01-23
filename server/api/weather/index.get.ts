@@ -17,6 +17,12 @@ interface WeatherResponse {
 // Helper function to make HTTPS requests with native Node.js module
 function httpsGet(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
+    // Define timeout first before using it
+    const timeout = setTimeout(() => {
+      req.destroy();
+      reject(new Error("Request timeout"));
+    }, 30000);
+
     const req = https.get(url, (res) => {
       // Check for non-2xx status codes
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
@@ -47,11 +53,6 @@ function httpsGet(url: string): Promise<any> {
       clearTimeout(timeout);
       reject(err);
     });
-
-    const timeout = setTimeout(() => {
-      req.destroy();
-      reject(new Error("Request timeout"));
-    }, 30000);
   });
 }
 

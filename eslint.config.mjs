@@ -42,10 +42,10 @@ export default withNuxt(antfu({
         /clear-completed\.post\.ts$/i,
         // API routes use kebab-case by Nuxt convention
         /access-token\.get\.ts$/i,
+        /all-tasks\.get\.ts$/i,
         /create-picker-session\.post\.ts$/i,
         /get-picker-media\.get\.ts$/i,
         /proxy-image\.get\.ts$/i,
-        /home-screen\.md$/i,
       ],
     }],
   },
