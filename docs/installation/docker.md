@@ -206,10 +206,10 @@ To enable Google integrations (Calendar, Photos, Tasks), add these environment v
    - Google Tasks API
    - Google Photos Library API
 4. Create OAuth 2.0 Client ID (Web application)
-5. Add authorized redirect URIs:
-   - `http://your-domain:3000/api/integrations/google_calendar/callback`
-   - `http://your-domain:3000/api/integrations/google_tasks/callback`
-   - `http://your-domain:3000/api/integrations/google_photos/callback`
+5. Add authorized redirect URIs (use `http://` for local/dev, `https://` for production):
+   - `http://localhost:3000/api/integrations/google_calendar/callback` (or `https://your-domain.com/api/integrations/google_calendar/callback` for production)
+   - `http://localhost:3000/api/integrations/google_tasks/callback` (or `https://your-domain.com/api/integrations/google_tasks/callback` for production)
+   - `http://localhost:3000/api/integrations/google_photos/callback` (coming soon - add if you want to preconfigure)
 
 See the integration documentation for more details:
 - [Google Calendar](/integrations/calendar/#google-calendar)

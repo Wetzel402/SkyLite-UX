@@ -121,7 +121,6 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
           dueDate: task.due ? new Date(task.due) : null,
           description: task.notes ?? "",
           todoColumnId: 'google-tasks-virtual',
-          source: 'google_tasks',
         })),
         _count: { items: filteredTasks.length },
       });
@@ -151,7 +150,6 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
           dueDate: reminder.dueDate ? new Date(reminder.dueDate) : null,
           description: reminder.description ?? "",
           todoColumnId: 'calendar-reminders-virtual',
-          source: 'calendar_reminder',
         })),
         _count: { items: filteredReminders.length },
       });

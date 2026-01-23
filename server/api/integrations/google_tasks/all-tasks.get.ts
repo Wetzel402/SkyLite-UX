@@ -22,14 +22,14 @@ export default defineEventHandler(async () => {
   }
 
   // Normalize settings to handle null/undefined
-  const settings = (integration.settings ?? {}) as { accessToken?: string; expiryDate?: number };
+  const settings = (integration.settings ?? {}) as { accessToken?: string; tokenExpiry?: number };
 
   const service = new GoogleTasksServerService(
     oauthConfig.clientId,
     oauthConfig.clientSecret,
     integration.apiKey,
     settings.accessToken,
-    settings.expiryDate,
+    settings.tokenExpiry,
     integration.id,
     async (integrationId, accessToken, expiry) => {
       await prisma.integration.update({
@@ -38,7 +38,7 @@ export default defineEventHandler(async () => {
           settings: {
             ...settings,
             accessToken,
-            expiryDate: expiry,
+            tokenExpiry: expiry,
           },
         },
       });

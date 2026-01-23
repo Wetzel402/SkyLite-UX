@@ -98,7 +98,7 @@ The "Today's Tasks" widget shows:
 The integration uses OAuth 2.0 with refresh tokens:
 - Refresh token stored in `Integration.apiKey`
 - Access token stored in `Integration.settings.accessToken`
-- Expiry date stored in `Integration.settings.expiryDate`
+- Expiry date stored in `Integration.settings.tokenExpiry`
 - Tokens automatically refreshed by GoogleTasksServerService
 
 ### Performance

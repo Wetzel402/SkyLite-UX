@@ -20,8 +20,8 @@ export function createGoogleTasksService(_id: string) {
     },
     async getStatus() {
       return {
-        connected: true,
-        message: "Google Tasks integration active",
+        isConnected: true,
+        lastChecked: new Date(),
       };
     },
   };

@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
           apiKey: tokens.refresh_token ?? existing.apiKey,
           settings: {
             accessToken: tokens.access_token,
-            expiryDate: tokens.expiry_date,
+            tokenExpiry: tokens.expiry_date,
             scope: tokens.scope,
           },
         },
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
           apiKey: tokens.refresh_token,
           settings: {
             accessToken: tokens.access_token,
-            expiryDate: tokens.expiry_date,
+            tokenExpiry: tokens.expiry_date,
             scope: tokens.scope,
           },
         },
