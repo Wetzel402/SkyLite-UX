@@ -24,24 +24,26 @@ const googleTasks = ref<any[]>([]);
 const calendarReminders = ref<any[]>([]);
 
 // Fetch Google Tasks
-const fetchGoogleTasks = async () => {
+async function fetchGoogleTasks() {
   try {
     const response = await $fetch<{ tasks: any[] }>("/api/integrations/google_tasks/all-tasks");
     googleTasks.value = response.tasks || [];
-  } catch {
+  }
+  catch {
     googleTasks.value = [];
   }
-};
+}
 
 // Fetch Calendar Reminders
-const fetchCalendarReminders = async () => {
+async function fetchCalendarReminders() {
   try {
     const response = await $fetch<{ reminders: any[] }>("/api/integrations/google_calendar/reminders");
     calendarReminders.value = response.reminders || [];
-  } catch {
+  }
+  catch {
     calendarReminders.value = [];
   }
-};
+}
 
 const mutableTodoColumns = computed(() => todoColumns.value?.map(col => ({
   ...col,
@@ -91,7 +93,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
         dueDate: todo.dueDate,
         description: todo.description ?? "",
         todoColumnId: todo.todoColumnId || "",
-        source: 'local',
+        source: "local",
       })),
     _count: column._count ? { items: column._count.todos } : undefined,
   }));
@@ -103,8 +105,8 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
     const filteredTasks = googleTasks.value.filter(task => task.title && task.title.trim());
     if (filteredTasks.length > 0) {
       allColumns.push({
-        id: 'google-tasks-virtual',
-        name: 'Google Tasks',
+        id: "google-tasks-virtual",
+        name: "Google Tasks",
         order: 9999,
         createdAt: parseStableDate(new Date(0)), // Use epoch for stable date
         updatedAt: parseStableDate(new Date(0)),
@@ -116,12 +118,12 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
           checked: task.status === "completed",
           order: index,
           notes: task.notes ?? null,
-          shoppingListId: 'google-tasks-virtual',
+          shoppingListId: "google-tasks-virtual",
           priority: "MEDIUM" as const,
           dueDate: task.due ? new Date(task.due) : null,
           description: task.notes ?? "",
-          todoColumnId: 'google-tasks-virtual',
-          source: 'google_tasks',
+          todoColumnId: "google-tasks-virtual",
+          source: "google_tasks",
         })),
         _count: { items: filteredTasks.length },
       });
@@ -133,8 +135,8 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
     const filteredReminders = calendarReminders.value.filter(reminder => reminder.title && reminder.title.trim());
     if (filteredReminders.length > 0) {
       allColumns.push({
-        id: 'calendar-reminders-virtual',
-        name: 'Calendar Reminders',
+        id: "calendar-reminders-virtual",
+        name: "Calendar Reminders",
         order: 10000,
         createdAt: parseStableDate(new Date(0)), // Use epoch for stable date
         updatedAt: parseStableDate(new Date(0)),
@@ -146,12 +148,12 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
           checked: false,
           order: index,
           notes: reminder.description ?? null,
-          shoppingListId: 'calendar-reminders-virtual',
+          shoppingListId: "calendar-reminders-virtual",
           priority: "MEDIUM" as const,
           dueDate: reminder.dueDate ? new Date(reminder.dueDate) : null,
           description: reminder.description ?? "",
-          todoColumnId: 'calendar-reminders-virtual',
-          source: 'calendar_reminder',
+          todoColumnId: "calendar-reminders-virtual",
+          source: "calendar_reminder",
         })),
         _count: { items: filteredReminders.length },
       });

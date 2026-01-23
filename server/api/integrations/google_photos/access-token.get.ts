@@ -1,5 +1,6 @@
-import prisma from "~/lib/prisma";
 import consola from "consola";
+
+import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
   const origin = getHeader(event, "origin");

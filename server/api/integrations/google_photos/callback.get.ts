@@ -1,6 +1,8 @@
 import { consola } from "consola";
 import { google } from "googleapis";
+
 import prisma from "~/lib/prisma";
+
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async (event) => {

@@ -92,11 +92,11 @@ export type GooglePhotosSettings = {
 
 export type ShoppingSettings = Record<string, unknown>;
 
-export type IntegrationSettings =
-  | ICalSettings
-  | GoogleCalendarSettings
-  | GooglePhotosSettings
-  | ShoppingSettings;
+export type IntegrationSettings
+  = | ICalSettings
+    | GoogleCalendarSettings
+    | GooglePhotosSettings
+    | ShoppingSettings;
 
 export const integrationRegistry = new Map<string, IntegrationConfig>();
 

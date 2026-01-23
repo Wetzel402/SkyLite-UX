@@ -15,6 +15,7 @@ The Google Tasks integration allows you to view your Google Tasks alongside loca
 ## Setup
 
 1. Configure Google OAuth credentials in `.env`:
+
    ```env
    GOOGLE_CLIENT_ID=your_client_id
    GOOGLE_CLIENT_SECRET=your_client_secret
@@ -59,6 +60,7 @@ The Google Tasks integration allows you to view your Google Tasks alongside loca
 ### Todo List Page
 
 Google Tasks and Calendar reminders appear as separate virtual columns:
+
 - **Google Tasks** column: Shows all incomplete Google Tasks
 - **Calendar Reminders** column: Shows short calendar events (1 hour or less)
 - Each item includes a source indicator (google_tasks or calendar_reminder)
@@ -66,6 +68,7 @@ Google Tasks and Calendar reminders appear as separate virtual columns:
 ### Home Page
 
 The "Today's Tasks" widget shows:
+
 - Local todos due today or without due date
 - Google Tasks due today or without due date
 - Calendar reminders due today
@@ -74,20 +77,24 @@ The "Today's Tasks" widget shows:
 ## Troubleshooting
 
 ### No tasks showing
+
 - Check that integration is enabled in Settings
 - Verify that Google Tasks is not empty in Google Tasks app
 - Check browser console for error messages
 
 ### 403 errors
+
 - Re-authorize the integration (token may have expired)
 - Check that OAuth credentials are correctly configured
 
 ### Missing tasks
+
 - Ensure task lists are not empty in Google Tasks
 - Only incomplete tasks are fetched
 - Tasks are fetched from all task lists
 
 ### Token refresh issues
+
 - Tokens are automatically refreshed 30 seconds before expiry
 - If refresh fails, re-authorize the integration
 
@@ -96,6 +103,7 @@ The "Today's Tasks" widget shows:
 ### Token Management
 
 The integration uses OAuth 2.0 with refresh tokens:
+
 - Refresh token stored in `Integration.apiKey`
 - Access token stored in `Integration.settings.accessToken`
 - Expiry date stored in `Integration.settings.tokenExpiry`

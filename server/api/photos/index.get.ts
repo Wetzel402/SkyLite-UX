@@ -2,11 +2,11 @@ import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const pageSize = Math.min(Number(query.pageSize) || 50, 100);
+  const _pageSize = Math.min(Number(query.pageSize) || 50, 100);
 
   // Get selected albums
   const albums = await prisma.selectedAlbum.findMany({
-    orderBy: { order: 'asc' },
+    orderBy: { order: "asc" },
   });
 
   if (albums.length === 0) {

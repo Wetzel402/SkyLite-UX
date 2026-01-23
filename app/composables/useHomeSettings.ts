@@ -1,6 +1,6 @@
 import type { HomeSettings } from "~/types/database";
 
-export const useHomeSettings = () => {
+export function useHomeSettings() {
   const homeSettings = useState<HomeSettings | null>("homeSettings", () => null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -56,4 +56,4 @@ export const useHomeSettings = () => {
     fetchHomeSettings,
     updateHomeSettings,
   };
-};
+}

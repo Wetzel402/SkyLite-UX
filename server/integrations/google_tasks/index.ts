@@ -1,2 +1,2 @@
 export { GoogleTasksServerService } from "./client";
-export type { GoogleTasksList, GoogleTask } from "./types";
+export type { GoogleTask, GoogleTasksList } from "./types";

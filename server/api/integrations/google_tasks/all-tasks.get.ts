@@ -1,6 +1,8 @@
 import { consola } from "consola";
-import { GoogleTasksServerService } from "../../../integrations/google_tasks";
+
 import prisma from "~/lib/prisma";
+
+import { GoogleTasksServerService } from "../../../integrations/google_tasks";
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async () => {
@@ -42,13 +44,14 @@ export default defineEventHandler(async () => {
           },
         },
       });
-    }
+    },
   );
 
   try {
     const tasks = await service.getAllTasks();
     return { tasks };
-  } catch (error: any) {
+  }
+  catch (error: any) {
     consola.error("Failed to fetch Google Tasks:", error);
     return { tasks: [] };
   }

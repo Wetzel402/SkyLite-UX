@@ -1,4 +1,5 @@
 import { consola } from "consola";
+
 import prisma from "~/lib/prisma";
 
 export default defineEventHandler(async (_event) => {
@@ -46,7 +47,7 @@ export default defineEventHandler(async (_event) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      consola.error('Google Photos Picker API error:', {
+      consola.error("Google Photos Picker API error:", {
         status: response.status,
         statusText: response.statusText,
         error: errorText,

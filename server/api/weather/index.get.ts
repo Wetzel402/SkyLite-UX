@@ -1,7 +1,7 @@
 import { consola } from "consola";
 import https from "node:https";
 
-interface WeatherResponse {
+type WeatherResponse = {
   temperature: number;
   weatherCode: number;
   weatherDescription: string;
@@ -12,18 +12,19 @@ interface WeatherResponse {
     weatherCode: number;
     weatherDescription: string;
   }>;
-}
+};
 
 // Helper function to make HTTPS requests with native Node.js module
 function httpsGet(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    // Define timeout first before using it
+    let req: ReturnType<typeof https.get>;
+
     const timeout = setTimeout(() => {
       req.destroy();
       reject(new Error("Request timeout"));
     }, 30000);
 
-    const req = https.get(url, (res) => {
+    req = https.get(url, (res) => {
       // Check for non-2xx status codes
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
         // Drain the response to free up resources
@@ -61,8 +62,8 @@ export default defineEventHandler(async (event): Promise<WeatherResponse> => {
   const { latitude, longitude } = query;
 
   // Validate coordinates (accept 0 as valid value)
-  if (latitude === undefined || latitude === null || latitude === "" ||
-      longitude === undefined || longitude === null || longitude === "") {
+  if (latitude === undefined || latitude === null || latitude === ""
+    || longitude === undefined || longitude === null || longitude === "") {
     throw createError({
       statusCode: 400,
       message: "Latitude and longitude are required",
@@ -117,17 +118,28 @@ export default defineEventHandler(async (event): Promise<WeatherResponse> => {
 
     // WMO Weather interpretation codes to descriptions
     const getWeatherDescription = (code: number): string => {
-      if (code === 0) return "Clear sky";
-      if (code === 1) return "Mainly clear";
-      if (code === 2) return "Partly cloudy";
-      if (code === 3) return "Overcast";
-      if (code >= 45 && code <= 48) return "Foggy";
-      if (code >= 51 && code <= 57) return "Drizzle";
-      if (code >= 61 && code <= 67) return "Rain";
-      if (code >= 71 && code <= 77) return "Snow";
-      if (code >= 80 && code <= 82) return "Rain showers";
-      if (code >= 85 && code <= 86) return "Snow showers";
-      if (code >= 95 && code <= 99) return "Thunderstorm";
+      if (code === 0)
+        return "Clear sky";
+      if (code === 1)
+        return "Mainly clear";
+      if (code === 2)
+        return "Partly cloudy";
+      if (code === 3)
+        return "Overcast";
+      if (code >= 45 && code <= 48)
+        return "Foggy";
+      if (code >= 51 && code <= 57)
+        return "Drizzle";
+      if (code >= 61 && code <= 67)
+        return "Rain";
+      if (code >= 71 && code <= 77)
+        return "Snow";
+      if (code >= 80 && code <= 82)
+        return "Rain showers";
+      if (code >= 85 && code <= 86)
+        return "Snow showers";
+      if (code >= 95 && code <= 99)
+        return "Thunderstorm";
       return "Unknown";
     };
 

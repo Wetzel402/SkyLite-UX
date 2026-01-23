@@ -36,7 +36,8 @@ export class GooglePhotosService implements IntegrationService {
       };
 
       return hasToken;
-    } catch (error) {
+    }
+    catch (error) {
       this.status = {
         isConnected: false,
         lastChecked: new Date(),

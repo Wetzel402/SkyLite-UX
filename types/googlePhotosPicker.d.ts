@@ -1,4 +1,5 @@
 declare global {
+  // eslint-disable-next-line ts/consistent-type-definitions
   interface Window {
     gapi?: any;
     google?: {

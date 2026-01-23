@@ -1,4 +1,4 @@
-export const usePhotos = () => {
+export function usePhotos() {
   const photos = ref<Array<{
     id: string;
     url: string;
@@ -14,11 +14,11 @@ export const usePhotos = () => {
 
     try {
       // Get selected albums from database
-      const response = await $fetch('/api/selected-albums');
+      const response = await $fetch("/api/selected-albums");
       const albums = response.albums || [];
 
       if (albums.length === 0) {
-        error.value = 'No albums selected. Please select albums in settings.';
+        error.value = "No albums selected. Please select albums in settings.";
         photos.value = [];
         return;
       }
@@ -31,19 +31,21 @@ export const usePhotos = () => {
           url: `/api/integrations/google_photos/proxy-image?photoId=${encodeURIComponent(a.albumId)}`,
           filename: a.title,
         }));
-    } catch (e: any) {
-      error.value = e.message || 'Failed to fetch photos';
-    } finally {
+    }
+    catch (e: any) {
+      error.value = e.message || "Failed to fetch photos";
+    }
+    finally {
       loading.value = false;
     }
   };
 
   const getPhotoUrl = (url: string, width = 1920, height = 1080) => {
     // Add width and height parameters for high-resolution images
-    if (url.includes('/api/integrations/google_photos/proxy-image')) {
+    if (url.includes("/api/integrations/google_photos/proxy-image")) {
       const urlObj = new URL(url, window.location.origin);
-      urlObj.searchParams.set('width', width.toString());
-      urlObj.searchParams.set('height', height.toString());
+      urlObj.searchParams.set("width", width.toString());
+      urlObj.searchParams.set("height", height.toString());
       return urlObj.toString();
     }
     return url;
@@ -56,4 +58,4 @@ export const usePhotos = () => {
     fetchPhotos,
     getPhotoUrl,
   };
-};
+}

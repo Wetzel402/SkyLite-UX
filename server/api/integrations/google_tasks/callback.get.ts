@@ -1,6 +1,8 @@
 import { consola } from "consola";
 import { google } from "googleapis";
+
 import prisma from "~/lib/prisma";
+
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async (event) => {
@@ -44,7 +46,7 @@ export default defineEventHandler(async (event) => {
   const oauth2Client = new google.auth.OAuth2(
     oauthConfig.clientId,
     oauthConfig.clientSecret,
-    redirectUri
+    redirectUri,
   );
 
   try {
@@ -111,9 +113,10 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(
       event,
       `/settings?success=google_tasks_added&integrationId=${integration.id}`,
-      302
+      302,
     );
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Google Tasks OAuth callback error:", error);
     throw createError({
       statusCode: 500,

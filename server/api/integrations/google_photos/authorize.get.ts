@@ -1,6 +1,7 @@
 import { google } from "googleapis";
+import { randomBytes } from "node:crypto";
+
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
-import { randomBytes } from "crypto";
 
 export default defineEventHandler(async (event) => {
   const oauthConfig = getGoogleOAuthConfig();

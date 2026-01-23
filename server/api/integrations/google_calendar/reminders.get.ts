@@ -1,6 +1,8 @@
 import { consola } from "consola";
-import { GoogleCalendarServerService } from "../../../integrations/google_calendar";
+
 import prisma from "~/lib/prisma";
+
+import { GoogleCalendarServerService } from "../../../integrations/google_calendar";
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async () => {
@@ -45,7 +47,7 @@ export default defineEventHandler(async () => {
           },
         },
       });
-    }
+    },
   );
 
   try {
@@ -57,7 +59,7 @@ export default defineEventHandler(async () => {
     const events = await service.fetchEvents(calendarIds);
 
     // Filter for short events that act as reminders (1 hour or less)
-    const reminders = events.filter(event => {
+    const reminders = events.filter((event) => {
       const start = new Date(event.start?.dateTime || event.start?.date || "");
       const end = new Date(event.end?.dateTime || event.end?.date || "");
       const duration = end.getTime() - start.getTime();
@@ -72,7 +74,8 @@ export default defineEventHandler(async () => {
         dueDate: event.start?.dateTime || event.start?.date,
       })),
     };
-  } catch (error: any) {
+  }
+  catch (error: any) {
     consola.error("Failed to fetch calendar reminders:", error);
     return { reminders: [] };
   }

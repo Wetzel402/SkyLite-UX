@@ -17,9 +17,10 @@ Initiates OAuth flow for Google Tasks.
 **Response**: HTTP 302 Redirect to Google OAuth consent screen
 
 **Example**:
+
 ```javascript
 // Redirect to authorization page
-window.location.href = '/api/integrations/google_tasks/authorize';
+window.location.href = "/api/integrations/google_tasks/authorize";
 ```
 
 ---
@@ -33,15 +34,18 @@ OAuth callback endpoint.
 **Authentication**: None required (OAuth callback)
 
 **Query Parameters**:
+
 - `code` (string, required): Authorization code from Google
 
 **Response**: HTTP 302 Redirect to `/settings?success=google_tasks_added&integrationId={id}`
 
 **Error Responses**:
+
 - `400 Bad Request`: Missing or invalid authorization code
 - `500 Internal Server Error`: OAuth credentials not configured or token exchange failed
 
 **Example**:
+
 ```
 GET /api/integrations/google_tasks/callback?code=4/0AY0e-g7...
 ```
@@ -63,22 +67,24 @@ Fetches all incomplete tasks from all task lists.
 **Response**: JSON object with tasks array
 
 **Response Schema**:
+
 ```typescript
 {
   tasks: Array<{
-    id: string;                    // Google Task ID
-    title: string;                 // Task title
-    notes?: string | null;         // Task notes/description
+    id: string; // Google Task ID
+    title: string; // Task title
+    notes?: string | null; // Task notes/description
     status: "needsAction" | "completed";
-    due?: string | null;           // ISO 8601 date string
-    completed?: string | null;     // ISO 8601 date string
-    updated: string;               // ISO 8601 date string
-    taskListId: string;            // ID of the task list containing this task
-  }>
+    due?: string | null; // ISO 8601 date string
+    completed?: string | null; // ISO 8601 date string
+    updated: string; // ISO 8601 date string
+    taskListId: string; // ID of the task list containing this task
+  }>;
 }
 ```
 
 **Success Response Example**:
+
 ```json
 {
   "tasks": [
@@ -104,6 +110,7 @@ Fetches all incomplete tasks from all task lists.
 ```
 
 **Empty Response Example**:
+
 ```json
 {
   "tasks": []
@@ -111,14 +118,16 @@ Fetches all incomplete tasks from all task lists.
 ```
 
 **Error Handling**:
+
 - Returns empty tasks array if integration is not enabled
 - Returns empty tasks array if integration credentials are not configured
 - Returns empty tasks array if API call fails
 - Automatically refreshes expired access tokens
 
 **Example Usage**:
+
 ```javascript
-const response = await fetch('/api/integrations/google_tasks/all-tasks');
+const response = await fetch("/api/integrations/google_tasks/all-tasks");
 const data = await response.json();
 console.log(`Found ${data.tasks.length} tasks`);
 ```
@@ -138,18 +147,20 @@ Fetches short calendar events (reminders).
 **Response**: JSON object with reminders array
 
 **Response Schema**:
+
 ```typescript
 {
   reminders: Array<{
-    id: string;                    // Google Calendar event ID
-    title: string;                 // Event summary/title
-    description?: string | null;   // Event description
-    dueDate: string;              // ISO 8601 date/time string (event start time)
-  }>
+    id: string; // Google Calendar event ID
+    title: string; // Event summary/title
+    description?: string | null; // Event description
+    dueDate: string; // ISO 8601 date/time string (event start time)
+  }>;
 }
 ```
 
 **Success Response Example**:
+
 ```json
 {
   "reminders": [
@@ -169,6 +180,7 @@ Fetches short calendar events (reminders).
 ```
 
 **Empty Response Example**:
+
 ```json
 {
   "reminders": []
@@ -176,19 +188,22 @@ Fetches short calendar events (reminders).
 ```
 
 **Filtering Logic**:
+
 - Only includes events with duration ≤ 1 hour (3600000 milliseconds)
 - Only fetches from calendars selected in integration settings
 - Returns empty array if no calendars are selected
 
 **Error Handling**:
+
 - Returns empty reminders array if integration is not enabled
 - Returns empty reminders array if integration credentials are not configured
 - Returns empty reminders array if API call fails
 - Automatically refreshes expired access tokens
 
 **Example Usage**:
+
 ```javascript
-const response = await fetch('/api/integrations/google_calendar/reminders');
+const response = await fetch("/api/integrations/google_calendar/reminders");
 const data = await response.json();
 console.log(`Found ${data.reminders.length} reminders`);
 ```
@@ -200,30 +215,31 @@ console.log(`Found ${data.reminders.length} reminders`);
 To check if Google Tasks integration is enabled, use the general integrations endpoint:
 
 ```javascript
-const response = await fetch('/api/integrations');
+const response = await fetch("/api/integrations");
 const integrations = await response.json();
 const googleTasks = integrations.find(
-  i => i.type === 'tasks' && i.service === 'google'
+  i => i.type === "tasks" && i.service === "google"
 );
-console.log('Google Tasks enabled:', googleTasks?.enabled);
+console.log("Google Tasks enabled:", googleTasks?.enabled);
 ```
 
 ---
 
 ## Error Codes
 
-| Status Code | Description |
-|------------|-------------|
-| 200 | Success |
-| 400 | Bad Request (missing required parameters) |
-| 404 | Integration not found |
-| 500 | Internal Server Error (OAuth config missing, API error, etc.) |
+| Status Code | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| 200         | Success                                                       |
+| 400         | Bad Request (missing required parameters)                     |
+| 404         | Integration not found                                         |
+| 500         | Internal Server Error (OAuth config missing, API error, etc.) |
 
 ---
 
 ## Rate Limiting
 
 Google Tasks API has the following quotas:
+
 - Queries per day: 1,000,000
 - Queries per 100 seconds per user: 50,000
 
@@ -234,6 +250,7 @@ If you exceed these limits, the API will return a 429 (Too Many Requests) error.
 ## Token Management
 
 All endpoints automatically handle token refresh:
+
 - Access tokens are cached in Integration.settings.accessToken
 - Refresh tokens are stored in Integration.apiKey
 - Tokens are automatically refreshed 30 seconds before expiry
@@ -265,16 +282,19 @@ To test the Google Tasks integration:
 ## Troubleshooting
 
 ### Empty tasks array
+
 - Verify integration is enabled in database
 - Check that OAuth credentials are configured
 - Ensure user has authorized the integration
 - Verify user has tasks in Google Tasks app
 
 ### 403 Forbidden
+
 - Token may have expired - re-authorize integration
 - Check OAuth scopes include `https://www.googleapis.com/auth/tasks`
 
 ### 500 Internal Server Error
+
 - Check server logs for detailed error messages
 - Verify OAuth credentials are valid
 - Ensure database connection is working

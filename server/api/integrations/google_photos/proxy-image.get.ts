@@ -1,5 +1,6 @@
 import { consola } from "consola";
 import { Buffer } from "node:buffer";
+
 import prisma from "~/lib/prisma";
 
 // Allowed Google Photos domains for SSRF protection
@@ -16,10 +17,10 @@ function isValidGooglePhotosUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     return (
-      parsed.protocol === "https:" &&
-      ALLOWED_DOMAINS.some(
-        (domain) =>
-          parsed.hostname === domain || parsed.hostname.endsWith("." + domain)
+      parsed.protocol === "https:"
+      && ALLOWED_DOMAINS.some(
+        domain =>
+          parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`),
       )
     );
   }
@@ -98,7 +99,7 @@ export default defineEventHandler(async (event) => {
     // Fetch the image with OAuth token
     const response = await fetch(imageUrl, {
       headers: {
-        "Authorization": `Bearer ${settings.accessToken}`,
+        Authorization: `Bearer ${settings.accessToken}`,
       },
     });
 

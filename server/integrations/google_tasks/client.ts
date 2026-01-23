@@ -1,5 +1,8 @@
-import { google, tasks_v1 } from "googleapis";
+import type { tasks_v1 } from "googleapis";
+
 import { consola } from "consola";
+import { google } from "googleapis";
+
 import type { GoogleTask, GoogleTasksList } from "./types";
 
 /**
@@ -21,7 +24,7 @@ export class GoogleTasksServerService {
   private onTokenRefresh?: (
     integrationId: string,
     accessToken: string,
-    expiry: number
+    expiry: number,
   ) => Promise<void>;
 
   constructor(
@@ -31,7 +34,7 @@ export class GoogleTasksServerService {
     accessToken?: string,
     expiry?: number,
     integrationId?: string,
-    onTokenRefresh?: (integrationId: string, accessToken: string, expiry: number) => Promise<void>
+    onTokenRefresh?: (integrationId: string, accessToken: string, expiry: number) => Promise<void>,
   ) {
     this.oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
     this.oauth2Client.setCredentials({
@@ -59,7 +62,7 @@ export class GoogleTasksServerService {
         await this.onTokenRefresh(
           this.integrationId,
           newCredentials.access_token,
-          newCredentials.expiry_date || 0
+          newCredentials.expiry_date || 0,
         );
       }
     }

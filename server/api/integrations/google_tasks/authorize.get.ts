@@ -1,5 +1,6 @@
-import crypto from "node:crypto";
 import { google } from "googleapis";
+import crypto from "node:crypto";
+
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async (event) => {
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const oauth2Client = new google.auth.OAuth2(
     oauthConfig.clientId,
     oauthConfig.clientSecret,
-    redirectUri
+    redirectUri,
   );
 
   // Generate CSRF state token

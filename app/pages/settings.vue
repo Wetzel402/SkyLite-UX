@@ -541,19 +541,21 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
 async function handleOpenPhotosPicker() {
   try {
     await openPicker();
-  } catch (error) {
-    consola.error('Failed to open picker:', error);
-    showError('Picker Error', 'Failed to open Google Photos picker');
+  }
+  catch (error) {
+    consola.error("Failed to open picker:", error);
+    showError("Picker Error", "Failed to open Google Photos picker");
   }
 }
 
 async function handleRemoveAlbum(albumId: string) {
   try {
-    await $fetch(`/api/selected-albums/${albumId}`, { method: 'DELETE' });
+    await $fetch(`/api/selected-albums/${albumId}`, { method: "DELETE" });
     await fetchSelectedAlbums();
-  } catch (error) {
-    consola.error('Failed to remove album:', error);
-    showError('Remove Album Failed', 'Failed to remove album');
+  }
+  catch (error) {
+    consola.error("Failed to remove album:", error);
+    showError("Remove Album Failed", "Failed to remove album");
   }
 }
 </script>
@@ -884,7 +886,9 @@ async function handleRemoveAlbum(albumId: string) {
                 class="w-full"
                 @change="updateHomeSettingsComposable({ photoTransitionSpeed: Number(($event.target as HTMLInputElement).value) })"
               >
-              <p class="text-xs text-muted">Time between photo transitions (5-60 seconds)</p>
+              <p class="text-xs text-muted">
+                Time between photo transitions (5-60 seconds)
+              </p>
             </div>
 
             <!-- Ken Burns Intensity -->
@@ -902,7 +906,9 @@ async function handleRemoveAlbum(albumId: string) {
                 class="w-full"
                 @change="updateHomeSettingsComposable({ kenBurnsIntensity: Number(($event.target as HTMLInputElement).value) })"
               >
-              <p class="text-xs text-muted">Zoom and pan effect strength (0 = off, 2 = maximum)</p>
+              <p class="text-xs text-muted">
+                Zoom and pan effect strength (0 = off, 2 = maximum)
+              </p>
             </div>
 
             <!-- Album Selection -->
@@ -930,9 +936,11 @@ async function handleRemoveAlbum(albumId: string) {
                     :src="`/api/integrations/google_photos/proxy-image?photoId=${encodeURIComponent(album.albumId)}`"
                     class="w-12 h-12 rounded object-cover"
                     :alt="album.title"
-                  />
+                  >
                   <div class="flex-1 min-w-0">
-                    <div class="font-medium text-highlighted truncate">{{ album.title }}</div>
+                    <div class="font-medium text-highlighted truncate">
+                      {{ album.title }}
+                    </div>
                   </div>
                   <UButton
                     size="sm"
@@ -1036,7 +1044,9 @@ async function handleRemoveAlbum(albumId: string) {
                   class="w-full"
                   @input="updateHomeSettingsComposable({ refreshInterval: Number(($event.target as HTMLInputElement).value) })"
                 >
-                <p class="text-xs text-muted">Choose between 1 and 12 hours</p>
+                <p class="text-xs text-muted">
+                  Choose between 1 and 12 hours
+                </p>
               </div>
             </div>
 

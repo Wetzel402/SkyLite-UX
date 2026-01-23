@@ -22,6 +22,7 @@ Skylite UX supports two database backends. **SQLite is the default** and recomme
 ### SQLite (Default - Recommended)
 
 SQLite runs inside the same container - no external database needed. Perfect for:
+
 - Single-user or family deployments
 - Raspberry Pi or low-resource devices
 - Simple self-hosted setups
@@ -154,16 +155,16 @@ volumes:
 
 ### Required
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable         | Description   | Example                            |
+| ---------------- | ------------- | ---------------------------------- |
 | `NUXT_PUBLIC_TZ` | Your timezone | `America/Chicago`, `Europe/London` |
 
 ### Database
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | Database connection string | `file:/data/skylite.db` (SQLite) |
-| `PRISMA_ACCEPT_DATA_LOSS` | Allow destructive schema changes on startup | `false` |
+| Variable                  | Description                                 | Default                          |
+| ------------------------- | ------------------------------------------- | -------------------------------- |
+| `DATABASE_URL`            | Database connection string                  | `file:/data/skylite.db` (SQLite) |
+| `PRISMA_ACCEPT_DATA_LOSS` | Allow destructive schema changes on startup | `false`                          |
 
 **DATABASE_URL formats:**
 
@@ -182,9 +183,9 @@ When set to `true`, allows Prisma to apply destructive schema changes automatica
 
 ### Application
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NUXT_PUBLIC_LOG_LEVEL` | Logging level | `info` |
+| Variable                | Description   | Default |
+| ----------------------- | ------------- | ------- |
+| `NUXT_PUBLIC_LOG_LEVEL` | Logging level | `info`  |
 
 Valid log levels: `debug`, `info`, `warn`, `error`
 
@@ -192,9 +193,9 @@ Valid log levels: `debug`, `info`, `warn`, `error`
 
 To enable Google integrations (Calendar, Photos, Tasks), add these environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID |
+| Variable               | Description                     |
+| ---------------------- | ------------------------------- |
+| `GOOGLE_CLIENT_ID`     | Your Google OAuth Client ID     |
 | `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret |
 
 **Setup steps:**
@@ -212,6 +213,7 @@ To enable Google integrations (Calendar, Photos, Tasks), add these environment v
    - `http://localhost:3000/api/integrations/google_photos/callback` (coming soon - add if you want to preconfigure)
 
 See the integration documentation for more details:
+
 - [Google Calendar](/integrations/calendar/#google-calendar)
 - [Google Tasks](/integrations/google-tasks/)
 - Google Photos (coming soon)
