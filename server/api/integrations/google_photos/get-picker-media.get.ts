@@ -1,6 +1,8 @@
 import { consola } from "consola";
 
+import { GooglePhotosServerService } from "../../../integrations/google_photos";
 import prisma from "~/lib/prisma";
+import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,51 +34,117 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const settings = integration.settings as { accessToken?: string };
+    // Get OAuth config
+    const oauthConfig = getGoogleOAuthConfig();
+    if (!oauthConfig) {
+      throw createError({
+        statusCode: 500,
+        message: "Google OAuth credentials not configured",
+      });
+    }
 
-    if (!settings.accessToken) {
+    const settings = integration.settings as {
+      accessToken?: string;
+      refreshToken?: string;
+      expiryDate?: number;
+    };
+
+    if (!settings.refreshToken) {
       throw createError({
         statusCode: 401,
-        message: "No access token available",
+        message: "No refresh token available. Please re-authorize the integration.",
       });
     }
 
-    // Get media items from the picker session
-    const url = `https://photospicker.googleapis.com/v1/mediaItems?sessionId=${sessionId}`;
-    consola.info("Fetching media items from:", url);
-
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${settings.accessToken}`,
+    // Create service with token refresh callback
+    const service = new GooglePhotosServerService(
+      oauthConfig.clientId,
+      oauthConfig.clientSecret,
+      settings.refreshToken,
+      settings.accessToken,
+      settings.expiryDate,
+      integration.id,
+      async (integrationId, accessToken, expiry) => {
+        // Persist refreshed token to database
+        await prisma.integration.update({
+          where: { id: integrationId },
+          data: {
+            settings: {
+              ...settings,
+              accessToken,
+              expiryDate: expiry,
+            },
+          },
+        });
       },
-    });
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      consola.error("Failed to get media items:", {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
+    // Get access token (with auto-refresh)
+    const accessToken = await service.getAccessToken();
+
+    // Fetch all pages of media items
+    const allMediaItems: any[] = [];
+    let nextPageToken: string | undefined;
+    let pageCount = 0;
+
+    do {
+      pageCount++;
+      const url = nextPageToken
+        ? `https://photospicker.googleapis.com/v1/mediaItems?sessionId=${sessionId}&pageToken=${nextPageToken}`
+        : `https://photospicker.googleapis.com/v1/mediaItems?sessionId=${sessionId}`;
+
+      consola.info(`Fetching page ${pageCount} from:`, url);
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
-      throw createError({
-        statusCode: response.status,
-        message: `Failed to get media items: ${response.status} ${response.statusText} - ${errorText}`,
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        consola.error("Failed to get media items:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          page: pageCount,
+        });
+        throw createError({
+          statusCode: response.status,
+          message: `Failed to get media items: ${response.status} ${response.statusText}`,
+        });
+      }
+
+      const data = await response.json();
+      const mediaItems = data.mediaItems || [];
+
+      consola.info(`Page ${pageCount} received:`, {
+        count: mediaItems.length,
+        hasNextPageToken: !!data.nextPageToken,
       });
-    }
 
-    const data = await response.json();
-    consola.info("Media items received:", {
-      count: data.mediaItems?.length || 0,
-      hasNextPageToken: !!data.nextPageToken,
-    });
+      // Add items from this page
+      allMediaItems.push(...mediaItems);
 
-    // Log first media item structure for debugging
-    if (data.mediaItems && data.mediaItems.length > 0) {
-      consola.info("Sample media item structure:", JSON.stringify(data.mediaItems[0], null, 2));
+      // Get next page token
+      nextPageToken = data.nextPageToken;
+
+      // Safety limit: max 50 pages (should handle up to ~5000 photos)
+      if (pageCount >= 50) {
+        consola.warn("Reached maximum page limit (50), stopping pagination");
+        break;
+      }
+    } while (nextPageToken);
+
+    consola.success(`Fetched all ${allMediaItems.length} media items across ${pageCount} page(s)`);
+
+    // Log first media item structure for debugging (only once)
+    if (allMediaItems.length > 0) {
+      consola.info("Sample media item structure:", JSON.stringify(allMediaItems[0], null, 2));
     }
 
     return {
-      mediaItems: data.mediaItems || [],
+      mediaItems: allMediaItems,
     };
   }
   catch (error: any) {
