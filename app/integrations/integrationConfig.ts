@@ -4,7 +4,7 @@ import type { DialogField } from "~/types/ui";
 import { createGoogleCalendarService, handleGoogleCalendarSave } from "./google_calendar/googleCalendar";
 import { handleGooglePhotosSave } from "./google_photos/googlePhotos";
 import { createGooglePhotosService } from "./google_photos/googlePhotosService";
-import { createGoogleTasksService } from "./google_tasks/googleTasksService";
+import { createGoogleTasksService, handleGoogleTasksSave } from "./google_tasks/googleTasksService";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
@@ -211,6 +211,7 @@ export const integrationConfigs: IntegrationConfig[] = [
     icon: "https://unpkg.com/lucide-static@latest/icons/list-todo.svg",
     dialogFields: [],
     syncInterval: 0, // Fetch-on-demand, not synced
+    customSaveHandler: handleGoogleTasksSave,
   },
 ];
 
