@@ -16,4 +16,10 @@ export default defineAppConfig({
       },
     },
   },
+  // Color mode configuration
+  colorMode: {
+    preference: "system", // Default to system preference
+    fallback: "light", // Fallback if system preference cannot be determined
+    classSuffix: "", // No suffix for dark/light classes
+  },
 });

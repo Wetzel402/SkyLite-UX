@@ -27,7 +27,7 @@ const isDark = computed({
     return colorMode.value === "dark";
   },
   set() {
-    colorMode.value = colorMode.value === "dark" ? "light" : "dark";
+    colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
   },
 });
 
@@ -72,12 +72,7 @@ const showMeals = computed({
   },
 });
 
-onMounted(() => {
-  if (!colorMode.value) {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    colorMode.preference = prefersDark ? "dark" : "light";
-  }
-});
+// Color mode initialization is now handled globally by the colorMode plugin
 
 const selectedUser = ref<User | null>(null);
 const isUserDialogOpen = ref(false);
