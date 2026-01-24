@@ -132,7 +132,12 @@ export function expandRecurringEvents<T extends {
       }
     }
     catch (error) {
-      consola.warn("Failed to expand recurring event:", error);
+      // Silently skip malformed recurring events - they're still included as single events
+      // Common causes: invalid RRULE syntax, malformed dates, unsupported recurrence patterns
+      consola.debug(
+        "Skipped recurring event expansion due to invalid recurrence rule:",
+        error instanceof Error ? error.message : String(error),
+      );
       expandedEvents.push(event);
     }
   }

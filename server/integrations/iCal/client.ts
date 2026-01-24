@@ -123,7 +123,11 @@ export class ICalServerService {
       }
     }
     catch (error) {
-      consola.warn("ICalServerService: Failed to expand recurring event:", error);
+      // Silently skip malformed recurring events - return single occurrence
+      consola.debug(
+        "ICalServerService: Skipped recurring event expansion:",
+        error instanceof Error ? error.message : String(error),
+      );
       return [this.parseICalEvent(vevent)];
     }
 
