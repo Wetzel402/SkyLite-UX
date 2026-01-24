@@ -2,7 +2,7 @@ name: Docker prod image
 
 on:
   release:
-    types: [published]
+    types: [published, edited, released]
 
 jobs:
   push_to_registry:
