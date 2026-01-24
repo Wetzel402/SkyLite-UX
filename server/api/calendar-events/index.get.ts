@@ -71,7 +71,11 @@ function expandRecurringEvent(event: CalendarEvent, startDate: Date, endDate: Da
     }
   }
   catch (error) {
-    consola.warn("Failed to expand recurring event:", error);
+    // Silently skip malformed recurring events - return single occurrence
+    consola.debug(
+      "Skipped recurring event expansion:",
+      error instanceof Error ? error.message : String(error),
+    );
     return [event];
   }
 
