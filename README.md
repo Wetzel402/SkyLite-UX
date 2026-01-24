@@ -8,9 +8,9 @@
 <img src="https://github.com/user-attachments/assets/cf4b4b9f-c8db-4303-8fd0-58126a42382f" alt="SkyLite-UX"/>
 </p>
 
-[![GitHub Release](https://img.shields.io/github/v/release/wetzel402/SkyLite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release)](https://github.com/wetzel402/SkyLite-UX/releases)
-[![GitHub Repo stars](https://img.shields.io/github/stars/wetzel402/SkyLite-UX?style=for-the-badge)](https://github.com/wetzel402/SkyLite-UX)
-[![Docker Pulls](https://img.shields.io/docker/pulls/wetzel402/skylite-ux?style=for-the-badge)](https://hub.docker.com/r/wetzel402/skylite-ux)
+[![GitHub Release](https://img.shields.io/github/v/release/y3knik/SkyLite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release)](https://github.com/y3knik/SkyLite-UX/releases)
+[![GitHub Repo stars](https://img.shields.io/github/stars/y3knik/SkyLite-UX?style=for-the-badge)](https://github.com/y3knik/SkyLite-UX)
+[![Docker Pulls](https://img.shields.io/docker/pulls/y3knik/skylite-ux?style=for-the-badge)](https://hub.docker.com/r/y3knik/skylite-ux)
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/KJn3YfWxn7)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/y3knik/skylite-ux)
@@ -57,15 +57,15 @@ Beautiful ambient display perfect for a family command center:
 
 ## Installation
 
-View the [docs](https://wetzel402.github.io/SkyLite-UX/installation) for details.
+View the [docs](https://y3knik.github.io/SkyLite-UX/installation) for details.
 
 ## Development
 
-Read our [development guide](https://wetzel402.github.io/SkyLite-UX/contributing/code/) for more details.
+Read our [development guide](https://y3knik.github.io/SkyLite-UX/contributing/code/) for more details.
 
 ## Contributing
 
-Check out the [contributor guide](https://wetzel402.github.io/SkyLite-UX/contributing/) to get started.
+Check out the [contributor guide](https://y3knik.github.io/SkyLite-UX/contributing/) to get started.
 
 ## License
 
