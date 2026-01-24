@@ -635,16 +635,6 @@ async function handleOpenPhotosPicker() {
   }
 }
 
-async function handleRemoveAlbum(albumId: string) {
-  try {
-    await $fetch(`/api/selected-albums/${albumId}`, { method: "DELETE" });
-    await fetchSelectedAlbums();
-  }
-  catch (error) {
-    consola.error("Failed to remove album:", error);
-    showError("Remove Album Failed", "Failed to remove album");
-  }
-}
 </script>
 
 <template>
