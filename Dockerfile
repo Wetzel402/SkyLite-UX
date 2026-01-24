@@ -33,8 +33,9 @@ ENV HOST=0.0.0.0
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and Prisma schema (needed for npm ci)
 COPY package*.json ./
+COPY prisma ./prisma/
 
 # Install system dependencies and production npm packages
 RUN apt-get update -y && apt-get install -y openssl && \
@@ -43,9 +44,6 @@ RUN apt-get update -y && apt-get install -y openssl && \
 # Copy built application from builder stage
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-
-# Copy Prisma schema files (both PostgreSQL and SQLite)
-COPY prisma ./prisma/
 
 # Copy entrypoint script
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
