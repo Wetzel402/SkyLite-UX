@@ -28,9 +28,9 @@ Organize tasks with due dates and priorities. Track individual and family to-dos
 
 Collaborative shopping lists with real-time updates. Add, edit, and check off items as you shop.
 
-### Meal Planning
+### [Meal Planning](meal-planning)
 
-Plan your family's meals for the week. Add breakfast, lunch, dinner, and sides to your meal plan.
+Plan your family's meals for the week with offline support. Add meals anywhere, sync when connected. Features Progressive Web App (PWA) installation for mobile and desktop use.
 
 ### User Management
 

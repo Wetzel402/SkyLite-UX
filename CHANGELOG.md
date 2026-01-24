@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Progressive Web App (PWA) Support**
+  - Installable on mobile devices and desktop
+  - Service worker for offline caching
+  - App manifest with 192x192 and 512x512 icons
+  - Offline-first architecture with automatic sync
+- **Offline Meal Planning**
+  - Add meals while disconnected from home server
+  - IndexedDB-based offline storage queue
+  - Automatic sync when connection restored
+  - Manual "Sync Now" button for immediate sync
+  - Real-time sync status indicator (offline/syncing/pending)
+  - Offline queue management page at `/offline-queue`
+  - Optimistic UI updates with pending meal indicators
+  - 30-second auto-sync interval when online
+- **Google Photos URL Refresh**
+  - New `/api/selected-albums/refresh` endpoint
+  - Automatic hourly URL refresh to prevent expiration
+  - Immediate refresh on home page load
+  - Prevents 403 errors from expired photo URLs
+- **Photo Playback Mode Selection**
+  - Random or sequential photo playback
+  - Persists selection in home settings
+  - Proper validation with Zod enum schema
 - Google Tasks integration (read-only)
   - View Google Tasks alongside local todos
   - Display calendar reminders as todos
