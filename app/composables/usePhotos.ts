@@ -1,3 +1,5 @@
+import { consola } from 'consola';
+
 export function usePhotos() {
   const photos = ref<Array<{
     id: string;
@@ -51,11 +53,25 @@ export function usePhotos() {
     return url;
   };
 
+  // Refresh album URLs from Google Photos to prevent expiration
+  const refreshAlbums = async () => {
+    try {
+      await $fetch("/api/selected-albums/refresh", {
+        method: "POST",
+      });
+      // Re-fetch photos after refresh to get updated URLs
+      await fetchPhotos();
+    } catch (e: any) {
+      consola.error("Failed to refresh albums:", e);
+    }
+  };
+
   return {
     photos,
     loading,
     error,
     fetchPhotos,
     getPhotoUrl,
+    refreshAlbums,
   };
 }

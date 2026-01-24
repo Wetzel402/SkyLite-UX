@@ -6,6 +6,7 @@ const updateSchema = z.object({
   photosEnabled: z.boolean().optional(),
   photoTransitionSpeed: z.number().optional(),
   kenBurnsIntensity: z.number().optional(),
+  photoPlayback: z.enum(["sequential", "random"]).optional(),
   weatherEnabled: z.boolean().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),

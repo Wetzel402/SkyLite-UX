@@ -983,6 +983,26 @@ async function handleOpenPhotosPicker() {
               </p>
             </div>
 
+            <!-- Photo Playback Mode -->
+            <div v-if="homeSettings?.photosEnabled" class="space-y-2">
+              <label class="text-sm font-medium text-highlighted">Photo Playback</label>
+              <select
+                :value="homeSettings?.photoPlayback ?? 'sequential'"
+                class="w-full px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                @change="updateHomeSettingsComposable({ photoPlayback: ($event.target as HTMLSelectElement).value })"
+              >
+                <option value="sequential">
+                  Sequential
+                </option>
+                <option value="random">
+                  Random
+                </option>
+              </select>
+              <p class="text-xs text-muted">
+                Sequential plays photos in order, Random shuffles them
+              </p>
+            </div>
+
             <!-- Album Selection -->
             <div v-if="homeSettings?.photosEnabled" class="space-y-3 pt-4 border-t border-muted">
               <div class="flex items-center justify-between">

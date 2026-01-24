@@ -26,7 +26,65 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ["@nuxt/ui", "@nuxt/eslint", "@nuxtjs/html-validator"],
+  modules: ["@nuxt/ui", "@nuxt/eslint", "@nuxtjs/html-validator", "@vite-pwa/nuxt"],
+
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'SkyLite UX',
+      short_name: 'SkyLite',
+      description: 'Family hub for calendar, todos, meals, and shopping',
+      theme_color: '#0ea5e9',
+      background_color: '#ffffff',
+      display: 'standalone',
+      start_url: '/',
+      icons: [
+        {
+          src: '/skylite-192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: '/skylite-512.png',
+          sizes: '512x512',
+          type: 'image/png'
+        }
+      ]
+    },
+    workbox: {
+      navigateFallback: '/',
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts-cache',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+            }
+          }
+        },
+        {
+          urlPattern: /\/api\/meal-plans\/.*/i,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'api-meal-plans',
+            networkTimeoutSeconds: 10,
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 // 1 hour
+            }
+          }
+        }
+      ]
+    },
+    devOptions: {
+      enabled: true,
+      type: 'module'
+    }
+  },
 
   components: {
     dirs: [

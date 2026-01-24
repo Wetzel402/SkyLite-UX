@@ -195,6 +195,7 @@ model HomeSettings {
   photosEnabled         Boolean  @default(true)
   photoTransitionSpeed  Int      @default(10000)  // milliseconds between transitions
   kenBurnsIntensity     Float    @default(1.0)    // 0.5-2.0 scale factor for effect
+  photoPlayback         String   @default("sequential") // sequential | random
 
   // Weather settings
   weatherEnabled        Boolean  @default(true)

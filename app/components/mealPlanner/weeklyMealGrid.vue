@@ -3,9 +3,11 @@ import { format } from "date-fns";
 
 import type { Meal, MealType } from "~/types/database";
 
+type MealWithPending = Meal & { _isPending?: boolean };
+
 const props = defineProps<{
   weekStart: Date;
-  meals: Meal[];
+  meals: MealWithPending[];
 }>();
 
 const emit = defineEmits<{
@@ -95,7 +97,7 @@ function getDayDate(dayOfWeek: number): string {
               <div
                 v-for="meal in mealGrid[dayOfWeek - 1]?.[mealType] || []"
                 :key="meal.id"
-                class="text-sm bg-primary/10 hover:bg-primary/20 rounded px-2 py-1 transition-colors cursor-pointer"
+                class="relative text-sm bg-primary/10 hover:bg-primary/20 rounded px-2 py-1 transition-colors cursor-pointer"
                 @click.stop="emit('editMeal', meal)"
               >
                 <div class="font-medium truncate">
@@ -104,6 +106,13 @@ function getDayDate(dayOfWeek: number): string {
                 <div v-if="meal.daysInAdvance > 0" class="text-xs text-muted">
                   Prep: {{ meal.daysInAdvance }}d before
                 </div>
+
+                <!-- Pending sync indicator -->
+                <div
+                  v-if="(meal as any)._isPending"
+                  class="absolute top-1 right-1 w-2 h-2 bg-yellow-500 rounded-full"
+                  title="Waiting to sync"
+                />
               </div>
 
               <div v-if="(mealGrid[dayOfWeek - 1]?.[mealType]?.length || 0) === 0" class="text-xs text-muted text-center py-2">

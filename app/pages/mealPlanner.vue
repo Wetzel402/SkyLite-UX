@@ -7,6 +7,7 @@ import type { CreateMealInput, Meal, MealPlanWithMeals, MealType } from "~/types
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
 import MealDialog from "~/components/mealPlanner/mealDialog.vue";
 import PreparationReminders from "~/components/mealPlanner/preparationReminders.vue";
+import SyncStatusBar from "~/components/mealPlanner/syncStatusBar.vue";
 import WeeklyMealGrid from "~/components/mealPlanner/weeklyMealGrid.vue";
 import { useAlertToast } from "~/composables/useAlertToast";
 import { useStableDate } from "~/composables/useStableDate";
@@ -219,6 +220,9 @@ watch(currentWeekStart, () => {
     <div class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default">
       <GlobalDateHeader />
     </div>
+
+    <!-- Sync Status Bar -->
+    <SyncStatusBar />
 
     <!-- Week Navigation -->
     <div class="p-4 border-b border-default bg-default">

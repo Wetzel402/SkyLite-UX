@@ -9,11 +9,15 @@ import type {
   UpdateMealInput,
 } from "~/types/database";
 
+import { useOfflineSync } from "./useOfflineSync";
+import { queueMealCreation } from "~/utils/offlineDb";
+
 export function useMealPlans() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
   const { data: mealPlans } = useNuxtData<MealPlanWithMeals[]>("meal-plans");
+  const { isOnline, updatePendingCount } = useOfflineSync();
 
   const currentMealPlans = computed(() => mealPlans.value || []);
 
@@ -85,6 +89,46 @@ export function useMealPlans() {
   };
 
   const addMealToPlan = async (planId: string, mealData: CreateMealInput) => {
+    // If offline, queue the operation
+    if (!isOnline.value) {
+      const plan = mealPlans.value?.find(p => p.id === planId);
+
+      if (!plan) {
+        error.value = "Meal plan not found";
+        throw new Error("Meal plan not found");
+      }
+
+      // Ensure weekStart is a Date object before calling toISOString
+      const weekStartDate = plan.weekStart instanceof Date
+        ? plan.weekStart
+        : new Date(plan.weekStart);
+
+      const tempId = await queueMealCreation(
+        planId,
+        weekStartDate.toISOString(),
+        mealData
+      );
+
+      const tempMeal = {
+        id: tempId,
+        ...mealData,
+        mealPlanId: planId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        order: 0,
+        _isPending: true,
+      } as Meal & { _isPending: boolean };
+
+      // Optimistically update local data
+      if (plan.meals) {
+        plan.meals.push(tempMeal as any);
+      }
+
+      await updatePendingCount();
+      return tempMeal;
+    }
+
+    // Online - normal flow
     try {
       const newMeal = await $fetch<Meal>(`/api/meal-plans/${planId}/meals`, {
         method: "POST",
