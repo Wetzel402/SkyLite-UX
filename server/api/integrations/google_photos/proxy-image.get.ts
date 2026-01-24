@@ -1,7 +1,9 @@
 import { consola } from "consola";
 import { Buffer } from "node:buffer";
 
+import { GooglePhotosServerService } from "../../../integrations/google_photos";
 import prisma from "~/lib/prisma";
+import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 // Allowed Google Photos domains for SSRF protection
 const ALLOWED_DOMAINS = [
@@ -57,7 +59,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Get access token
+    // Get integration
     const integration = await prisma.integration.findFirst({
       where: {
         type: "photos",
@@ -73,12 +75,33 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const settings = integration.settings as { accessToken?: string };
+    // Get OAuth config
+    const oauthConfig = getGoogleOAuthConfig();
+    if (!oauthConfig) {
+      throw createError({
+        statusCode: 500,
+        message: "Google OAuth credentials not configured",
+      });
+    }
 
-    if (!settings.accessToken) {
+    // Guard against null/missing settings
+    if (!integration.settings) {
       throw createError({
         statusCode: 401,
-        message: "No access token available",
+        message: "Integration settings are missing. Please re-authorize the integration.",
+      });
+    }
+
+    const settings = integration.settings as {
+      accessToken?: string;
+      refreshToken?: string;
+      expiryDate?: number;
+    };
+
+    if (!settings.refreshToken) {
+      throw createError({
+        statusCode: 401,
+        message: "No refresh token available. Please re-authorize the integration.",
       });
     }
 
@@ -93,36 +116,39 @@ export default defineEventHandler(async (event) => {
     }
 
     // Append size parameters to get high-resolution image
-    // Google Photos baseUrls accept =w{width}-h{height} parameters
     imageUrl = `${imageUrl}=w${width}-h${height}`;
 
-    // Fetch the image with OAuth token
-    const response = await fetch(imageUrl, {
-      headers: {
-        Authorization: `Bearer ${settings.accessToken}`,
+    // Create service with token refresh callback
+    const service = new GooglePhotosServerService(
+      oauthConfig.clientId,
+      oauthConfig.clientSecret,
+      settings.refreshToken,
+      settings.accessToken,
+      settings.expiryDate,
+      integration.id,
+      async (integrationId, accessToken, expiry) => {
+        // Persist refreshed token to database
+        await prisma.integration.update({
+          where: { id: integrationId },
+          data: {
+            settings: {
+              ...settings,
+              accessToken,
+              expiryDate: expiry,
+            },
+          },
+        });
       },
-    });
+    );
 
-    if (!response.ok) {
-      consola.error("Failed to fetch image:", {
-        status: response.status,
-        photoId,
-      });
-      throw createError({
-        statusCode: response.status,
-        message: "Failed to fetch image from Google Photos",
-      });
-    }
-
-    // Get the image data
-    const imageBuffer = await response.arrayBuffer();
-    const contentType = response.headers.get("content-type") || "image/jpeg";
+    // Fetch image (handles token refresh automatically)
+    const { buffer, contentType } = await service.fetchImage(imageUrl);
 
     // Set response headers
     setHeader(event, "Content-Type", contentType);
     setHeader(event, "Cache-Control", "public, max-age=86400"); // Cache for 1 day
 
-    return Buffer.from(imageBuffer);
+    return Buffer.from(buffer);
   }
   catch (error: any) {
     if (error.statusCode) {

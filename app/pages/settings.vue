@@ -31,11 +31,94 @@ const isDark = computed({
   },
 });
 
-const { showError } = useAlertToast();
+const { showError, showInfo } = useAlertToast();
 
 const { settings, updateSettings, getSettings } = useAppSettings();
 const { homeSettings, fetchHomeSettings, updateHomeSettings: updateHomeSettingsComposable } = useHomeSettings();
 const { selectedAlbums, fetchSelectedAlbums, openPicker } = usePhotosPicker();
+
+// Photo management state
+const selectedPhotoIds = ref<Set<string>>(new Set());
+const currentPage = ref(1);
+const photosPerPage = 20;
+const selectAllPhotos = ref(false);
+
+// Pagination
+const paginatedPhotos = computed(() => {
+  const start = (currentPage.value - 1) * photosPerPage;
+  const end = start + photosPerPage;
+  return selectedAlbums.value.slice(start, end);
+});
+
+const totalPages = computed(() => Math.ceil(selectedAlbums.value.length / photosPerPage));
+
+// Toggle individual photo selection
+function togglePhotoSelection(photoId: string) {
+  if (selectedPhotoIds.value.has(photoId)) {
+    selectedPhotoIds.value.delete(photoId);
+  } else {
+    selectedPhotoIds.value.add(photoId);
+  }
+  // Update select all checkbox state
+  selectAllPhotos.value = paginatedPhotos.value.every(p => selectedPhotoIds.value.has(p.id));
+}
+
+// Toggle select all on current page
+function toggleSelectAllOnPage() {
+  if (selectAllPhotos.value) {
+    // Deselect all on current page
+    paginatedPhotos.value.forEach(photo => {
+      selectedPhotoIds.value.delete(photo.id);
+    });
+    selectAllPhotos.value = false;
+  } else {
+    // Select all on current page
+    paginatedPhotos.value.forEach(photo => {
+      selectedPhotoIds.value.add(photo.id);
+    });
+    selectAllPhotos.value = true;
+  }
+}
+
+// Bulk delete selected photos
+async function handleBulkDeletePhotos() {
+  if (selectedPhotoIds.value.size === 0) return;
+
+  try {
+    const idsToDelete = Array.from(selectedPhotoIds.value);
+    await Promise.all(idsToDelete.map(id => $fetch(`/api/selected-albums/${id}`, { method: "DELETE" })));
+    await fetchSelectedAlbums();
+    selectedPhotoIds.value.clear();
+    selectAllPhotos.value = false;
+
+    // Adjust current page if needed
+    if (paginatedPhotos.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+    }
+  } catch (error) {
+    consola.error("Failed to delete photos:", error);
+    showError("Delete Failed", "Failed to delete selected photos");
+  }
+}
+
+// Delete all photos
+async function handleDeleteAllPhotos() {
+  try {
+    await Promise.all(selectedAlbums.value.map(album => $fetch(`/api/selected-albums/${album.id}`, { method: "DELETE" })));
+    await fetchSelectedAlbums();
+    selectedPhotoIds.value.clear();
+    selectAllPhotos.value = false;
+    currentPage.value = 1;
+  } catch (error) {
+    consola.error("Failed to delete all photos:", error);
+    showError("Delete Failed", "Failed to delete all photos");
+  }
+}
+
+// Watch for page changes to update select all state
+watch(currentPage, () => {
+  selectAllPhotos.value = paginatedPhotos.value.every(p => selectedPhotoIds.value.has(p.id));
+});
 const showMeals = computed({
   get() {
     return settings.value?.showMealsOnCalendar ?? false;
@@ -535,7 +618,11 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
 
 async function handleOpenPhotosPicker() {
   try {
-    await openPicker();
+    const result = await openPicker();
+    // result is null if user closed picker without selecting anything - this is fine
+    if (result === null) {
+      showInfo("No Photos Selected", "You closed the picker without selecting any photos.");
+    }
   }
   catch (error) {
     consola.error("Failed to open picker:", error);
@@ -543,16 +630,6 @@ async function handleOpenPhotosPicker() {
   }
 }
 
-async function handleRemoveAlbum(albumId: string) {
-  try {
-    await $fetch(`/api/selected-albums/${albumId}`, { method: "DELETE" });
-    await fetchSelectedAlbums();
-  }
-  catch (error) {
-    consola.error("Failed to remove album:", error);
-    showError("Remove Album Failed", "Failed to remove album");
-  }
-}
 </script>
 
 <template>
@@ -909,46 +986,143 @@ async function handleRemoveAlbum(albumId: string) {
             <!-- Album Selection -->
             <div v-if="homeSettings?.photosEnabled" class="space-y-3 pt-4 border-t border-muted">
               <div class="flex items-center justify-between">
-                <label class="text-sm font-medium text-highlighted">Selected Photos</label>
-                <UButton
-                  size="sm"
-                  icon="i-lucide-plus"
-                  @click="handleOpenPhotosPicker"
-                >
-                  Select Photos
-                </UButton>
+                <div>
+                  <label class="text-sm font-medium text-highlighted">Selected Photos</label>
+                  <p v-if="selectedAlbums.length > 0" class="text-xs text-muted mt-1">
+                    {{ selectedAlbums.length }} photo{{ selectedAlbums.length !== 1 ? 's' : '' }} total
+                    <span v-if="selectedPhotoIds.size > 0" class="text-primary">
+                      • {{ selectedPhotoIds.size }} selected
+                    </span>
+                  </p>
+                </div>
+                <div class="flex gap-2">
+                  <UButton
+                    v-if="selectedPhotoIds.size > 0"
+                    size="sm"
+                    color="error"
+                    icon="i-lucide-trash-2"
+                    @click="handleBulkDeletePhotos"
+                  >
+                    Delete ({{ selectedPhotoIds.size }})
+                  </UButton>
+                  <UButton
+                    size="sm"
+                    icon="i-lucide-plus"
+                    @click="handleOpenPhotosPicker"
+                  >
+                    Add Photos
+                  </UButton>
+                </div>
               </div>
 
               <!-- Selected Photos List -->
-              <div v-if="selectedAlbums.length > 0" class="space-y-2">
-                <div
-                  v-for="album in selectedAlbums"
-                  :key="album.id"
-                  class="flex items-center gap-3 p-3 bg-muted rounded-lg border border-default"
-                >
-                  <img
-                    v-if="album.coverPhotoUrl"
-                    :src="`/api/integrations/google_photos/proxy-image?photoId=${encodeURIComponent(album.albumId)}`"
-                    class="w-12 h-12 rounded object-cover"
-                    :alt="album.title"
-                  >
-                  <div class="flex-1 min-w-0">
-                    <div class="font-medium text-highlighted truncate">
-                      {{ album.title }}
-                    </div>
+              <div v-if="selectedAlbums.length > 0" class="space-y-3">
+                <!-- Bulk actions toolbar -->
+                <div class="flex items-center justify-between p-2 bg-muted/50 rounded-lg border border-default">
+                  <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        v-model="selectAllPhotos"
+                        type="checkbox"
+                        class="w-4 h-4 rounded border-default"
+                        @change="toggleSelectAllOnPage"
+                      >
+                      <span class="text-sm text-highlighted">Select all on page</span>
+                    </label>
                   </div>
                   <UButton
-                    size="sm"
+                    v-if="selectedAlbums.length > 0"
+                    size="xs"
                     variant="ghost"
                     color="error"
-                    icon="i-lucide-trash-2"
-                    @click="handleRemoveAlbum(album.id)"
-                  />
+                    @click="handleDeleteAllPhotos"
+                  >
+                    Delete All {{ selectedAlbums.length }} Photos
+                  </UButton>
+                </div>
+
+                <!-- Photo grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div
+                    v-for="album in paginatedPhotos"
+                    :key="album.id"
+                    class="relative group"
+                  >
+                    <div
+                      class="relative rounded-lg border overflow-hidden cursor-pointer"
+                      :class="[
+                        selectedPhotoIds.has(album.id)
+                          ? 'border-primary ring-2 ring-primary'
+                          : 'border-default hover:border-primary'
+                      ]"
+                      @click="togglePhotoSelection(album.id)"
+                    >
+                      <!-- Checkbox overlay -->
+                      <div class="absolute top-2 left-2 z-10">
+                        <div
+                          class="w-5 h-5 rounded border-2 flex items-center justify-center"
+                          :class="[
+                            selectedPhotoIds.has(album.id)
+                              ? 'bg-primary border-primary'
+                              : 'bg-white/80 border-white/80 group-hover:bg-white'
+                          ]"
+                        >
+                          <UIcon
+                            v-if="selectedPhotoIds.has(album.id)"
+                            name="i-lucide-check"
+                            class="w-3 h-3 text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <!-- Photo -->
+                      <img
+                        v-if="album.coverPhotoUrl"
+                        :src="`/api/integrations/google_photos/proxy-image?photoId=${encodeURIComponent(album.albumId)}&width=400&height=400`"
+                        class="w-full h-32 object-cover"
+                        :alt="album.title"
+                        loading="lazy"
+                      >
+                      <div v-else class="w-full h-32 bg-muted flex items-center justify-center">
+                        <UIcon name="i-lucide-image" class="w-8 h-8 text-muted" />
+                      </div>
+
+                      <!-- Title overlay on hover -->
+                      <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p class="text-xs text-white truncate">
+                          {{ album.title }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Pagination -->
+                <div v-if="totalPages > 1" class="flex items-center justify-between pt-3 border-t border-muted">
+                  <p class="text-sm text-muted">
+                    Page {{ currentPage }} of {{ totalPages }}
+                  </p>
+                  <div class="flex gap-2">
+                    <UButton
+                      size="sm"
+                      variant="ghost"
+                      icon="i-lucide-chevron-left"
+                      :disabled="currentPage === 1"
+                      @click="currentPage--"
+                    />
+                    <UButton
+                      size="sm"
+                      variant="ghost"
+                      icon="i-lucide-chevron-right"
+                      :disabled="currentPage === totalPages"
+                      @click="currentPage++"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div v-else class="text-sm text-muted p-3 bg-muted rounded-lg border border-default">
-                No photos selected. Click "Select Photos" to choose from your Google Photos.
+                No photos selected. Click "Add Photos" to choose from your Google Photos.
               </div>
             </div>
 
