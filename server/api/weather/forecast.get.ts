@@ -60,7 +60,7 @@ function getWeatherCondition(code: number): WeatherCondition {
   return weatherCodes[code] || { code, description: "Unknown", icon: "i-lucide-cloud" };
 }
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const query = getQuery(event);
 
   // Get location from query or use default (Chicago)
@@ -141,4 +141,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Weather service unavailable",
     });
   }
+}, {
+  maxAge: 60 * 60, // 1 hour cache
 });
