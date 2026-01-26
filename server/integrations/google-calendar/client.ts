@@ -144,15 +144,21 @@ export class GoogleCalendarServerService {
     const allEvents: GoogleEvent[] = [];
 
     // Fetch events from each selected calendar
-    for (const calendarId of selectedCalendars) {
-      try {
-        const events = await this.fetchEventsFromCalendar(calendarId);
-        allEvents.push(...events);
-      }
-      catch (error) {
-        consola.error(`Failed to fetch events from calendar ${calendarId}:`, error);
-        // Continue with other calendars even if one fails
-      }
+    const results = await Promise.all(
+      selectedCalendars.map(async (calendarId) => {
+        try {
+          return await this.fetchEventsFromCalendar(calendarId);
+        }
+        catch (error) {
+          consola.error(`Failed to fetch events from calendar ${calendarId}:`, error);
+          // Continue with other calendars even if one fails
+          return [];
+        }
+      }),
+    );
+
+    for (const events of results) {
+      allEvents.push(...events);
     }
 
     consola.debug(`Fetched ${allEvents.length} events from ${selectedCalendars.length} calendars for integration ${this.integrationId}`);
