@@ -8,7 +8,7 @@ import { decryptToken } from "../../../integrations/google-calendar/oauth";
 /**
  * Immich Album type from Immich API
  */
-interface ImmichAlbum {
+type ImmichAlbum = {
   id: string;
   albumName: string;
   description: string;
@@ -18,7 +18,7 @@ interface ImmichAlbum {
   updatedAt: string;
   shared: boolean;
   ownerId: string;
-}
+};
 
 /**
  * GET /api/integrations/immich/albums

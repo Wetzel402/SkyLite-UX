@@ -3,8 +3,10 @@ import type { ICalSettings, IntegrationConfig } from "~/types/integrations";
 // This file contains all integration configurations that are used by both client and server
 import type { DialogField } from "~/types/ui";
 
+import type { HomeAssistantWeatherSettings } from "./home-assistant/homeAssistantWeather";
+
 import { createGoogleCalendarService } from "./google-calendar/googleCalendar";
-import { createHomeAssistantWeatherService, type HomeAssistantWeatherSettings } from "./home-assistant/homeAssistantWeather";
+import { createHomeAssistantWeatherService } from "./home-assistant/homeAssistantWeather";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
