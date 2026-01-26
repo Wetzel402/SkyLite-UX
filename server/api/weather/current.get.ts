@@ -1,6 +1,8 @@
 // Weather API using Open-Meteo (free, no API key required)
 // This provides current weather conditions
 
+import { createError, defineCachedEventHandler, getQuery } from "h3";
+
 type OpenMeteoCurrentResponse = {
   current: {
     time: string;
