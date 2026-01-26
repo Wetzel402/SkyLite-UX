@@ -123,6 +123,7 @@ function handleDelete() {
           color="neutral"
           variant="ghost"
           icon="i-lucide-x"
+          aria-label="Close"
           class="-my-1"
           @click="emit('close')"
         />
@@ -138,18 +139,21 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">Title</label>
+          <label for="todo-title" class="block text-sm font-medium text-highlighted">Title</label>
           <UInput
+            id="todo-title"
             v-model="todoTitle"
             placeholder="Todo title"
             class="w-full"
             :ui="{ base: 'w-full' }"
+            autofocus
           />
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">Description</label>
+          <label for="todo-description" class="block text-sm font-medium text-highlighted">Description</label>
           <UTextarea
+            id="todo-description"
             v-model="todoDescription"
             placeholder="Todo description (optional)"
             :rows="3"
@@ -160,8 +164,9 @@ function handleDelete() {
 
         <div class="flex gap-4">
           <div class="w-1/2 space-y-2">
-            <label class="block text-sm font-medium text-highlighted">Priority</label>
+            <label for="todo-priority" class="block text-sm font-medium text-highlighted">Priority</label>
             <USelect
+              id="todo-priority"
               v-model="todoPriority"
               :items="priorityOptions"
               option-attribute="label"
