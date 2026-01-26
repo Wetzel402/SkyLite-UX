@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
 
   // Get and decrypt credentials
   const encryptedApiKey = integration.apiKey;
-  const baseUrl = integration.url;
+  const baseUrl = integration.baseUrl;
 
   if (!encryptedApiKey || !baseUrl) {
     throw createError({

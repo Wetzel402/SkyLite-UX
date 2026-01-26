@@ -1,5 +1,4 @@
 import type { Priority, Prisma } from "@prisma/client";
-import type { JsonObject } from "type-fest";
 
 export type User = Prisma.UserGetPayload<Record<string, never>> & {
   avatar?: string | null;
@@ -91,7 +90,7 @@ export type ShoppingListItem = BaseListItem & {
   unit: string | null;
   label: string | null;
   food: string | null;
-  integrationData?: JsonObject;
+  integrationData?: Record<string, any>;
   source?: "native" | "integration";
   integrationId?: string;
 };
@@ -115,7 +114,11 @@ export type Integration = {
   baseUrl: string | null;
   icon: string | null;
   enabled: boolean;
-  settings: JsonObject | null;
+  settings: Record<string, any> | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  tokenExpiry: Date | null;
+  tokenType: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -179,7 +182,7 @@ export type RawIntegrationItem = {
   quantity: number;
   unit: string | null;
   food: string | null;
-  integrationData?: JsonObject;
+  integrationData?: Record<string, any>;
 };
 
 export type { Priority };

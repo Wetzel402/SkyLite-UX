@@ -322,12 +322,12 @@ const serviceFactoryMap = {
     const useUserColors = settings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
-  "calendar:google-calendar": (id: string) => createGoogleCalendarService(id),
+  "calendar:google-calendar": (id: string, _apiKey: string, _baseUrl: string, _settings?: unknown) => createGoogleCalendarService(id),
   "weather:home-assistant": (id: string, apiKey: string, baseUrl: string, settings?: HomeAssistantWeatherSettings) => {
     return createHomeAssistantWeatherService(id, apiKey, baseUrl, settings);
   },
-  "shopping:mealie": createMealieService,
-  "shopping:tandoor": createTandoorService,
+  "shopping:mealie": (id: string, apiKey: string, baseUrl: string, _settings?: unknown) => createMealieService(id, apiKey, baseUrl),
+  "shopping:tandoor": (id: string, apiKey: string, baseUrl: string, _settings?: unknown) => createTandoorService(id, apiKey, baseUrl),
 } as const;
 
 const fieldFilters = {

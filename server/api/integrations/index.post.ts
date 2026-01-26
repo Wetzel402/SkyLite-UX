@@ -61,6 +61,10 @@ export default defineEventHandler(async (event) => {
       name: name || "Temp",
       icon: icon || null,
       settings: settings || {},
+      accessToken: null,
+      refreshToken: null,
+      tokenExpiry: null,
+      tokenType: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

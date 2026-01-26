@@ -16,7 +16,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "calendarsSelected", calendarIds: string[]): void;
+  (e: "calendarsSelected", calendars: { id: string; summary: string; color?: string }[]): void;
 }>();
 
 const calendars = ref<GoogleCalendarInfo[]>([]);
@@ -66,7 +66,15 @@ function handleContinue() {
     return;
   }
 
-  emit("calendarsSelected", selectedCalendarIds.value);
+  const selectedCalendars = calendars.value
+    .filter(cal => selectedCalendarIds.value.includes(cal.id))
+    .map(cal => ({
+      id: cal.id,
+      summary: cal.summary,
+      color: cal.backgroundColor,
+    }));
+
+  emit("calendarsSelected", selectedCalendars);
 }
 
 function toggleCalendar(calendarId: string) {
