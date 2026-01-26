@@ -61,7 +61,7 @@ function getWeatherCondition(code: number, isDay: boolean): WeatherCondition {
   return condition;
 }
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const query = getQuery(event);
 
   // Get location from query or use default (Chicago)
@@ -124,4 +124,7 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Weather service unavailable",
     });
   }
+}, {
+  maxAge: 60 * 15, // 15 minutes
+  swr: true,
 });
