@@ -1,7 +1,7 @@
 // Weather API using Open-Meteo (free, no API key required)
 // This provides current weather conditions
 
-import { createError, defineCachedEventHandler, getQuery } from "h3";
+import { createError, getQuery } from "h3";
 
 type OpenMeteoCurrentResponse = {
   current: {
@@ -63,70 +63,73 @@ function getWeatherCondition(code: number, isDay: boolean): WeatherCondition {
   return condition;
 }
 
-export default defineCachedEventHandler(async (event) => {
-  const query = getQuery(event);
+export default defineCachedEventHandler(
+  async (event) => {
+    const query = getQuery(event);
 
-  // Get location from query or use default (Chicago)
-  let lat = Number.parseFloat(query.lat as string) || 41.8781;
-  let lon = Number.parseFloat(query.lon as string) || -87.6298;
-  const units = (query.units as string) || "fahrenheit";
+    // Get location from query or use default (Chicago)
+    let lat = Number.parseFloat(query.lat as string) || 41.8781;
+    let lon = Number.parseFloat(query.lon as string) || -87.6298;
+    const units = (query.units as string) || "fahrenheit";
 
-  // If location is provided as city name, we'll use a simple geocoding
-  // For now, use coordinates directly
-  if (query.location) {
-    // Try to parse as coordinates first (lat,lon)
-    const locationStr = query.location as string;
-    const coordMatch = locationStr.match(/^(-?\d+(?:\.\d*)?),\s*(-?\d+(?:\.\d*)?)$/);
-    if (coordMatch && coordMatch[1] && coordMatch[2]) {
-      lat = Number.parseFloat(coordMatch[1]);
-      lon = Number.parseFloat(coordMatch[2]);
+    // If location is provided as city name, we'll use a simple geocoding
+    // For now, use coordinates directly
+    if (query.location) {
+      // Try to parse as coordinates first (lat,lon)
+      const locationStr = query.location as string;
+      const coordMatch = locationStr.match(/^(-?\d+(?:\.\d*)?),\s*(-?\d+(?:\.\d*)?)$/);
+      if (coordMatch && coordMatch[1] && coordMatch[2]) {
+        lat = Number.parseFloat(coordMatch[1]);
+        lon = Number.parseFloat(coordMatch[2]);
+      }
+      // Otherwise keep defaults (in production, would use geocoding API)
     }
-    // Otherwise keep defaults (in production, would use geocoding API)
-  }
 
-  const temperatureUnit = units === "celsius" ? "celsius" : "fahrenheit";
+    const temperatureUnit = units === "celsius" ? "celsius" : "fahrenheit";
 
-  try {
-    const response = await $fetch<OpenMeteoCurrentResponse>(
-      `https://api.open-meteo.com/v1/forecast`,
-      {
-        query: {
-          latitude: lat,
-          longitude: lon,
-          current: "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day",
-          temperature_unit: temperatureUnit,
-          wind_speed_unit: "mph",
-          timezone: "auto",
+    try {
+      const response = await $fetch<OpenMeteoCurrentResponse>(
+        `https://api.open-meteo.com/v1/forecast`,
+        {
+          query: {
+            latitude: lat,
+            longitude: lon,
+            current: "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day",
+            temperature_unit: temperatureUnit,
+            wind_speed_unit: "mph",
+            timezone: "auto",
+          },
         },
-      },
-    );
+      );
 
-    const current = response.current;
-    const isDay = current.is_day === 1;
-    const condition = getWeatherCondition(current.weather_code, isDay);
+      const current = response.current;
+      const isDay = current.is_day === 1;
+      const condition = getWeatherCondition(current.weather_code, isDay);
 
-    return {
-      temperature: Math.round(current.temperature_2m),
-      feelsLike: Math.round(current.apparent_temperature),
-      humidity: current.relative_humidity_2m,
-      windSpeed: Math.round(current.wind_speed_10m),
-      windDirection: current.wind_direction_10m,
-      condition: condition.description,
-      icon: condition.icon,
-      isDay,
-      units: temperatureUnit,
-      location: { lat, lon },
-      fetchedAt: new Date().toISOString(),
-    };
-  }
-  catch (error) {
-    console.error("Failed to fetch weather:", error);
-    throw createError({
-      statusCode: 503,
-      statusMessage: "Weather service unavailable",
-    });
-  }
-}, {
-  maxAge: 60 * 15, // 15 minutes
-  swr: true,
-});
+      return {
+        temperature: Math.round(current.temperature_2m),
+        feelsLike: Math.round(current.apparent_temperature),
+        humidity: current.relative_humidity_2m,
+        windSpeed: Math.round(current.wind_speed_10m),
+        windDirection: current.wind_direction_10m,
+        condition: condition.description,
+        icon: condition.icon,
+        isDay,
+        units: temperatureUnit,
+        location: { lat, lon },
+        fetchedAt: new Date().toISOString(),
+      };
+    }
+    catch (error) {
+      console.error("Failed to fetch weather:", error);
+      throw createError({
+        statusCode: 503,
+        statusMessage: "Weather service unavailable",
+      });
+    }
+  },
+  {
+    maxAge: 60 * 15, // 15 minutes
+    swr: true,
+  },
+);
