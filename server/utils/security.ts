@@ -1,4 +1,5 @@
-import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
+import { Buffer } from "node:buffer";
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 
 const scryptAsync = promisify(scrypt);
@@ -31,13 +32,20 @@ export async function verifyPin(pin: string, storedHash: string): Promise<boolea
     return false;
   }
 
-  const [salt, keyHex] = parts;
+  const salt = parts[0];
+  const keyHex = parts[1];
+
+  if (!salt || !keyHex) {
+    return false;
+  }
+
   const keyBuffer = Buffer.from(keyHex, "hex");
 
   try {
     const derivedKey = (await scryptAsync(pin, salt, KEY_LEN)) as Buffer;
     return timingSafeEqual(keyBuffer, derivedKey);
-  } catch {
+  }
+  catch {
     return false;
   }
 }

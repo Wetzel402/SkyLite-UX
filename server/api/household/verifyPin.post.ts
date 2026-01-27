@@ -37,7 +37,8 @@ export default defineEventHandler(async (event) => {
         where: { id: settings.id },
         data: { parentPin: hashed },
       });
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Failed to migrate PIN:", error);
     }
   }

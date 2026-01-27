@@ -87,6 +87,10 @@ export default defineEventHandler(async (event) => {
         settings: updatedData.settings || {},
         createdAt: new Date(),
         updatedAt: new Date(),
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiry: null,
+        tokenType: null,
       };
 
       const integrationService = await createIntegrationService(tempIntegration);

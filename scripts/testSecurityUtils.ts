@@ -1,5 +1,6 @@
 import { hashPin, verifyPin } from "../server/utils/security";
 
+/* eslint-disable no-console */
 async function runTests() {
   console.log("Running security utils tests...");
 
@@ -10,7 +11,8 @@ async function runTests() {
     if (condition) {
       console.log(`✅ ${message}`);
       passed++;
-    } else {
+    }
+    else {
       console.error(`❌ ${message}`);
       failed++;
     }
