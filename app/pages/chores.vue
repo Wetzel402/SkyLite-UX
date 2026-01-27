@@ -278,8 +278,9 @@ onMounted(() => {
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <!-- User selector -->
             <div v-if="users.length > 0" class="flex items-center gap-2">
-              <span class="text-sm text-muted">Acting as:</span>
+              <label for="user-select" class="text-sm text-muted">Acting as:</label>
               <select
+                id="user-select"
                 v-model="selectedUserId"
                 class="border border-default rounded px-2 py-1 text-sm bg-default"
               >
@@ -295,18 +296,21 @@ onMounted(() => {
             <UButtonGroup>
               <UButton
                 :variant="activeFilter === 'all' ? 'solid' : 'ghost'"
+                :aria-pressed="activeFilter === 'all'"
                 @click="activeFilter = 'all'"
               >
                 All
               </UButton>
               <UButton
                 :variant="activeFilter === 'my-chores' ? 'solid' : 'ghost'"
+                :aria-pressed="activeFilter === 'my-chores'"
                 @click="activeFilter = 'my-chores'"
               >
                 My Chores
               </UButton>
               <UButton
                 :variant="activeFilter === 'available' ? 'solid' : 'ghost'"
+                :aria-pressed="activeFilter === 'available'"
                 @click="activeFilter = 'available'"
               >
                 Available
@@ -316,7 +320,12 @@ onMounted(() => {
         </div>
 
         <!-- Loading state -->
-        <div v-if="loading" class="flex items-center justify-center py-12">
+        <div
+          v-if="loading"
+          class="flex items-center justify-center py-12"
+          role="status"
+          aria-live="polite"
+        >
           <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary" />
           <span class="ml-2 text-muted">Loading chores...</span>
         </div>
