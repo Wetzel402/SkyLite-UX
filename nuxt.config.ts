@@ -2,8 +2,25 @@
 import pkg from "./package.json";
 
 export default defineNuxtConfig({
+  // Disable SSR only for Capacitor builds, enable for web
+  // eslint-disable-next-line node/no-process-env
+  ssr: process.env.CAPACITOR_BUILD !== "true",
+
   devtools: {
     enabled: true,
+  },
+
+  // Disable experimental features for Capacitor builds
+  experimental: {
+    // Disable payload extraction to prevent preload errors
+    payloadExtraction: false,
+  },
+
+  // Route rules to prevent preloading errors in Capacitor
+  routeRules: {
+    "/mealPlanner": { prerender: false },
+    "/mobile-settings": { prerender: false },
+    "/home": { prerender: false },
   },
 
   runtimeConfig: {
@@ -29,61 +46,61 @@ export default defineNuxtConfig({
   modules: ["@nuxt/ui", "@nuxt/eslint", "@nuxtjs/html-validator", "@vite-pwa/nuxt"],
 
   pwa: {
-    registerType: 'autoUpdate',
+    registerType: "autoUpdate",
     manifest: {
-      name: 'SkyLite UX',
-      short_name: 'SkyLite',
-      description: 'Family hub for calendar, todos, meals, and shopping',
-      theme_color: '#0ea5e9',
-      background_color: '#ffffff',
-      display: 'standalone',
-      start_url: '/',
+      name: "SkyLite UX",
+      short_name: "SkyLite",
+      description: "Family hub for calendar, todos, meals, and shopping",
+      theme_color: "#0ea5e9",
+      background_color: "#ffffff",
+      display: "standalone",
+      start_url: "/",
       icons: [
         {
-          src: '/skylite-192.png',
-          sizes: '192x192',
-          type: 'image/png'
+          src: "/skylite-192.png",
+          sizes: "192x192",
+          type: "image/png",
         },
         {
-          src: '/skylite-512.png',
-          sizes: '512x512',
-          type: 'image/png'
-        }
-      ]
+          src: "/skylite-512.png",
+          sizes: "512x512",
+          type: "image/png",
+        },
+      ],
     },
     workbox: {
-      navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      navigateFallback: "/",
+      globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-          handler: 'CacheFirst',
+          handler: "CacheFirst",
           options: {
-            cacheName: 'google-fonts-cache',
+            cacheName: "google-fonts-cache",
             expiration: {
               maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-            }
-          }
+              maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+            },
+          },
         },
         {
           urlPattern: /\/api\/meal-plans\/.*/i,
-          handler: 'NetworkFirst',
+          handler: "NetworkFirst",
           options: {
-            cacheName: 'api-meal-plans',
+            cacheName: "api-meal-plans",
             networkTimeoutSeconds: 10,
             expiration: {
               maxEntries: 50,
-              maxAgeSeconds: 60 * 60 // 1 hour
-            }
-          }
-        }
-      ]
+              maxAgeSeconds: 60 * 60, // 1 hour
+            },
+          },
+        },
+      ],
     },
     devOptions: {
       enabled: true,
-      type: 'module'
-    }
+      type: "module",
+    },
   },
 
   components: {
@@ -154,16 +171,25 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
 
   nitro: {
-    plugins: [
-      "../server/plugins/01.logging.ts",
-      "../server/plugins/02.syncManager.ts",
-    ],
+    // Disable server plugins during static generation to prevent hanging
+    // setInterval in syncManager keeps process alive during 'nuxt generate'
+    // eslint-disable-next-line node/no-process-env
+    plugins: process.env.CAPACITOR_BUILD === "true"
+      ? []
+      : [
+          "../server/plugins/01.logging.ts",
+          "../server/plugins/02.syncManager.ts",
+        ],
   },
 
   plugins: [
     "~/plugins/01.logging.ts",
-    "~/plugins/02.appInit.ts",
-    "~/plugins/03.syncManager.client.ts",
+    // Disable appInit for Capacitor builds - it tries to fetch from /api/* which doesn't exist in static builds
+    // eslint-disable-next-line node/no-process-env
+    ...(process.env.CAPACITOR_BUILD !== "true" ? ["~/plugins/02.appInit.ts"] : []),
+    // Disable syncManager for Capacitor builds - it tries to connect to /api/sync/events via EventSource
+    // eslint-disable-next-line node/no-process-env
+    ...(process.env.CAPACITOR_BUILD !== "true" ? ["~/plugins/03.syncManager.client.ts"] : []),
   ],
 
   future: {

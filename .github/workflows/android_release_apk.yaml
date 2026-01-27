@@ -1,0 +1,172 @@
+name: Build Release APK
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # Allow manual trigger
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build-release-apk:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Nuxt static site
+        env:
+          CAPACITOR_BUILD: 'true' # Disable server plugins to prevent hanging
+          NODE_ENV: 'production' # Ensure production build (no HMR)
+        run: |
+          # Use timeout to force-kill if npm doesn't exit cleanly
+          timeout 8m npm run generate || {
+            echo "Build timed out but likely completed - checking output..."
+            if [ -d ".output/public" ] && [ -f ".output/public/index.html" ]; then
+              echo "✓ Static site generated successfully"
+              exit 0
+            else
+              echo "✗ Build failed - no output found"
+              exit 1
+            fi
+          }
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK (for quick testing)
+        run: cd android && ./gradlew assembleDebug --no-daemon
+
+      - name: Build release APK (unsigned)
+        run: cd android && ./gradlew assembleRelease --no-daemon
+        continue-on-error: true
+
+      - name: Rename APKs with version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Rename debug APK
+          if [ -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
+            cp android/app/build/outputs/apk/debug/app-debug.apk \
+               skylite-${VERSION}-debug.apk
+          fi
+
+          # Rename release APK if it exists
+          if [ -f android/app/build/outputs/apk/release/app-release-unsigned.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release-unsigned.apk \
+               skylite-${VERSION}-release-unsigned.apk
+          fi
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: skylite-${{ steps.version.outputs.version }}-debug-apk
+          path: skylite-${{ steps.version.outputs.version }}-debug.apk
+          retention-days: 90
+
+      - name: Upload release APK artifact (if exists)
+        uses: actions/upload-artifact@v4
+        if: ${{ hashFiles(format('skylite-{0}-release-unsigned.apk', steps.version.outputs.version)) != '' }}
+        with:
+          name: skylite-${{ steps.version.outputs.version }}-release-apk
+          path: skylite-${{ steps.version.outputs.version }}-release-unsigned.apk
+          retention-days: 365
+        continue-on-error: true
+
+      - name: Attach APKs to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            skylite-${{ steps.version.outputs.version }}-debug.apk
+            skylite-${{ steps.version.outputs.version }}-release-unsigned.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release notes
+        if: always()
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "## 🎉 SkyLite Android Release ${VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📱 APK Downloads" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "skylite-${VERSION}-debug.apk" ]; then
+            SIZE=$(du -h "skylite-${VERSION}-debug.apk" | cut -f1)
+            echo "#### Debug APK ✅" >> $GITHUB_STEP_SUMMARY
+            echo "- **Size:** ${SIZE}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Filename:** \`skylite-${VERSION}-debug.apk\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Use for:** Testing and sideloading" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "skylite-${VERSION}-release-unsigned.apk" ]; then
+            SIZE=$(du -h "skylite-${VERSION}-release-unsigned.apk" | cut -f1)
+            echo "#### Release APK (Unsigned) ✅" >> $GITHUB_STEP_SUMMARY
+            echo "- **Size:** ${SIZE}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Filename:** \`skylite-${VERSION}-release-unsigned.apk\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Note:** Unsigned - needs signing for Play Store" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "#### Release APK ⚠️" >> $GITHUB_STEP_SUMMARY
+            echo "Release APK not built (requires signing configuration)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "### 📥 Installation Instructions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the debug APK from:" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "release" ]; then
+            echo "   - **Release assets** (scroll down on release page)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "   - **Actions artifacts** (this workflow run)" >> $GITHUB_STEP_SUMMARY
+          echo "2. Transfer to Android device" >> $GITHUB_STEP_SUMMARY
+          echo "3. Enable **Install from Unknown Sources**" >> $GITHUB_STEP_SUMMARY
+          echo "4. Tap APK to install" >> $GITHUB_STEP_SUMMARY
+          echo "5. Configure server URL in **Mobile Settings**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 First-Time Setup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Launch SkyLite app" >> $GITHUB_STEP_SUMMARY
+          echo "2. Navigate to **Mobile Settings**" >> $GITHUB_STEP_SUMMARY
+          echo "3. Enter server URL: \`http://192.168.1.X:3000\`" >> $GITHUB_STEP_SUMMARY
+          echo "   - Find your server IP: run \`ipconfig\` on server" >> $GITHUB_STEP_SUMMARY
+          echo "4. Tap **Save Settings**" >> $GITHUB_STEP_SUMMARY
+          echo "5. Restart app" >> $GITHUB_STEP_SUMMARY

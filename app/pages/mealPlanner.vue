@@ -106,11 +106,18 @@ function handleToday() {
 }
 
 // Meal operations
-function openAddMeal(dayOfWeek: number, mealType: MealType) {
-  selectedDayOfWeek.value = dayOfWeek;
-  selectedMealType.value = mealType;
-  editingMeal.value = null;
-  mealDialog.value = true;
+function openAddMeal(dayOfWeek: number, mealType: MealType, data?: { name: string; description: string; daysInAdvance: number }) {
+  if (data) {
+    // Called from inline form with data - create meal directly
+    handleMealSaveFromInline(dayOfWeek, mealType, data);
+  }
+  else {
+    // Called from desktop - open dialog
+    selectedDayOfWeek.value = dayOfWeek;
+    selectedMealType.value = mealType;
+    editingMeal.value = null;
+    mealDialog.value = true;
+  }
 }
 
 function openEditMeal(meal: Meal) {
@@ -118,6 +125,32 @@ function openEditMeal(meal: Meal) {
   selectedDayOfWeek.value = meal.dayOfWeek;
   selectedMealType.value = meal.mealType;
   mealDialog.value = true;
+}
+
+async function handleMealSaveFromInline(dayOfWeek: number, mealType: MealType, data: { name: string; description: string; daysInAdvance: number }) {
+  try {
+    if (!currentPlan.value?.id) {
+      showError("Error", "No meal plan found for this week.");
+      return;
+    }
+
+    await addMealToPlan(currentPlan.value.id, {
+      name: data.name,
+      description: data.description,
+      daysInAdvance: data.daysInAdvance,
+      dayOfWeek,
+      mealType,
+    });
+    showSuccess("Meal Added", "Meal has been added successfully.");
+
+    // Reload the meal plan
+    await loadWeekMealPlan();
+    await loadUpcomingPrepMeals();
+  }
+  catch (error) {
+    consola.error("Failed to save meal:", error);
+    showError("Save Failed", "Failed to save meal. Please try again.");
+  }
 }
 
 async function handleMealSave(mealData: CreateMealInput) {
@@ -172,6 +205,24 @@ async function handleMealDelete() {
   }
 }
 
+async function handleMealDeleteFromInline(meal: Meal) {
+  if (!meal?.id)
+    return;
+
+  try {
+    await deleteMeal(meal.id);
+    showSuccess("Meal Deleted", "Meal has been deleted successfully.");
+
+    // Reload the meal plan
+    await loadWeekMealPlan();
+    await loadUpcomingPrepMeals();
+  }
+  catch (error) {
+    consola.error("Failed to delete meal:", error);
+    showError("Delete Failed", "Failed to delete meal. Please try again.");
+  }
+}
+
 async function handleTogglePreparation(mealId: string, completed: boolean) {
   // Find the meal and store previous state for rollback
   const meal = upcomingPrepMeals.value.find(m => m.id === mealId);
@@ -199,6 +250,26 @@ async function handleTogglePreparation(mealId: string, completed: boolean) {
 
     consola.error("Failed to toggle preparation:", error);
     showError("Update Failed", "Failed to update preparation status.");
+  }
+}
+
+async function handleMoveMeal(event: { mealId: string; newDayOfWeek: number; newMealType: MealType }) {
+  try {
+    // Update meal with new day and meal type
+    await updateMeal(event.mealId, {
+      dayOfWeek: event.newDayOfWeek,
+      mealType: event.newMealType,
+    });
+
+    showSuccess("Meal Moved", "Meal has been moved successfully.");
+
+    // Reload the meal plan
+    await loadWeekMealPlan();
+    await loadUpcomingPrepMeals();
+  }
+  catch (error) {
+    consola.error("Failed to move meal:", error);
+    showError("Move Failed", "Failed to move meal. Please try again.");
   }
 }
 
@@ -284,6 +355,8 @@ watch(currentWeekStart, () => {
           :meals="currentPlan?.meals || []"
           @add-meal="openAddMeal"
           @edit-meal="openEditMeal"
+          @delete-meal="handleMealDeleteFromInline"
+          @move-meal="handleMoveMeal"
         />
 
         <!-- Preparation Reminders -->

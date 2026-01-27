@@ -94,6 +94,7 @@ View and manage pending changes at `/offline-queue`:
 ### Multi-Device Sync
 
 When online, all changes sync in real-time:
+
 - Edit a meal on your phone → appears instantly on the kitchen tablet
 - Family members can collaborate simultaneously
 - Server-Sent Events (SSE) provide live updates
@@ -105,6 +106,7 @@ When online, all changes sync in real-time:
 **Problem**: You're at work (outside your home network) and want to plan next week's meals.
 
 **Solution**:
+
 1. Install the PWA on your phone
 2. Open the meal planner during lunch break
 3. Add meals for the week (works offline)
@@ -116,6 +118,7 @@ When online, all changes sync in real-time:
 **Problem**: You're at the store and need to check what meals you planned.
 
 **Solution**:
+
 1. Open the PWA on your phone
 2. View the meal plan (cached from last sync)
 3. Check ingredients needed for each meal
@@ -126,6 +129,7 @@ When online, all changes sync in real-time:
 **Problem**: Multiple family members want to contribute to meal planning.
 
 **Solution**:
+
 1. Each person installs the PWA on their device
 2. Anyone can add meals when inspiration strikes
 3. Changes sync automatically when devices are home

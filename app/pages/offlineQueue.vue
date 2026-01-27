@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getPendingMeals, removePendingMeal, type PendingMeal } from '~/utils/offlineDb';
-import { useOfflineSync } from '~/composables/useOfflineSync';
+import { onMounted, ref } from "vue";
+
+import type { PendingMeal } from "~/utils/offlineDb";
+
+import { useOfflineSync } from "~/composables/useOfflineSync";
+import { getPendingMeals, removePendingMeal } from "~/utils/offlineDb";
 
 const pendingMeals = ref<PendingMeal[]>([]);
 const { triggerSync } = useOfflineSync();
@@ -53,7 +56,7 @@ async function clearAll() {
         :class="{
           'border-yellow-300 bg-yellow-50': item.status === 'pending',
           'border-blue-300 bg-blue-50': item.status === 'syncing',
-          'border-red-300 bg-red-50': item.status === 'error'
+          'border-red-300 bg-red-50': item.status === 'error',
         }"
       >
         <div class="flex items-start justify-between">
@@ -96,7 +99,11 @@ async function clearAll() {
       <UButton @click="syncAll">
         Sync All
       </UButton>
-      <UButton variant="ghost" color="error" @click="clearAll">
+      <UButton
+        variant="ghost"
+        color="error"
+        @click="clearAll"
+      >
         Clear All
       </UButton>
     </div>

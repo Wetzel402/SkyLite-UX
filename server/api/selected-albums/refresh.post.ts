@@ -1,7 +1,8 @@
 import { consola } from "consola";
 
-import { GooglePhotosServerService } from "../../../server/integrations/google_photos";
 import prisma from "~/lib/prisma";
+
+import { GooglePhotosServerService } from "../../../server/integrations/google_photos";
 import { getGoogleOAuthConfig } from "../../../server/utils/googleOAuthConfig";
 
 /**
@@ -96,7 +97,7 @@ export default defineEventHandler(async () => {
               Authorization: `Bearer ${accessToken}`,
             },
             signal: controller.signal,
-          }
+          },
         );
 
         clearTimeout(timeoutId);
@@ -113,10 +114,12 @@ export default defineEventHandler(async () => {
           });
 
           refreshedCount++;
-        } else {
+        }
+        else {
           consola.warn(`Failed to refresh album ${album.albumId}: ${response.status}`);
         }
-      } catch (err) {
+      }
+      catch (err) {
         consola.error(`Error refreshing album ${album.albumId}:`, err);
       }
     }
@@ -124,7 +127,8 @@ export default defineEventHandler(async () => {
     consola.success(`Refreshed ${refreshedCount} album URLs`);
 
     return { success: true, refreshed: refreshedCount };
-  } catch (error: any) {
+  }
+  catch (error: any) {
     consola.error("Error refreshing albums:", error);
     throw createError({
       statusCode: 500,

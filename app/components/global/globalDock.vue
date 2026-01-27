@@ -1,51 +1,52 @@
 <script setup lang="ts">
 const route = useRoute();
+
+// @ts-ignore - Capacitor is added via script tag in Capacitor builds
+const isCapacitor = typeof window !== "undefined" && "Capacitor" in window;
+
+type NavItem = {
+  to: string;
+  icon: string;
+  label: string;
+};
+
+const navigationItems = computed(() => {
+  const allItems: NavItem[] = [
+    { to: "/calendar", icon: "i-lucide-calendar-days", label: "Calendar" },
+    { to: "/todolists", icon: "i-lucide-list-todo", label: "Todo Lists" },
+    { to: "/shoppinglists", icon: "i-lucide-shopping-cart", label: "Shopping Lists" },
+    { to: "/mealplanner", icon: "i-lucide-utensils", label: "Meal Planner" },
+    { to: "/settings", icon: "i-lucide-settings", label: "Settings" },
+    { to: "/mobile-settings", icon: "i-lucide-settings", label: "Settings" },
+  ];
+
+  // In Capacitor, only show meal planner and mobile settings
+  if (isCapacitor) {
+    return allItems.filter(item =>
+      item.to === "/mealplanner" || item.to === "/mobile-settings",
+    );
+  }
+
+  // On web, show all except mobile-settings
+  return allItems.filter(item => item.to !== "/mobile-settings");
+});
+
 function isActivePath(path: string) {
   return route.path === path;
-};
+}
 </script>
 
 <template>
   <div class="sticky bottom-0 left-0 w-full h-[50px] bg-default flex items-center justify-evenly px-4 z-100">
     <UButton
-      :class="isActivePath('/calendar') ? 'text-primary' : 'text-default'"
-      to="/calendar"
+      v-for="item in navigationItems"
+      :key="item.to"
+      :class="isActivePath(item.to) ? 'text-primary' : 'text-default'"
+      :to="item.to"
       variant="ghost"
-      icon="i-lucide-calendar-days"
+      :icon="item.icon"
       size="xl"
-      aria-label="Calendar"
-    />
-    <UButton
-      :class="isActivePath('/todolists') ? 'text-primary' : 'text-default'"
-      to="/todolists"
-      variant="ghost"
-      icon="i-lucide-list-todo"
-      size="xl"
-      aria-label="Todo Lists"
-    />
-    <UButton
-      :class="isActivePath('/shoppinglists') ? 'text-primary' : 'text-default'"
-      to="/shoppinglists"
-      variant="ghost"
-      icon="i-lucide-shopping-cart"
-      size="xl"
-      aria-label="Shopping Lists"
-    />
-    <UButton
-      :class="isActivePath('/mealplanner') ? 'text-primary' : 'text-default'"
-      to="/mealplanner"
-      variant="ghost"
-      icon="i-lucide-utensils"
-      size="xl"
-      aria-label="Meal Planner"
-    />
-    <UButton
-      :class="isActivePath('/settings') ? 'text-primary' : 'text-default'"
-      to="/settings"
-      variant="ghost"
-      icon="i-lucide-settings"
-      size="xl"
-      aria-label="Settings"
+      :aria-label="item.label"
     />
   </div>
 </template>

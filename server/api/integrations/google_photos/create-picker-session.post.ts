@@ -1,7 +1,8 @@
 import { consola } from "consola";
 
-import { GooglePhotosServerService } from "../../../integrations/google_photos";
 import prisma from "~/lib/prisma";
+
+import { GooglePhotosServerService } from "../../../integrations/google_photos";
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
 
 export default defineEventHandler(async (_event) => {

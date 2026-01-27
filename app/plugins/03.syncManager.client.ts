@@ -4,7 +4,28 @@ import type { CalendarEvent } from "~/types/calendar";
 import type { ShoppingListWithItemsAndCount, TodoWithUser } from "~/types/database";
 import type { EventSourceStatus, IntegrationSyncData, SyncConnectionStatus, SyncEvent } from "~/types/sync";
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((): any => {
+  const isCapacitor = typeof window !== "undefined" && "Capacitor" in window;
+
+  if (isCapacitor) {
+    consola.info("[Sync Manager] Capacitor detected, skipping sync manager initialization");
+    return {
+      provide: {
+        // Return stub functions matching the real API so code doesn't break
+        getSyncData: () => undefined,
+        getAllSyncData: () => ({}),
+        getSyncConnectionStatus: () => "disabled" as SyncConnectionStatus,
+        getLastHeartbeat: () => null,
+        isSyncConnected: () => false,
+        getCachedIntegrationData: () => undefined,
+        checkIntegrationCache: () => false,
+        purgeIntegrationCache: () => {},
+        triggerImmediateSync: async () => Promise.resolve(),
+        reconnectSync: () => {},
+      },
+    };
+  }
+
   const syncData = useState<IntegrationSyncData>("sync-data", () => ({}));
   const connectionStatus = useState<SyncConnectionStatus>("sync-connection-status", () => "disconnected");
   const lastHeartbeat = useState<Date | null>("sync-last-heartbeat", () => null);

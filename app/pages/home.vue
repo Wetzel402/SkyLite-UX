@@ -239,7 +239,7 @@ async function fetchUpcomingEvents() {
     const eventPromises = googleCalendarIntegrations.map(integration =>
       $fetch<{ events: CalendarEvent[] }>(
         `/api/integrations/google_calendar/events?integrationId=${integration.id}`,
-      ).catch(error => {
+      ).catch((error) => {
         console.error(`Failed to fetch events from integration ${integration.id}:`, error);
         return { events: [] };
       }),

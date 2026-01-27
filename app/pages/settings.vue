@@ -56,7 +56,8 @@ const totalPages = computed(() => Math.ceil(selectedAlbums.value.length / photos
 function togglePhotoSelection(photoId: string) {
   if (selectedPhotoIds.value.has(photoId)) {
     selectedPhotoIds.value.delete(photoId);
-  } else {
+  }
+  else {
     selectedPhotoIds.value.add(photoId);
   }
   // Update select all checkbox state
@@ -67,13 +68,14 @@ function togglePhotoSelection(photoId: string) {
 function toggleSelectAllOnPage() {
   if (selectAllPhotos.value) {
     // Deselect all on current page
-    paginatedPhotos.value.forEach(photo => {
+    paginatedPhotos.value.forEach((photo) => {
       selectedPhotoIds.value.delete(photo.id);
     });
     selectAllPhotos.value = false;
-  } else {
+  }
+  else {
     // Select all on current page
-    paginatedPhotos.value.forEach(photo => {
+    paginatedPhotos.value.forEach((photo) => {
       selectedPhotoIds.value.add(photo.id);
     });
     selectAllPhotos.value = true;
@@ -82,7 +84,8 @@ function toggleSelectAllOnPage() {
 
 // Bulk delete selected photos
 async function handleBulkDeletePhotos() {
-  if (selectedPhotoIds.value.size === 0) return;
+  if (selectedPhotoIds.value.size === 0)
+    return;
 
   try {
     const idsToDelete = Array.from(selectedPhotoIds.value);
@@ -95,7 +98,8 @@ async function handleBulkDeletePhotos() {
     if (paginatedPhotos.value.length === 0 && currentPage.value > 1) {
       currentPage.value--;
     }
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Failed to delete photos:", error);
     showError("Delete Failed", "Failed to delete selected photos");
   }
@@ -109,7 +113,8 @@ async function handleDeleteAllPhotos() {
     selectedPhotoIds.value.clear();
     selectAllPhotos.value = false;
     currentPage.value = 1;
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Failed to delete all photos:", error);
     showError("Delete Failed", "Failed to delete all photos");
   }
@@ -629,7 +634,6 @@ async function handleOpenPhotosPicker() {
     showError("Picker Error", "Failed to open Google Photos picker");
   }
 }
-
 </script>
 
 <template>
@@ -1073,7 +1077,7 @@ async function handleOpenPhotosPicker() {
                       :class="[
                         selectedPhotoIds.has(album.id)
                           ? 'border-primary ring-2 ring-primary'
-                          : 'border-default hover:border-primary'
+                          : 'border-default hover:border-primary',
                       ]"
                       @click="togglePhotoSelection(album.id)"
                     >
@@ -1084,7 +1088,7 @@ async function handleOpenPhotosPicker() {
                           :class="[
                             selectedPhotoIds.has(album.id)
                               ? 'bg-primary border-primary'
-                              : 'bg-white/80 border-white/80 group-hover:bg-white'
+                              : 'bg-white/80 border-white/80 group-hover:bg-white',
                           ]"
                         >
                           <UIcon

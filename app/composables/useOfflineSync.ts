@@ -1,9 +1,10 @@
-import { ref, readonly, onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, readonly, ref } from "vue";
+
 import {
   getPendingMeals,
   removePendingMeal,
   updatePendingMealStatus,
-} from '~/utils/offlineDb';
+} from "~/utils/offlineDb";
 
 export function useOfflineSync() {
   const isOnline = ref(false);
@@ -13,6 +14,9 @@ export function useOfflineSync() {
   const syncError = ref<string | null>(null);
 
   let syncInterval: NodeJS.Timeout | null = null;
+  let networkListener: any = null; // Store Capacitor Network listener subscription
+  // @ts-ignore - Capacitor is added via script tag in Capacitor builds
+  const isCapacitor = typeof window !== "undefined" && "Capacitor" in window;
 
   // Load pending count
   async function updatePendingCount() {
@@ -22,7 +26,8 @@ export function useOfflineSync() {
 
   // Sync pending meals to server
   async function syncPendingMeals() {
-    if (!isOnline.value || isSyncing.value) return;
+    if (!isOnline.value || isSyncing.value)
+      return;
 
     isSyncing.value = true;
     syncError.value = null;
@@ -32,29 +37,32 @@ export function useOfflineSync() {
 
       for (const item of pending) {
         try {
-          await updatePendingMealStatus(item.id, 'syncing');
+          await updatePendingMealStatus(item.id, "syncing");
 
           await $fetch(`/api/meal-plans/${item.mealPlanId}/meals`, {
-            method: 'POST',
+            method: "POST",
             body: item.mealData,
           });
 
           await removePendingMeal(item.id);
-        } catch (error) {
+        }
+        catch (error) {
           await updatePendingMealStatus(
             item.id,
-            'error',
-            error instanceof Error ? error.message : 'Sync failed'
+            "error",
+            error instanceof Error ? error.message : "Sync failed",
           );
         }
       }
 
       lastSyncTime.value = new Date();
       await updatePendingCount();
-      await refreshNuxtData('meal-plans');
-    } catch (error) {
-      syncError.value = error instanceof Error ? error.message : 'Sync failed';
-    } finally {
+      await refreshNuxtData("meal-plans");
+    }
+    catch (error) {
+      syncError.value = error instanceof Error ? error.message : "Sync failed";
+    }
+    finally {
       isSyncing.value = false;
     }
   }
@@ -65,7 +73,7 @@ export function useOfflineSync() {
     }
   }
 
-  // Event handlers for cleanup
+  // Event handlers for cleanup (web only)
   const onOnlineHandler = () => {
     isOnline.value = true;
     triggerSync();
@@ -75,17 +83,37 @@ export function useOfflineSync() {
     isOnline.value = false;
   };
 
-  // Initialize on client
-  onMounted(() => {
-    // Set initial online status
-    isOnline.value = navigator.onLine;
+  // Capacitor Network listener
+  const onNetworkChange = (status: any) => {
+    isOnline.value = status.connected;
+    if (status.connected) {
+      triggerSync();
+    }
+  };
 
-    // Add event listeners
-    window.addEventListener('online', onOnlineHandler);
-    window.addEventListener('offline', onOfflineHandler);
+  // Initialize on client
+  onMounted(async () => {
+    if (isCapacitor) {
+      // Dynamically import Capacitor Network API
+      const { Network } = await import("@capacitor/network");
+
+      const status = await Network.getStatus();
+      isOnline.value = status.connected;
+
+      // Add event listener for network changes and store subscription
+      networkListener = await Network.addListener("networkStatusChange", onNetworkChange);
+    }
+    else {
+      // Use browser API
+      isOnline.value = navigator.onLine;
+
+      // Add event listeners
+      window.addEventListener("online", onOnlineHandler);
+      window.addEventListener("offline", onOfflineHandler);
+    }
 
     // Load pending count
-    updatePendingCount();
+    await updatePendingCount();
 
     // Auto-sync periodically when online
     syncInterval = setInterval(() => {
@@ -96,9 +124,16 @@ export function useOfflineSync() {
   });
 
   // Cleanup on unmount
-  onUnmounted(() => {
-    window.removeEventListener('online', onOnlineHandler);
-    window.removeEventListener('offline', onOfflineHandler);
+  onUnmounted(async () => {
+    if (isCapacitor && networkListener) {
+      // Remove only this component's Network listener
+      await networkListener.remove();
+    }
+    else if (!isCapacitor) {
+      // Remove browser event listeners
+      window.removeEventListener("online", onOnlineHandler);
+      window.removeEventListener("offline", onOfflineHandler);
+    }
 
     if (syncInterval) {
       clearInterval(syncInterval);

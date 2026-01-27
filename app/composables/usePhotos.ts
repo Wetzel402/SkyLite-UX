@@ -1,4 +1,4 @@
-import { consola } from 'consola';
+import { consola } from "consola";
 
 export function usePhotos() {
   const photos = ref<Array<{
@@ -61,7 +61,8 @@ export function usePhotos() {
       });
       // Re-fetch photos after refresh to get updated URLs
       await fetchPhotos();
-    } catch (e: any) {
+    }
+    catch (e: any) {
       consola.error("Failed to refresh albums:", e);
     }
   };

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useOfflineSync } from '~/composables/useOfflineSync';
+import { useOfflineSync } from "~/composables/useOfflineSync";
 
 const { isOnline, isSyncing, pendingCount, triggerSync } = useOfflineSync();
 </script>

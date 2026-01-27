@@ -9,8 +9,9 @@ import type {
   UpdateMealInput,
 } from "~/types/database";
 
-import { useOfflineSync } from "./useOfflineSync";
 import { queueMealCreation } from "~/utils/offlineDb";
+
+import { useOfflineSync } from "./useOfflineSync";
 
 export function useMealPlans() {
   const loading = ref(false);
@@ -106,7 +107,7 @@ export function useMealPlans() {
       const tempId = await queueMealCreation(
         planId,
         weekStartDate.toISOString(),
-        mealData
+        mealData,
       );
 
       const tempMeal = {
