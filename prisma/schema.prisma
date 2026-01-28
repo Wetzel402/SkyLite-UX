@@ -187,6 +187,8 @@ model CalendarEvent {
 
   users CalendarEventUser[]
 
+  @@index([start])
+  @@index([end])
   @@map("calendar_events")
 }
 
