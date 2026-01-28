@@ -1,7 +1,7 @@
 {
   "name": "skylite-ux",
   "type": "module",
-  "version": "2025.10.1",
+  "version": "2026.1.0",
   "private": true,
   "scripts": {
     "dev": "nuxt dev",
@@ -10,6 +10,7 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.json --composite false",
     "lint": "eslint . --fix",
     "format": "prettier --write src/"
+    "docs": "cd docs && bundle exec jekyll serve --host 0.0.0.0"
   },
   "dependencies": {
     "@eslint/plugin-kit": "^0.3.4",
