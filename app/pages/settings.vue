@@ -1156,7 +1156,6 @@ async function updateHouseholdColor(type: "HOLIDAY" | "FAMILY", color: string) {
     <SettingsIntegrationDialog
       :integration="selectedIntegration"
       :is-open="isIntegrationDialogOpen"
-      :active-type="activeIntegrationTab"
       :existing-integrations="integrations as Integration[]"
       :connection-test-result="connectionTestResult"
       @close="() => { isIntegrationDialogOpen = false; selectedIntegration = null; }"
