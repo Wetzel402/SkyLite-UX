@@ -1,0 +1,42 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+
+> skylite-ux@2025.10.1 lint
+> eslint . --fix
+
+
+/app/CLAUDE.md
+  1:1  error  Filename is not in camel case. Rename it to `claude.md`  unicorn/filename-case
+
+/app/app/pages/settings.vue
+   89:7   error  'hasParentPin' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  100:19  error  'usersData' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+  585:39  error  This line has 2 statements. Maximum allowed is 1                                         style/max-statements-per-line
+
+/app/prompts/coding_prompt.md
+  1:1  error  Filename is not in camel case. Rename it to `codingPrompt.md`  unicorn/filename-case
+
+/app/prompts/coding_prompt_yolo.md
+  1:1  error  Filename is not in camel case. Rename it to `codingPromptYolo.md`  unicorn/filename-case
+
+/app/prompts/initializer_prompt.md
+  1:1  error  Filename is not in camel case. Rename it to `initializerPrompt.md`  unicorn/filename-case
+
+/app/scripts/create-test-events.js
+  1:1  error  Filename is not in camel case. Rename it to `createTestEvents.js`  unicorn/filename-case
+
+/app/scripts/delete-test-events.js
+  1:1  error  Filename is not in camel case. Rename it to `deleteTestEvents.js`  unicorn/filename-case
+
+/app/scripts/test-security-utils.ts
+   1:1  error    Filename is not in camel case. Rename it to `testSecurityUtils.ts`                 unicorn/filename-case
+   4:3  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  11:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  42:3  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+/app/server/utils/security.ts
+  16:65  error  Unexpected use of the global variable 'Buffer'. Use 'require("buffer").Buffer' instead  node/prefer-global/buffer
+  41:21  error  Unexpected use of the global variable 'Buffer'. Use 'require("buffer").Buffer' instead  node/prefer-global/buffer
+  44:67  error  Unexpected use of the global variable 'Buffer'. Use 'require("buffer").Buffer' instead  node/prefer-global/buffer
+
+✖ 16 problems (13 errors, 3 warnings)

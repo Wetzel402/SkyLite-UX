@@ -86,7 +86,6 @@ const connectionTestResult = ref<ConnectionTestResult>(null);
 // PIN protection for integrations section
 const isPinDialogOpen = ref(false);
 const isIntegrationsSectionUnlocked = ref(false);
-const hasParentPin = ref(false);
 
 // Check if parent PIN is set on mount
 const householdSettings = ref<any>(null);
@@ -97,7 +96,6 @@ onMounted(async () => {
     const settings = await $fetch<any>("/api/household/settings");
     householdSettings.value = settings;
     // Check if there are any PARENT users
-    const { data: usersData } = useNuxtData("users"); // Use cached data or fetch?
     // Actually best to rely on fetching fresh list or assuming `users` composable is source of truth.
     // The `useUsers` composable is already used in script.
 
@@ -582,7 +580,10 @@ const availableCalendars = computed(() => {
         try {
           settings = JSON.parse(settings);
         }
-        catch (e) { console.error(e); continue; }
+        catch (e) {
+          console.error(e);
+          continue;
+        }
       }
 
       if (!settings || typeof settings !== "object")

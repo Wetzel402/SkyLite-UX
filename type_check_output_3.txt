@@ -1,0 +1,17 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+
+> skylite-ux@2025.10.1 type-check
+> vue-tsc --noEmit -p tsconfig.json --composite false
+
+app/components/settings/settingsIntegrationDialog.vue(511,14): error TS2322: Type '(calendars: { id: string; summary: string; color?: string | undefined; }[]) => void' is not assignable to type '(calendarIds: string[]) => any'.
+  Types of parameters 'calendars' and 'calendarIds' are incompatible.
+    Type 'string[]' is not assignable to type '{ id: string; summary: string; color?: string | undefined; }[]'.
+      Type 'string' is not assignable to type '{ id: string; summary: string; color?: string | undefined; }'.
+app/components/settings/settingsIntegrationDialog.vue(618,38): error TS2339: Property 'accessToken' does not exist on type 'Integration'.
+app/components/settings/settingsIntegrationDialog.vue(619,39): error TS2339: Property 'refreshToken' does not exist on type 'Integration'.
+app/components/settings/settingsIntegrationDialog.vue(620,38): error TS2339: Property 'tokenExpiry' does not exist on type 'Integration'.
+app/components/settings/settingsIntegrationDialog.vue(620,71): error TS2339: Property 'tokenExpiry' does not exist on type 'Integration'.
+app/pages/settings.vue(578,5): error TS2589: Type instantiation is excessively deep and possibly infinite.
+app/types/integrations.ts(91,104): error TS2554: Expected 3 arguments, but got 4.
+server/api/integrations/immich/albums.get.ts(62,31): error TS2339: Property 'url' does not exist on type '{ name: string; id: string; createdAt: Date; updatedAt: Date; type: string; service: string; apiKey: string | null; baseUrl: string | null; icon: string | null; enabled: boolean; ... 4 more ...; tokenType: string | null; }'.

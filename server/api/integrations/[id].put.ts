@@ -91,6 +91,10 @@ export default defineEventHandler(async (event) => {
         tokenType: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiry: null,
+        tokenType: null,
       };
 
       const integrationService = await createIntegrationService(tempIntegration);
