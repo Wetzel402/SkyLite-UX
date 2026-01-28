@@ -30,6 +30,23 @@ const computedEventHeight = computed(() => getEventHeight("month", props.eventHe
 
 const eventGap = 4;
 
+const eventsByDay = computed(() => {
+  const map = new Map<string, CalendarEvent[]>();
+  for (const week of props.weeks) {
+    for (const day of week) {
+      const key = format(day, "yyyy-MM-dd");
+      const events = getAllEventsForDay(props.events, day);
+      map.set(key, sortEvents(events));
+    }
+  }
+  return map;
+});
+
+function getEventsForDay(day: Date): CalendarEvent[] {
+  const key = format(day, "yyyy-MM-dd");
+  return eventsByDay.value.get(key) || [];
+}
+
 onMounted(() => {
   scrollToDate(getStableDate(), "month");
 });
@@ -89,7 +106,7 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
             :style="{ height: `${(computedEventHeight + eventGap) * 3}px` }"
           >
             <div
-              v-for="event in sortEvents(getAllEventsForDay(events, day))"
+              v-for="event in getEventsForDay(day)"
               v-show="!isPlaceholderEvent(event)"
               :key="`${event.id}-${day.toISOString().slice(0, 10)}`"
               class="rounded"
@@ -103,7 +120,7 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
               />
             </div>
 
-            <div v-show="getAllEventsForDay(events, day).length === 0" class="flex flex-col items-center justify-center gap-1 text-muted flex-1">
+            <div v-show="getEventsForDay(day).length === 0" class="flex flex-col items-center justify-center gap-1 text-muted flex-1">
               <UIcon name="i-lucide-calendar-off" class="w-6 h-6" />
               <span class="text-md text-muted">
                 {{ isToday(day) ? 'No events today' : 'No events' }}
@@ -135,7 +152,7 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
                     </div>
                     <div class="space-y-1">
                       <div
-                        v-for="event in sortEvents(getAllEventsForDay(events, day))"
+                        v-for="event in getEventsForDay(day)"
                         v-show="!isPlaceholderEvent(event)"
                         :key="event.id"
                       >
