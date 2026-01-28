@@ -3,8 +3,10 @@ import type { ICalSettings, IntegrationConfig } from "~/types/integrations";
 // This file contains all integration configurations that are used by both client and server
 import type { DialogField } from "~/types/ui";
 
+import type { HomeAssistantWeatherSettings } from "./home-assistant/homeAssistantWeather";
+
 import { createGoogleCalendarService } from "./google-calendar/googleCalendar";
-import { createHomeAssistantWeatherService, type HomeAssistantWeatherSettings } from "./home-assistant/homeAssistantWeather";
+import { createHomeAssistantWeatherService } from "./home-assistant/homeAssistantWeather";
 import { createICalService } from "./iCal/iCalendar";
 import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
 import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
@@ -320,12 +322,12 @@ const serviceFactoryMap = {
     const useUserColors = settings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
-  "calendar:google-calendar": (id: string) => createGoogleCalendarService(id),
+  "calendar:google-calendar": (id: string, ..._args: any[]) => createGoogleCalendarService(id),
   "weather:home-assistant": (id: string, apiKey: string, baseUrl: string, settings?: HomeAssistantWeatherSettings) => {
     return createHomeAssistantWeatherService(id, apiKey, baseUrl, settings);
   },
-  "shopping:mealie": createMealieService,
-  "shopping:tandoor": createTandoorService,
+  "shopping:mealie": (id: string, apiKey: string, baseUrl: string, ..._args: any[]) => createMealieService(id, apiKey, baseUrl),
+  "shopping:tandoor": (id: string, apiKey: string, baseUrl: string, ..._args: any[]) => createTandoorService(id, apiKey, baseUrl),
 } as const;
 
 const fieldFilters = {

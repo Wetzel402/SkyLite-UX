@@ -1,0 +1,11 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+
+> skylite-ux@2025.10.1 type-check
+> vue-tsc --noEmit -p tsconfig.json --composite false
+
+app/components/settings/settingsIntegrationDialog.vue(511,14): error TS2322: Type '(calendars: { id: string; summary: string; color?: string | undefined; }[]) => void' is not assignable to type '(calendarIds: string[]) => any'.
+  Types of parameters 'calendars' and 'calendarIds' are incompatible.
+    Type 'string[]' is not assignable to type '{ id: string; summary: string; color?: string | undefined; }[]'.
+      Type 'string' is not assignable to type '{ id: string; summary: string; color?: string | undefined; }'.
+app/pages/settings.vue(576,5): error TS2589: Type instantiation is excessively deep and possibly infinite.

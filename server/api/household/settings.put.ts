@@ -48,6 +48,17 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Hash PIN if provided
+  let hashedPin: string | null | undefined;
+  if (body.parentPin !== undefined) {
+    if (body.parentPin === null) {
+      hashedPin = null;
+    }
+    else {
+      hashedPin = await hashPin(body.parentPin);
+    }
+  }
+
   // Update settings
   const updatedSettings = await prisma.householdSettings.update({
     where: { id: settings.id },
@@ -55,7 +66,7 @@ export default defineEventHandler(async (event) => {
       ...(body.familyName !== undefined && { familyName: body.familyName.trim() }),
       ...(body.choreCompletionMode !== undefined && { choreCompletionMode: body.choreCompletionMode }),
       ...(body.rewardApprovalThreshold !== undefined && { rewardApprovalThreshold: body.rewardApprovalThreshold }),
-      ...(body.parentPin !== undefined && { parentPin: body.parentPin }),
+      ...(hashedPin !== undefined && { parentPin: hashedPin }),
     },
   });
 

@@ -4,7 +4,8 @@ npm warn Unknown project config "strict-peer-dependencies". This will stop worki
 > skylite-ux@2025.10.1 lint
 > eslint . --fix
 
-[?25l│
-◆  Package is required for this config: eslint-plugin-format. Do you want to install them?
-│  ● Yes / ○ No
-└
+
+/app/CLAUDE.md
+  1:1  error  Filename is not in camel case. Rename it to `claude.md`  unicorn/filename-case
+
+✖ 1 problem (1 error, 0 warnings)

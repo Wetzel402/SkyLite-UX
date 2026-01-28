@@ -4,7 +4,7 @@ export type ImmichSettings = {
   selectedAlbums?: string[];
 };
 
-export interface ImmichAlbum {
+export type ImmichAlbum = {
   id: string;
   title: string;
   description: string;
@@ -13,7 +13,7 @@ export interface ImmichAlbum {
   shared: boolean;
   createdAt: string;
   updatedAt: string;
-}
+};
 
 /**
  * Create an Immich photo service instance

@@ -118,6 +118,10 @@ export type Integration = {
   settings: JsonObject | null;
   createdAt: Date;
   updatedAt: Date;
+  accessToken: string | null;
+  refreshToken: string | null;
+  tokenExpiry: Date | null;
+  tokenType: string | null;
 };
 
 export type CreateIntegrationInput = Omit<Integration, "id" | "createdAt" | "updatedAt">;

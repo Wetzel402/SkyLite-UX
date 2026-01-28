@@ -2,6 +2,7 @@
 import { consola } from "consola";
 
 import type { CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
+import type { IntegrationStatus } from "~/types/integrations";
 import type { ConnectionTestResult } from "~/types/ui";
 
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
@@ -10,7 +11,7 @@ import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
 import { useAlertToast } from "~/composables/useAlertToast";
 import { integrationServices } from "~/plugins/02.appInit";
 import { getSlogan } from "~/types/global";
-import { createIntegrationService, integrationRegistry, type IntegrationStatus } from "~/types/integrations";
+import { createIntegrationService, integrationRegistry } from "~/types/integrations";
 
 const { showError, showSuccess } = useAlertToast();
 
@@ -85,7 +86,6 @@ const connectionTestResult = ref<ConnectionTestResult>(null);
 // PIN protection for integrations section
 const isPinDialogOpen = ref(false);
 const isIntegrationsSectionUnlocked = ref(false);
-const hasParentPin = ref(false);
 
 // Check if parent PIN is set on mount
 const householdSettings = ref<any>(null);
@@ -96,10 +96,9 @@ onMounted(async () => {
     const settings = await $fetch<any>("/api/household/settings");
     householdSettings.value = settings;
     // Check if there are any PARENT users
-    const { data: usersData } = useNuxtData("users"); // Use cached data or fetch?
     // Actually best to rely on fetching fresh list or assuming `users` composable is source of truth.
     // The `useUsers` composable is already used in script.
-    
+
     // We'll rely on the `users` computed property from `useUsers`.
     // Wait for users to load? `useUsers` fetches on mount usually if not called.
     // Let's just set unlocked to false by default.
@@ -119,11 +118,12 @@ onMounted(async () => {
 // If no users exist, unlock.
 watch(users, (newUsers) => {
   if (newUsers.length === 0) {
-     isIntegrationsSectionUnlocked.value = true;
-  } else {
-     // If locked and we have users, ensure it stays locked until verified.
-     // But if we just created the first user, maybe we should auto-unlock?
-     // For safety, default to locked if users exist.
+    isIntegrationsSectionUnlocked.value = true;
+  }
+  else {
+    // If locked and we have users, ensure it stays locked until verified.
+    // But if we just created the first user, maybe we should auto-unlock?
+    // For safety, default to locked if users exist.
   }
 }, { immediate: true });
 
@@ -216,12 +216,12 @@ async function handleUserSave(userData: CreateUserInput) {
     selectedUser.value = null;
 
     // Trigger explicit sync for calendar integrations to update user-event mapping
-    const calendarIntegrations = (integrations.value as Integration[] || []).filter(i => i.type === 'calendar' && i.enabled);
+    const calendarIntegrations = (integrations.value as Integration[] || []).filter(i => i.type === "calendar" && i.enabled);
     for (const integration of calendarIntegrations) {
-      if (integration.service === 'google-calendar') {
+      if (integration.service === "google-calendar") {
         consola.debug(`Settings: Triggering sync for integration ${integration.id} to update user colors`);
-        triggerImmediateSync('calendar', integration.id).catch(err => {
-           consola.warn(`Settings: Failed to trigger sync for ${integration.id}:`, err);
+        triggerImmediateSync("calendar", integration.id).catch((err) => {
+          consola.warn(`Settings: Failed to trigger sync for ${integration.id}:`, err);
         });
       }
     }
@@ -568,24 +568,30 @@ function getIntegrationIconUrl(integration: Integration) {
 // Logic for Household Calendars
 const availableCalendars = computed(() => {
   const calendars: { label: string; value: string; color?: string }[] = [];
-  
-  if (!integrations.value) return calendars;
+
+  if (!integrations.value)
+    return calendars;
 
   for (const integration of integrations.value) {
     if (integration.service === "google-calendar" && integration.enabled && integration.settings) {
       // Robustly handle settings
       let settings: unknown = integration.settings;
-      if (typeof settings === 'string') {
+      if (typeof settings === "string") {
         try {
           settings = JSON.parse(settings);
-        } catch (e) { console.error(e); continue; }
+        }
+        catch (e) {
+          console.error(e);
+          continue;
+        }
       }
 
-      if (!settings || typeof settings !== 'object') continue;
+      if (!settings || typeof settings !== "object")
+        continue;
 
       const metadata = (settings as any).calendarMetadata || {};
-      const selectedIds = Array.isArray((settings as any).selectedCalendars) 
-        ? (settings as any).selectedCalendars 
+      const selectedIds = Array.isArray((settings as any).selectedCalendars)
+        ? (settings as any).selectedCalendars
         : [];
 
       for (const calId of selectedIds) {
@@ -602,10 +608,12 @@ const availableCalendars = computed(() => {
 });
 
 function getLinkedCalendarsByType(type: "HOLIDAY" | "FAMILY"): string[] {
-  if (!householdSettings.value?.linkedCalendars) return [];
-  
+  if (!householdSettings.value?.linkedCalendars)
+    return [];
+
   // Clean up old string format if any (backward compatibility safety)
-  if (!Array.isArray(householdSettings.value.linkedCalendars)) return [];
+  if (!Array.isArray(householdSettings.value.linkedCalendars))
+    return [];
 
   return householdSettings.value.linkedCalendars
     .filter((l: any) => l.type === type)
@@ -613,7 +621,8 @@ function getLinkedCalendarsByType(type: "HOLIDAY" | "FAMILY"): string[] {
 }
 
 async function toggleHouseholdCalendar(type: "HOLIDAY" | "FAMILY", value: string, checked: boolean) {
-  if (!householdSettings.value) return;
+  if (!householdSettings.value)
+    return;
 
   const [integrationId, calendarId] = value.split(":");
   let currentLinks = Array.isArray(householdSettings.value.linkedCalendars) ? [...householdSettings.value.linkedCalendars] : [];
@@ -624,7 +633,8 @@ async function toggleHouseholdCalendar(type: "HOLIDAY" | "FAMILY", value: string
     if (!exists) {
       currentLinks.push({ type, integrationId, calendarId });
     }
-  } else {
+  }
+  else {
     currentLinks = currentLinks.filter((l: any) => !(l.type === type && l.integrationId === integrationId && l.calendarId === calendarId));
   }
 
@@ -635,15 +645,15 @@ async function toggleHouseholdCalendar(type: "HOLIDAY" | "FAMILY", value: string
   try {
     await $fetch("/api/household/settings", {
       method: "PUT",
-      body: { linkedCalendars: currentLinks }
+      body: { linkedCalendars: currentLinks },
     });
-    
+
     // Trigger Sync to update event tags
     // Retrieve ALL engaged calendar integrations to be safe
-    const calendarIntegrations = (integrations.value as Integration[]).filter(i => i.type === 'calendar' && i.enabled);
-    calendarIntegrations.forEach(i => triggerImmediateSync('calendar', i.id));
-
-  } catch (err) {
+    const calendarIntegrations = (integrations.value as Integration[]).filter(i => i.type === "calendar" && i.enabled);
+    calendarIntegrations.forEach(i => triggerImmediateSync("calendar", i.id));
+  }
+  catch (err) {
     console.error("Failed to update household calendars", err);
     showError("Failed to Save", "Could not update calendar settings.");
   }
@@ -653,10 +663,13 @@ const linkedHolidayCalendars = computed(() => getLinkedCalendarsByType("HOLIDAY"
 const linkedFamilyCalendars = computed(() => getLinkedCalendarsByType("FAMILY"));
 
 async function updateHouseholdColor(type: "HOLIDAY" | "FAMILY", color: string) {
-  if (!householdSettings.value) return;
+  if (!householdSettings.value)
+    return;
 
-  if (type === "HOLIDAY") householdSettings.value.holidayColor = color;
-  if (type === "FAMILY") householdSettings.value.familyColor = color;
+  if (type === "HOLIDAY")
+    householdSettings.value.holidayColor = color;
+  if (type === "FAMILY")
+    householdSettings.value.familyColor = color;
 
   try {
     await $fetch("/api/household/settings", {
@@ -967,7 +980,9 @@ async function updateHouseholdColor(type: "HOLIDAY" | "FAMILY", color: string) {
               <div class="flex items-center justify-between">
                 <div>
                   <label class="block text-sm font-medium text-highlighted">Holiday Calendars</label>
-                  <p class="text-xs text-muted mb-2">Events from these calendars will be tagged as Holidays.</p>
+                  <p class="text-xs text-muted mb-2">
+                    Events from these calendars will be tagged as Holidays.
+                  </p>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-xs text-muted">Color</span>
@@ -981,15 +996,23 @@ async function updateHouseholdColor(type: "HOLIDAY" | "FAMILY", color: string) {
                 </div>
               </div>
               <div class="space-y-1 max-h-48 overflow-y-auto border border-default rounded-md p-2">
-                 <div v-for="cal in availableCalendars" :key="`holiday-${cal.value}`" class="flex items-center gap-2">
-                    <UCheckbox 
-                      :model-value="linkedHolidayCalendars.includes(cal.value)"
-                      @update:model-value="(checked: any) => toggleHouseholdCalendar('HOLIDAY', cal.value, checked)"
-                      :label="cal.label"
-                      color="primary"
-                    />
-                    <span v-if="cal.color" :style="{ backgroundColor: cal.color }" class="size-2 rounded-full shrink-0" />
-                 </div>
+                <div
+                  v-for="cal in availableCalendars"
+                  :key="`holiday-${cal.value}`"
+                  class="flex items-center gap-2"
+                >
+                  <UCheckbox
+                    :model-value="linkedHolidayCalendars.includes(cal.value)"
+                    :label="cal.label"
+                    color="primary"
+                    @update:model-value="(checked: any) => toggleHouseholdCalendar('HOLIDAY', cal.value, checked)"
+                  />
+                  <span
+                    v-if="cal.color"
+                    :style="{ backgroundColor: cal.color }"
+                    class="size-2 rounded-full shrink-0"
+                  />
+                </div>
               </div>
             </div>
 
@@ -998,7 +1021,9 @@ async function updateHouseholdColor(type: "HOLIDAY" | "FAMILY", color: string) {
               <div class="flex items-center justify-between">
                 <div>
                   <label class="block text-sm font-medium text-highlighted">Family Calendars</label>
-                  <p class="text-xs text-muted mb-2">Events from these calendars will be tagged as Family Events.</p>
+                  <p class="text-xs text-muted mb-2">
+                    Events from these calendars will be tagged as Family Events.
+                  </p>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-xs text-muted">Color</span>
@@ -1012,15 +1037,23 @@ async function updateHouseholdColor(type: "HOLIDAY" | "FAMILY", color: string) {
                 </div>
               </div>
               <div class="space-y-1 max-h-48 overflow-y-auto border border-default rounded-md p-2">
-                 <div v-for="cal in availableCalendars" :key="`family-${cal.value}`" class="flex items-center gap-2">
-                    <UCheckbox 
-                      :model-value="linkedFamilyCalendars.includes(cal.value)"
-                      @update:model-value="(checked: any) => toggleHouseholdCalendar('FAMILY', cal.value, checked)"
-                      :label="cal.label"
-                      color="primary"
-                    />
-                    <span v-if="cal.color" :style="{ backgroundColor: cal.color }" class="size-2 rounded-full shrink-0" />
-                 </div>
+                <div
+                  v-for="cal in availableCalendars"
+                  :key="`family-${cal.value}`"
+                  class="flex items-center gap-2"
+                >
+                  <UCheckbox
+                    :model-value="linkedFamilyCalendars.includes(cal.value)"
+                    :label="cal.label"
+                    color="primary"
+                    @update:model-value="(checked: any) => toggleHouseholdCalendar('FAMILY', cal.value, checked)"
+                  />
+                  <span
+                    v-if="cal.color"
+                    :style="{ backgroundColor: cal.color }"
+                    class="size-2 rounded-full shrink-0"
+                  />
+                </div>
               </div>
             </div>
           </div>

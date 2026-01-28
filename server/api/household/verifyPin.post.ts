@@ -23,8 +23,25 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Simple comparison - in production, this should use proper hashing
-  const isValid = settings.parentPin === body.pin;
+  // Verify PIN (supports both hashed and legacy plaintext)
+  let isValid = await verifyPin(body.pin, settings.parentPin);
+
+  // Migration: If verification failed, check if it's a legacy plaintext PIN
+  if (!isValid && settings.parentPin === body.pin) {
+    isValid = true;
+
+    // Upgrade to hashed PIN
+    try {
+      const hashed = await hashPin(body.pin);
+      await prisma.householdSettings.update({
+        where: { id: settings.id },
+        data: { parentPin: hashed },
+      });
+    }
+    catch (error) {
+      console.error("Failed to migrate PIN:", error);
+    }
+  }
 
   return { valid: isValid };
 });
