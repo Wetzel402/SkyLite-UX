@@ -61,8 +61,6 @@ function getWeatherCondition(code: number, isDay: boolean): WeatherCondition {
   return condition;
 }
 
-import { defineCachedEventHandler } from "#imports";
-
 export default defineCachedEventHandler(async (event) => {
   const query = getQuery(event);
 

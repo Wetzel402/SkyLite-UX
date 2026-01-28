@@ -37,6 +37,9 @@ export default withNuxt(antfu({
       case: "camelCase",
       ignore: [
         "README.md",
+        "CLAUDE.md",
+        "LICENSE.md",
+        "AGENTS.md",
         /docker-compose\.yml$/i,
         /-docker-compose\.yml$/i,
         /clear-completed\.post\.ts$/i,
