@@ -90,25 +90,44 @@ export function useMealPlans() {
   };
 
   const addMealToPlan = async (planId: string, mealData: CreateMealInput) => {
+    consola.info("[Use Meal Plans] addMealToPlan called", {
+      planId,
+      mealData,
+      isOnline: isOnline.value,
+    });
+
     // If offline, queue the operation
     if (!isOnline.value) {
+      consola.info("[Use Meal Plans] Device is offline, queueing meal creation");
+
       const plan = mealPlans.value?.find(p => p.id === planId);
 
       if (!plan) {
+        consola.error("[Use Meal Plans] Meal plan not found in local data", { planId });
         error.value = "Meal plan not found";
         throw new Error("Meal plan not found");
       }
+
+      consola.info("[Use Meal Plans] Found meal plan", { plan });
 
       // Ensure weekStart is a Date object before calling toISOString
       const weekStartDate = plan.weekStart instanceof Date
         ? plan.weekStart
         : new Date(plan.weekStart);
 
+      consola.info("[Use Meal Plans] Queueing meal creation", {
+        planId,
+        weekStart: weekStartDate.toISOString(),
+        mealData,
+      });
+
       const tempId = await queueMealCreation(
         planId,
         weekStartDate.toISOString(),
         mealData,
       );
+
+      consola.info("[Use Meal Plans] Meal queued with tempId:", tempId);
 
       const tempMeal = {
         id: tempId,
@@ -120,21 +139,31 @@ export function useMealPlans() {
         _isPending: true,
       } as Meal & { _isPending: boolean };
 
+      consola.info("[Use Meal Plans] Created temp meal object", tempMeal);
+
       // Optimistically update local data
       if (plan.meals) {
         plan.meals.push(tempMeal as any);
+        consola.info("[Use Meal Plans] Added temp meal to plan.meals, new count:", plan.meals.length);
+      }
+      else {
+        consola.warn("[Use Meal Plans] plan.meals is undefined, cannot add temp meal");
       }
 
       await updatePendingCount();
+      consola.info("[Use Meal Plans] Updated pending count after queueing");
       return tempMeal;
     }
 
     // Online - normal flow
+    consola.info("[Use Meal Plans] Device is online, creating meal via API");
     try {
       const newMeal = await $fetch<Meal>(`/api/meal-plans/${planId}/meals`, {
         method: "POST",
         body: mealData,
       });
+
+      consola.info("[Use Meal Plans] Meal created successfully via API", newMeal);
 
       await refreshNuxtData("meal-plans");
       return newMeal;

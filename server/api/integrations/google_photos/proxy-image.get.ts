@@ -143,13 +143,36 @@ export default defineEventHandler(async (event) => {
     );
 
     // Fetch image (handles token refresh automatically)
-    const { buffer, contentType } = await service.fetchImage(imageUrl);
+    try {
+      const { buffer, contentType } = await service.fetchImage(imageUrl);
 
-    // Set response headers
-    setHeader(event, "Content-Type", contentType);
-    setHeader(event, "Cache-Control", "public, max-age=86400"); // Cache for 1 day
+      // Set response headers
+      setHeader(event, "Content-Type", contentType);
+      setHeader(event, "Cache-Control", "public, max-age=86400"); // Cache for 1 day
 
-    return Buffer.from(buffer);
+      return Buffer.from(buffer);
+    }
+    catch (fetchError: any) {
+      // Check if it's a token/auth error
+      if (fetchError.message?.includes("refresh") || fetchError.message?.includes("token") || fetchError.message?.includes("401") || fetchError.message?.includes("403")) {
+        consola.error("Google Photos auth error, refresh token may be invalid:", fetchError);
+        throw createError({
+          statusCode: 401,
+          message: "Google Photos authorization expired. Please re-authorize the integration in settings.",
+        });
+      }
+
+      // Check if it's a URL expiration error
+      if (fetchError.message?.includes("404") || fetchError.message?.includes("410")) {
+        consola.warn("Google Photos URL expired for photo:", photoId);
+        throw createError({
+          statusCode: 410,
+          message: "Photo URL expired. Album URLs need to be refreshed.",
+        });
+      }
+
+      throw fetchError;
+    }
   }
   catch (error: any) {
     if (error.statusCode) {

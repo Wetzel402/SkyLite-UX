@@ -49,10 +49,31 @@ export default defineEventHandler(async () => {
 
   try {
     const tasks = await service.getAllTasks();
+    consola.info(`Google Tasks: Successfully fetched ${tasks.length} tasks`);
     return { tasks };
   }
   catch (error: any) {
     consola.error("Failed to fetch Google Tasks:", error);
-    return { tasks: [] };
+
+    // Check if it's an authorization/token error
+    const errorMessage = error.message || String(error);
+    const isAuthError = errorMessage.includes("invalid_grant")
+      || errorMessage.includes("unauthorized")
+      || errorMessage.includes("401")
+      || errorMessage.includes("403")
+      || error.code === 401
+      || error.code === 403;
+
+    if (isAuthError) {
+      consola.error("Google Tasks auth error - refresh token may be invalid");
+      throw createError({
+        statusCode: 401,
+        message: "Google Tasks authorization expired. Please re-authorize the integration in settings.",
+      });
+    }
+
+    // For other errors, log but return empty array to not break the UI
+    consola.warn("Returning empty tasks array due to error");
+    return { tasks: [], error: errorMessage };
   }
 });

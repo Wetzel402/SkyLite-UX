@@ -56,14 +56,27 @@ export function usePhotos() {
   // Refresh album URLs from Google Photos to prevent expiration
   const refreshAlbums = async () => {
     try {
+      consola.info("[Photos] Refreshing album URLs...");
       await $fetch("/api/selected-albums/refresh", {
         method: "POST",
       });
+      consola.success("[Photos] Album URLs refreshed successfully");
       // Re-fetch photos after refresh to get updated URLs
       await fetchPhotos();
     }
     catch (e: any) {
-      consola.error("Failed to refresh albums:", e);
+      consola.error("[Photos] Failed to refresh albums:", e);
+
+      // Check if it's an authorization error
+      if (e.statusCode === 401 || e.statusCode === 403) {
+        error.value = "Google Photos authorization expired. Please re-authorize in settings.";
+      }
+      else {
+        error.value = `Failed to refresh album URLs: ${e.message || e}`;
+      }
+
+      // Don't throw - allow the app to continue showing photos even if refresh fails
+      // Existing photos may still work for some time
     }
   };
 

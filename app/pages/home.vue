@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { consola } from "consola";
+
 import type { CalendarEvent } from "~/types/calendar";
 
 const { photos, fetchPhotos, getPhotoUrl, refreshAlbums } = usePhotos();
@@ -27,6 +29,9 @@ const todaysMenu = ref<Array<{ id: string; name: string; mealType: string; dayLa
 const intervals = ref<NodeJS.Timeout[]>([]);
 
 const currentPhoto = computed(() => photos.value[currentPhotoIndex.value]);
+const imageLoadError = ref(false);
+const imageErrorCount = ref(0);
+const lastRefreshAttempt = ref<Date | null>(null);
 
 const kenBurnsStyle = computed(() => {
   if (!homeSettings.value?.kenBurnsIntensity)
@@ -147,6 +152,41 @@ onUnmounted(() => {
   intervals.value.forEach(interval => clearInterval(interval));
 });
 
+// Handle image load errors - attempt refresh if multiple images fail
+async function handleImageError() {
+  consola.error("[Home] Photo failed to load:", currentPhoto.value?.url);
+  imageLoadError.value = true;
+  imageErrorCount.value++;
+
+  // If multiple consecutive errors and we haven't refreshed recently
+  const timeSinceLastRefresh = lastRefreshAttempt.value
+    ? Date.now() - lastRefreshAttempt.value.getTime()
+    : Infinity;
+
+  if (imageErrorCount.value >= 3 && timeSinceLastRefresh > 60000) {
+    consola.warn("[Home] Multiple photo load failures, attempting to refresh album URLs...");
+    lastRefreshAttempt.value = new Date();
+    imageErrorCount.value = 0; // Reset counter
+
+    try {
+      await refreshAlbums();
+      consola.success("[Home] Album URLs refreshed after image errors");
+    }
+    catch (e) {
+      consola.error("[Home] Failed to refresh albums after image errors:", e);
+    }
+  }
+}
+
+// Reset error count on successful image load
+function handleImageLoad() {
+  if (imageLoadError.value) {
+    consola.info("[Home] Photo loaded successfully after previous errors");
+    imageLoadError.value = false;
+  }
+  imageErrorCount.value = 0; // Reset error counter on successful load
+}
+
 function startSlideshow() {
   if (!homeSettings.value?.photosEnabled || photos.value.length === 0) {
     return;
@@ -218,7 +258,7 @@ async function fetchWeather() {
     };
   }
   catch (error) {
-    console.error("Failed to fetch weather:", error);
+    consola.error("Failed to fetch weather:", error);
   }
 }
 
@@ -240,7 +280,7 @@ async function fetchUpcomingEvents() {
       $fetch<{ events: CalendarEvent[] }>(
         `/api/integrations/google_calendar/events?integrationId=${integration.id}`,
       ).catch((error) => {
-        console.error(`Failed to fetch events from integration ${integration.id}:`, error);
+        consola.error(`Failed to fetch events from integration ${integration.id}:`, error);
         return { events: [] };
       }),
     );
@@ -259,7 +299,7 @@ async function fetchUpcomingEvents() {
     upcomingEvents.value = upcoming;
   }
   catch (error) {
-    console.error("Failed to fetch events:", error);
+    consola.error("Failed to fetch events:", error);
     upcomingEvents.value = [];
   }
 }
@@ -274,11 +314,26 @@ async function fetchTodaysTasks() {
     // Fetch local todos and Google Tasks in parallel
     const [todosResult, googleTasksResult] = await Promise.allSettled([
       $fetch<any[]>("/api/todos"),
-      $fetch<{ tasks: any[] }>("/api/integrations/google_tasks/all-tasks"),
+      $fetch<{ tasks: any[]; error?: string }>("/api/integrations/google_tasks/all-tasks"),
     ]);
 
     const todos = todosResult.status === "fulfilled" ? todosResult.value : [];
-    const googleTasks = googleTasksResult.status === "fulfilled" ? (googleTasksResult.value.tasks || []) : [];
+
+    let googleTasks: any[] = [];
+    if (googleTasksResult.status === "fulfilled") {
+      googleTasks = googleTasksResult.value.tasks || [];
+      if (googleTasksResult.value.error) {
+        consola.warn("[Home] Google Tasks returned with error:", googleTasksResult.value.error);
+      }
+      consola.info(`[Home] Fetched ${googleTasks.length} Google Tasks`);
+    }
+    else {
+      consola.error("[Home] Failed to fetch Google Tasks:", googleTasksResult.reason);
+      // Check if it's an auth error
+      if (googleTasksResult.reason?.statusCode === 401 || googleTasksResult.reason?.statusCode === 403) {
+        consola.error("[Home] Google Tasks authorization expired. User needs to re-authorize.");
+      }
+    }
 
     // Merge local todos and Google Tasks
     const allTodos = [
@@ -316,7 +371,7 @@ async function fetchTodaysTasks() {
     todaysTasks.value = filtered;
   }
   catch (error) {
-    console.error("Failed to fetch tasks:", error);
+    consola.error("Failed to fetch tasks:", error);
   }
 }
 
@@ -372,7 +427,7 @@ async function fetchTodaysMenu() {
     ];
   }
   catch (error) {
-    console.error("Failed to fetch today's menu:", error);
+    consola.error("Failed to fetch today's menu:", error);
   }
 }
 
@@ -448,6 +503,8 @@ function formatEventTime(dateString: string | Date) {
         class="w-full h-full object-cover transition-all duration-1000"
         :class="{ 'ken-burns': homeSettings?.kenBurnsIntensity && homeSettings.kenBurnsIntensity > 0 }"
         :style="kenBurnsStyle"
+        @load="handleImageLoad"
+        @error="handleImageError"
       >
     </div>
 

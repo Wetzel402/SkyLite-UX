@@ -57,23 +57,31 @@ const isCurrentWeek = computed(() => {
 // Load meal plan for current week
 async function loadWeekMealPlan() {
   loading.value = true;
+  consola.info("[Meal Planner] Loading meal plan for week:", currentWeekStart.value);
   try {
     const plan = await getMealPlanByWeek(currentWeekStart.value);
+    consola.info("[Meal Planner] Received meal plan:", plan);
 
     if (!plan) {
+      consola.info("[Meal Planner] No plan found, creating new plan");
       // Create a new meal plan for this week
       const newPlan = await createMealPlan({
         weekStart: currentWeekStart.value,
         order: 0,
       });
+      consola.info("[Meal Planner] Created new plan:", newPlan);
       currentPlan.value = newPlan;
     }
     else {
       currentPlan.value = plan;
+      consola.info("[Meal Planner] Set current plan, meals count:", plan.meals?.length || 0);
     }
   }
-  catch (error) {
-    consola.error("Failed to load meal plan:", error);
+  catch (error: any) {
+    consola.error("[Meal Planner] Failed to load meal plan");
+    consola.error("[Meal Planner] Error:", error);
+    consola.error("[Meal Planner] Error name:", error?.name);
+    consola.error("[Meal Planner] Error message:", error?.message);
     showError("Load Failed", "Failed to load meal plan. Please try again.");
   }
   finally {
@@ -83,12 +91,17 @@ async function loadWeekMealPlan() {
 
 // Load upcoming preparation meals
 async function loadUpcomingPrepMeals() {
+  consola.info("[Meal Planner] Loading upcoming prep meals");
   try {
     const meals = await getUpcomingPrepMeals();
+    consola.info("[Meal Planner] Received upcoming prep meals:", meals);
     upcomingPrepMeals.value = meals;
   }
-  catch (error) {
-    consola.error("Failed to load preparation reminders:", error);
+  catch (error: any) {
+    consola.error("[Meal Planner] Failed to load preparation reminders");
+    consola.error("[Meal Planner] Error:", error);
+    consola.error("[Meal Planner] Error name:", error?.name);
+    consola.error("[Meal Planner] Error message:", error?.message);
   }
 }
 
