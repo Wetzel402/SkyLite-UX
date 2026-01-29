@@ -1,6 +1,11 @@
+import { consola } from "consola";
 import { z } from "zod";
 
 import prisma from "~/lib/prisma";
+
+import { GooglePhotosServerService } from "../../../server/integrations/google_photos";
+import { getGoogleOAuthConfig } from "../../../server/utils/googleOAuthConfig";
+import { downloadAndSavePhoto } from "../../../server/utils/photoStorage";
 
 // Allowed Google Photos domains for SSRF protection
 const ALLOWED_DOMAINS = [
@@ -52,6 +57,73 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { albums, append } = requestSchema.parse(body);
 
+  // Get integration and access token for downloading images
+  const integration = await prisma.integration.findFirst({
+    where: {
+      type: "photos",
+      service: "google",
+      enabled: true,
+    },
+  });
+
+  if (!integration) {
+    throw createError({
+      statusCode: 404,
+      message: "Google Photos integration not found",
+    });
+  }
+
+  // Validate settings exist
+  if (!integration.settings) {
+    throw createError({
+      statusCode: 401,
+      message: "Integration settings are missing. Please re-authorize the integration.",
+    });
+  }
+
+  const settings = (integration.settings ?? {}) as {
+    accessToken?: string;
+    tokenExpiry?: number;
+  };
+
+  if (!integration.apiKey) {
+    throw createError({
+      statusCode: 401,
+      message: "No refresh token available. Please re-authorize the integration.",
+    });
+  }
+
+  // Get OAuth config
+  const oauthConfig = getGoogleOAuthConfig();
+  if (!oauthConfig) {
+    throw createError({
+      statusCode: 500,
+      message: "Google OAuth credentials not configured",
+    });
+  }
+
+  // Create service for token management
+  const service = new GooglePhotosServerService(
+    oauthConfig.clientId,
+    oauthConfig.clientSecret,
+    integration.apiKey,
+    settings.accessToken,
+    settings.tokenExpiry,
+    integration.id,
+    async (integrationId, accessToken, expiry) => {
+      await prisma.integration.update({
+        where: { id: integrationId },
+        data: {
+          settings: {
+            ...settings,
+            accessToken,
+            tokenExpiry: expiry,
+          },
+        },
+      });
+    },
+  );
+
   // Use transaction to ensure atomicity (all or nothing)
   const created = await prisma.$transaction(async (tx) => {
     if (!append) {
@@ -92,5 +164,77 @@ export default defineEventHandler(async (event) => {
     return [...existingAlbums, ...insertedAlbums];
   });
 
+  // Download cover photos in the background (don't block response)
+  // This runs after the transaction completes
+  downloadCoverPhotosInBackground(created, service);
+
   return { albums: created };
 });
+
+/**
+ * Downloads cover photos for albums in the background
+ */
+async function downloadCoverPhotosInBackground(
+  albums: any[],
+  service: any,
+): Promise<void> {
+  // Run in background - don't await
+  Promise.resolve().then(async () => {
+    for (const album of albums) {
+      // Skip if already downloaded or no cover photo URL
+      if (album.localImagePath || !album.coverPhotoUrl) {
+        continue;
+      }
+
+      try {
+        // Validate URL before downloading
+        const url = new URL(album.coverPhotoUrl);
+        const allowedHosts = [
+          "lh3.googleusercontent.com",
+          "lh4.googleusercontent.com",
+          "lh5.googleusercontent.com",
+          "lh6.googleusercontent.com",
+          "photos.google.com",
+          "photospicker.googleapis.com",
+        ];
+
+        if (!allowedHosts.some(host => url.hostname === host || url.hostname.endsWith(`.${host}`))) {
+          consola.warn(`Skipping download for album ${album.albumId}: invalid host ${url.hostname}`);
+          continue;
+        }
+
+        // Get fresh access token for this album (handles expiration)
+        let accessToken: string;
+        try {
+          accessToken = await service.getAccessToken();
+        }
+        catch (tokenError) {
+          consola.error(`Failed to get access token for album ${album.albumId}:`, tokenError);
+          continue; // Skip this album and move to next
+        }
+
+        const filename = `album-${album.albumId}.jpg`;
+        const localPath = await downloadAndSavePhoto(
+          album.coverPhotoUrl,
+          accessToken,
+          filename,
+        );
+
+        // Update database with local path
+        await prisma.selectedAlbum.update({
+          where: { id: album.id },
+          data: {
+            localImagePath: localPath,
+            cachedWidth: 1920,
+            cachedHeight: 1080,
+            downloadedAt: new Date(),
+          },
+        });
+      }
+      catch (error) {
+        consola.error(`Failed to download cover photo for album ${album.albumId}:`, error);
+        // Continue with next album even if one fails
+      }
+    }
+  });
+}

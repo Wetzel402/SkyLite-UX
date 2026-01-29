@@ -1,10 +1,11 @@
 import { consola } from "consola";
-import { Buffer } from "node:buffer";
+import { readFile, stat } from "node:fs/promises";
 
 import prisma from "~/lib/prisma";
 
 import { GooglePhotosServerService } from "../../../integrations/google_photos";
 import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
+import { downloadAndSavePhoto, getPhotoPath } from "../../../utils/photoStorage";
 
 // Allowed Google Photos domains for SSRF protection
 const ALLOWED_DOMAINS = [
@@ -32,12 +33,23 @@ function isValidGooglePhotosUrl(url: string): boolean {
   }
 }
 
+/**
+ * Clamps a dimension to safe bounds
+ */
+function clampDimension(value: number, min: number = 1, max: number = 4096): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
     const photoId = query.photoId as string;
-    const width = Number(query.width) || 1920;
-    const height = Number(query.height) || 1080;
+
+    // Parse and clamp dimensions to safe bounds (1-4096)
+    const requestedWidth = Number(query.width) || 1920;
+    const requestedHeight = Number(query.height) || 1080;
+    const width = clampDimension(requestedWidth);
+    const height = clampDimension(requestedHeight);
 
     if (!photoId) {
       throw createError({
@@ -141,15 +153,72 @@ export default defineEventHandler(async (event) => {
       },
     );
 
-    // Fetch image (handles token refresh automatically)
+    // Check if we have a local copy that matches the requested size
+    if (photo.localImagePath && photo.cachedWidth && photo.cachedHeight) {
+      // Only serve cached file if size matches (or no specific size requested)
+      const sizeMatches = (photo.cachedWidth === width && photo.cachedHeight === height);
+
+      if (sizeMatches) {
+        try {
+          const localPath = getPhotoPath(photo.localImagePath);
+
+          // Check if file exists
+          await stat(localPath);
+
+          // Serve from local storage
+          const buffer = await readFile(localPath);
+
+          setHeader(event, "Content-Type", "image/jpeg");
+          setHeader(event, "Cache-Control", "public, max-age=31536000"); // Cache for 1 year (local file won't change)
+
+          consola.info(`Serving photo from local storage: ${photo.localImagePath} (${width}x${height})`);
+          return buffer;
+        }
+        catch (fileError) {
+          consola.warn(`Local file not found, will download: ${photo.localImagePath}`, fileError);
+          // Fall through to download
+        }
+      }
+      else {
+        consola.info(`Cached size (${photo.cachedWidth}x${photo.cachedHeight}) doesn't match requested (${width}x${height}), downloading fresh`);
+      }
+    }
+
+    // No local copy or file missing - download and save it
     try {
-      const { buffer, contentType } = await service.fetchImage(imageUrl);
+      consola.info(`Downloading and saving photo: ${photoId}`);
 
-      // Set response headers
-      setHeader(event, "Content-Type", contentType);
-      setHeader(event, "Cache-Control", "public, max-age=86400"); // Cache for 1 day
+      // Get access token
+      const accessToken = await service.getAccessToken();
 
-      return Buffer.from(buffer);
+      // Download and save
+      const filename = `album-${photoId}.jpg`;
+      const localPath = await downloadAndSavePhoto(
+        photo.coverPhotoUrl!,
+        accessToken,
+        filename,
+        width,
+        height,
+      );
+
+      // Update database with size metadata
+      await prisma.selectedAlbum.update({
+        where: { id: photo.id },
+        data: {
+          localImagePath: localPath,
+          cachedWidth: width,
+          cachedHeight: height,
+          downloadedAt: new Date(),
+        },
+      });
+
+      // Serve the newly downloaded file
+      const buffer = await readFile(getPhotoPath(localPath));
+
+      setHeader(event, "Content-Type", "image/jpeg");
+      setHeader(event, "Cache-Control", "public, max-age=31536000"); // Cache for 1 year
+
+      return buffer;
     }
     catch (fetchError: any) {
       // Check if it's a token/auth error

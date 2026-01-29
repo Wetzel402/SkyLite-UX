@@ -39,11 +39,13 @@ export default defineEventHandler(async (event) => {
     redirectUri,
   );
 
-  // Generate authorization URL with Photos Library API scope
+  // Generate authorization URL with Photo Picker API scope
+  // Note: As of March 31, 2025, Library API is restricted to app-created content only.
+  // Picker API is the approved way to access user's photos.
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: [
-      "https://www.googleapis.com/auth/photoslibrary.readonly",
+      "https://www.googleapis.com/auth/photospicker.mediaitems.readonly",
     ],
     prompt: "consent",
     state, // Include state parameter for CSRF protection

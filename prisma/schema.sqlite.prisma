@@ -225,7 +225,11 @@ model SelectedAlbum {
   id          String   @id @default(cuid())
   albumId     String   @unique // Google Photos album ID from picker
   title       String   // Album title
-  coverPhotoUrl String? // Album cover photo URL
+  coverPhotoUrl String? // Album cover photo URL (Google Photos baseUrl - expires in 60 min)
+  localImagePath String? // Local filesystem path to downloaded image
+  cachedWidth Int? // Width of cached image
+  cachedHeight Int? // Height of cached image
+  downloadedAt DateTime? // When the image was downloaded locally
   mediaItemsCount Int?  // Number of photos in album
   order       Int      @default(0)  // Display order
   createdAt   DateTime @default(now())

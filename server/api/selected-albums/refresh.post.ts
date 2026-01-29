@@ -2,136 +2,50 @@ import { consola } from "consola";
 
 import prisma from "~/lib/prisma";
 
-import { GooglePhotosServerService } from "../../../server/integrations/google_photos";
-import { getGoogleOAuthConfig } from "../../../server/utils/googleOAuthConfig";
-
 /**
- * Refresh selected albums to get fresh URLs from Google Photos
+ * NOTE: As of March 31, 2025, Google Photos Library API no longer allows
+ * access to user's existing albums. Photos are now downloaded and stored
+ * locally when selected via the Picker API, so there's no need to refresh URLs.
+ *
+ * This endpoint verifies that local copies exist and reports their status.
+ * Missing photos are downloaded on-demand when first requested (not by this endpoint).
  */
 export default defineEventHandler(async () => {
   try {
-    // Get integration
-    const integration = await prisma.integration.findFirst({
-      where: {
-        type: "photos",
-        service: "google",
-        enabled: true,
-      },
-    });
-
-    if (!integration) {
-      throw createError({
-        statusCode: 404,
-        message: "Google Photos integration not found",
-      });
-    }
-
-    // Get OAuth config
-    const oauthConfig = getGoogleOAuthConfig();
-    if (!oauthConfig) {
-      throw createError({
-        statusCode: 500,
-        message: "Google OAuth credentials not configured",
-      });
-    }
-
-    const settings = integration.settings as {
-      accessToken?: string;
-      tokenExpiry?: number;
-    };
-
-    if (!integration.apiKey) {
-      throw createError({
-        statusCode: 401,
-        message: "No refresh token available. Please re-authorize the integration.",
-      });
-    }
-
-    // Create service
-    const service = new GooglePhotosServerService(
-      oauthConfig.clientId,
-      oauthConfig.clientSecret,
-      integration.apiKey,
-      settings.accessToken,
-      settings.tokenExpiry,
-      integration.id,
-      async (integrationId, accessToken, expiry) => {
-        await prisma.integration.update({
-          where: { id: integrationId },
-          data: {
-            settings: {
-              ...settings,
-              accessToken,
-              tokenExpiry: expiry,
-            },
-          },
-        });
-      },
-    );
-
     // Get all selected albums
     const selectedAlbums = await prisma.selectedAlbum.findMany();
 
     if (selectedAlbums.length === 0) {
-      return { success: true, refreshed: 0 };
+      return {
+        success: true,
+        refreshed: 0,
+        message: "No albums to refresh",
+        note: "No albums selected. Use the photo picker to add albums.",
+      };
     }
 
-    consola.info(`Refreshing ${selectedAlbums.length} album URLs...`);
+    // Count how many have local copies
+    const albumsWithLocalCopy = selectedAlbums.filter(a => a.localImagePath).length;
+    const albumsMissingLocal = selectedAlbums.length - albumsWithLocalCopy;
 
-    // Refresh each album's cover photo URL
-    let refreshedCount = 0;
-    for (const album of selectedAlbums) {
-      try {
-        // Get fresh album data from Google Photos API
-        const accessToken = await service.getAccessToken();
+    consola.info(`Albums with local copy: ${albumsWithLocalCopy}/${selectedAlbums.length}`);
 
-        // Add timeout to prevent hanging requests
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        const response = await fetch(
-          `https://photoslibrary.googleapis.com/v1/albums/${album.albumId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-            signal: controller.signal,
-          },
-        );
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          const albumData = await response.json();
-
-          // Update the coverPhotoUrl with fresh URL
-          await prisma.selectedAlbum.update({
-            where: { id: album.id },
-            data: {
-              coverPhotoUrl: albumData.coverPhotoBaseUrl,
-            },
-          });
-
-          refreshedCount++;
-        }
-        else {
-          consola.warn(`Failed to refresh album ${album.albumId}: ${response.status}`);
-        }
-      }
-      catch (err) {
-        consola.error(`Error refreshing album ${album.albumId}:`, err);
-      }
+    if (albumsMissingLocal > 0) {
+      consola.warn(`${albumsMissingLocal} albums missing local copy. They will be downloaded when requested.`);
     }
 
-    consola.success(`Refreshed ${refreshedCount} album URLs`);
-
-    return { success: true, refreshed: refreshedCount };
+    return {
+      success: true,
+      refreshed: albumsWithLocalCopy,
+      message: `${albumsWithLocalCopy} albums have local copies. Photos are downloaded from Google Photos Picker and stored locally.`,
+      note: "As of March 31, 2025, Google Photos Library API restrictions mean albums can only be accessed via Picker API. Local storage is used for long-term display.",
+    };
   }
   catch (error: any) {
-    consola.error("Error refreshing albums:", error);
+    consola.error("Error checking albums:", error);
     throw createError({
       statusCode: 500,
-      message: `Failed to refresh albums: ${error.message || error}`,
+      message: `Failed to check albums: ${error.message || error}`,
     });
   }
 });

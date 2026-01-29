@@ -33,3 +33,6 @@ data/
 # Prisma database files
 prisma/data/
 apk-download/
+
+# Photo storage (downloaded from Google Photos)
+storage/
