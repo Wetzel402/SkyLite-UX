@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build stage
-FROM --platform=$BUILDPLATFORM docker.io/library/node:20 AS builder
+FROM --platform=$BUILDPLATFORM docker.io/library/node:24-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -11,7 +11,10 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install system dependencies and npm packages
-RUN apt-get update -y && apt-get install -y openssl && \
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends openssl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
     npm ci
 
 # Copy source code
@@ -24,11 +27,12 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production stage
-FROM docker.io/library/node:20 AS production
+FROM docker.io/library/node:24-slim AS production
 
 # Set environment variables
-ENV NODE_ENV=production
-ENV HOST=0.0.0.0
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=3000
 
 # Set working directory
 WORKDIR /app
@@ -38,7 +42,10 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install system dependencies and production npm packages
-RUN apt-get update -y && apt-get install -y openssl && \
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends openssl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
     npm ci --omit=dev
 
 # Copy built application from builder stage
@@ -51,10 +58,24 @@ RUN chmod +x /app/docker-entrypoint.sh
 
 # Create data directory for SQLite and photos, set up volume
 RUN mkdir -p /data /data/photos
+
+# Create non-root user and set ownership
+RUN groupadd -r skylite && \
+    useradd -r -g skylite -d /app -s /sbin/nologin skylite && \
+    chown -R skylite:skylite /app /data
+
+# Switch to non-root user
+USER skylite
+
+# Set up volume (must be after USER for correct permissions)
 VOLUME ["/data"]
 
 # Expose the port the app runs on
 EXPOSE 3000
+
+# Add health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
 # Use entrypoint script for database setup and startup
 CMD ["/app/docker-entrypoint.sh"]
