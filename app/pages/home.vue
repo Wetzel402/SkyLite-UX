@@ -3,7 +3,7 @@ import { consola } from "consola";
 
 import type { CalendarEvent } from "~/types/calendar";
 
-const { photos, fetchPhotos, getPhotoUrl, refreshAlbums } = usePhotos();
+const { photos, fetchPhotos, getPhotoUrl } = usePhotos();
 const { homeSettings, fetchHomeSettings } = useHomeSettings();
 
 const currentPhotoIndex = ref(0);
@@ -31,7 +31,6 @@ const intervals = ref<NodeJS.Timeout[]>([]);
 const currentPhoto = computed(() => photos.value[currentPhotoIndex.value]);
 const imageLoadError = ref(false);
 const imageErrorCount = ref(0);
-const lastRefreshAttempt = ref<Date | null>(null);
 
 const kenBurnsStyle = computed(() => {
   if (!homeSettings.value?.kenBurnsIntensity)
@@ -104,11 +103,6 @@ onMounted(async () => {
     fetchHomeSettings(),
   ]);
 
-  // Refresh album URLs immediately to ensure fresh URLs
-  if (homeSettings.value?.photosEnabled && photos.value.length > 0) {
-    await refreshAlbums();
-  }
-
   startSlideshow();
   updateClock();
   intervals.value.push(setInterval(updateClock, 1000));
@@ -139,12 +133,6 @@ onMounted(async () => {
     await fetchTodaysMenu();
     intervals.value.push(setInterval(fetchTodaysMenu, refreshIntervalMs));
   }
-
-  // Refresh Google Photos album URLs every hour to prevent expiration
-  // Google Photos URLs typically expire after ~60 minutes
-  if (homeSettings.value?.photosEnabled && photos.value.length > 0) {
-    intervals.value.push(setInterval(refreshAlbums, 3600000)); // Refresh every hour
-  }
 });
 
 // Clear all intervals on unmount
@@ -152,29 +140,16 @@ onUnmounted(() => {
   intervals.value.forEach(interval => clearInterval(interval));
 });
 
-// Handle image load errors - attempt refresh if multiple images fail
-async function handleImageError() {
+// Handle image load errors
+function handleImageError() {
   consola.error("[Home] Photo failed to load:", currentPhoto.value?.url);
   imageLoadError.value = true;
   imageErrorCount.value++;
 
-  // If multiple consecutive errors and we haven't refreshed recently
-  const timeSinceLastRefresh = lastRefreshAttempt.value
-    ? Date.now() - lastRefreshAttempt.value.getTime()
-    : Infinity;
-
-  if (imageErrorCount.value >= 3 && timeSinceLastRefresh > 60000) {
-    consola.warn("[Home] Multiple photo load failures, attempting to refresh album URLs...");
-    lastRefreshAttempt.value = new Date();
-    imageErrorCount.value = 0; // Reset counter
-
-    try {
-      await refreshAlbums();
-      consola.success("[Home] Album URLs refreshed after image errors");
-    }
-    catch (e) {
-      consola.error("[Home] Failed to refresh albums after image errors:", e);
-    }
+  // Note: With local storage, failed images indicate missing files
+  // rather than expired URLs. No refresh needed.
+  if (imageErrorCount.value >= 3) {
+    consola.warn("[Home] Multiple photo load failures - photos may need to be re-selected");
   }
 }
 
