@@ -24,9 +24,7 @@ onMounted(async () => {
     const { Network } = await import("@capacitor/network");
 
     // Load server URL
-    console.log("[Mobile Settings] Loading server URL from Preferences...");
     const { value } = await Preferences.get({ key: "serverUrl" });
-    console.log("[Mobile Settings] Loaded from Preferences:", value || "(empty)");
     serverUrl.value = value || "";
 
     // Get network type
@@ -55,7 +53,6 @@ async function saveSettings() {
   try {
     // Validate URL is not empty
     const trimmedUrl = serverUrl.value?.trim();
-    console.log("[Mobile Settings] Attempting to save URL:", trimmedUrl);
 
     if (!trimmedUrl) {
       throw new Error("Server URL cannot be empty");
@@ -75,17 +72,11 @@ async function saveSettings() {
     }
 
     // Test connection to the server
-    console.log("[Mobile Settings] Testing connection to server...");
-
-    // Use AbortController for better WebView compatibility (Android 7-11)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
-      const testUrl = `${trimmedUrl}/api/app-settings`;
-      console.log("[Mobile Settings] Test URL:", testUrl);
-
-      const testResponse = await fetch(testUrl, {
+      const testResponse = await fetch(`${trimmedUrl}/api/app-settings`, {
         method: "GET",
         headers: {
           "Accept": "application/json",
@@ -93,27 +84,12 @@ async function saveSettings() {
         signal: controller.signal,
       });
 
-      console.log("[Mobile Settings] Response status:", testResponse.status);
-      console.log("[Mobile Settings] Response ok:", testResponse.ok);
-
       if (!testResponse.ok) {
         throw new Error(`Server responded with status ${testResponse.status}`);
       }
-
-      console.log("[Mobile Settings] Server connection test successful");
     }
     catch (error: any) {
-      // Log full error details
-      console.error("[Mobile Settings] Connection test failed");
-      console.error("[Mobile Settings] Error name:", error?.name);
-      console.error("[Mobile Settings] Error message:", error?.message);
-      console.error("[Mobile Settings] Error type:", typeof error);
-      console.error("[Mobile Settings] Error keys:", error ? Object.keys(error) : "null");
-
       if (error instanceof Error) {
-        console.error("[Mobile Settings] Error is instance of Error");
-        console.error("[Mobile Settings] Error stack:", error.stack);
-
         if (error.name === "AbortError" || error.name === "TimeoutError") {
           throw new Error("Connection timeout - cannot reach server. Check the IP address and ensure the server is running.");
         }
@@ -135,13 +111,10 @@ async function saveSettings() {
     const { Preferences } = await import("@capacitor/preferences");
 
     // Save to preferences
-    console.log("[Mobile Settings] Saving to Preferences...");
     await Preferences.set({ key: "serverUrl", value: trimmedUrl });
-    console.log("[Mobile Settings] Saved to Preferences successfully");
 
     // Verify it was saved by reading it back
     const { value: savedValue } = await Preferences.get({ key: "serverUrl" });
-    console.log("[Mobile Settings] Verification read back:", savedValue);
 
     if (savedValue !== trimmedUrl) {
       throw new Error("Failed to verify saved URL - preferences may not be persisting");
@@ -151,21 +124,14 @@ async function saveSettings() {
     // @ts-ignore
     if (typeof window !== "undefined") {
       window.__CAPACITOR_SERVER_URL__ = trimmedUrl;
-      console.log("[Mobile Settings] Updated window.__CAPACITOR_SERVER_URL__");
     }
 
     // Update the local value to the trimmed version
     serverUrl.value = trimmedUrl;
 
     saveSuccess.value = true;
-    console.log("[Mobile Settings] Save completed successfully");
   }
   catch (error: any) {
-    console.error("[Mobile Settings] Save failed");
-    console.error("[Mobile Settings] Error name:", error?.name);
-    console.error("[Mobile Settings] Error message:", error?.message);
-    console.error("[Mobile Settings] Error type:", typeof error);
-    console.error("[Mobile Settings] Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
 
     if (error instanceof Error) {
       saveError.value = error.message;

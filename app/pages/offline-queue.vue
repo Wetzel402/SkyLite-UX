@@ -191,7 +191,11 @@ const dayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satu
     </div>
 
     <div v-if="pendingMeals.length > 0" class="mt-6 flex gap-3">
-      <UButton :loading="isSyncing" :disabled="isSyncing" @click="syncAll">
+      <UButton
+        :loading="isSyncing"
+        :disabled="isSyncing"
+        @click="syncAll"
+      >
         <UIcon name="i-lucide-cloud-upload" class="h-4 w-4" />
         Sync All
       </UButton>

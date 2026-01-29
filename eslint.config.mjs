@@ -20,6 +20,12 @@ export default withNuxt(antfu({
     ".devcontainer/**",
     ".github/**",
     "docker-compose-example.yaml",
+    // Generated/build files
+    "android/**",
+    "ios/**",
+    ".nuxt/**",
+    ".output/**",
+    "dist/**",
     // Pre-existing files with lint issues (to be fixed separately)
     ".plan/**",
     "app/app.vue",

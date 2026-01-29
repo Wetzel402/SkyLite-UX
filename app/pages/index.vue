@@ -11,22 +11,15 @@ let hasNavigated = false;
 // Defensive navigation function - guarantees navigation happens
 async function performNavigation() {
   if (hasNavigated) {
-    console.log("[Index] Already navigated, skipping");
     return;
   }
-
-  console.log("[Index] performNavigation called, isCapacitor:", isCapacitor);
 
   try {
     let targetRoute = "/home";
 
     if (isCapacitor) {
-      console.log("[Index] Capacitor detected, checking server URL");
-
       const { Preferences } = await import("@capacitor/preferences");
       const { value: serverUrl } = await Preferences.get({ key: "serverUrl" });
-
-      console.log("[Index] Server URL:", serverUrl ? "configured" : "not configured");
 
       if (!serverUrl || serverUrl.trim() === "") {
         targetRoute = "/mobile-settings";
@@ -36,7 +29,6 @@ async function performNavigation() {
       }
     }
 
-    console.log("[Index] Navigating to:", targetRoute);
     hasNavigated = true;
 
     // Use push instead of replace and ignore preload errors
@@ -49,15 +41,12 @@ async function performNavigation() {
         throw error; // Re-throw other errors
       }
     });
-
-    console.log("[Index] Navigation completed");
   }
   catch (error) {
     console.error("[Index] Navigation error:", error);
 
     // Fallback: direct navigation
     if (!hasNavigated) {
-      console.log("[Index] Using fallback navigation");
       hasNavigated = true;
       const fallbackRoute = isCapacitor ? "/mealplanner" : "/home";
       window.location.href = fallbackRoute;
@@ -70,8 +59,6 @@ let navigationTimeout: NodeJS.Timeout | null = null;
 
 // Perform navigation on mount
 onMounted(async () => {
-  console.log("[Index] Component mounted");
-
   // Set a timeout fallback - if navigation hasn't happened after 2 seconds, force it
   navigationTimeout = setTimeout(() => {
     if (!hasNavigated) {

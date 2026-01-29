@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
+
 import type { MealType } from "~/types/database";
 
 type Props = {
@@ -22,6 +24,16 @@ const name = ref("");
 const description = ref("");
 const daysInAdvance = ref(0);
 const error = ref<string | null>(null);
+
+// Refs for input elements
+const nameInputRef = ref<any>(null);
+const daysInputRef = ref<any>(null);
+
+// Store event listener cleanup data
+const eventListenerCleanup: Array<{ el: HTMLElement; handler: (e: KeyboardEvent) => void }> = [];
+
+// Guard against double-save
+let isSaving = false;
 
 // Day names (Monday=0 to Sunday=6)
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -47,11 +59,89 @@ watch(() => props.editingMeal, (meal) => {
   }
 }, { immediate: true });
 
+// Add Enter key listener to native inputs after mount
+onMounted(() => {
+  // Find the actual native input elements inside UInput components
+  const attachEnterListener = (ref: any) => {
+    if (!ref)
+      return;
+
+    // UInput wraps the native input - find it
+    const nativeInput = ref.$el?.querySelector("input") || ref.$el;
+
+    if (nativeInput && nativeInput.addEventListener) {
+      // Set enterkeyhint to tell Android keyboard what action to show
+      nativeInput.setAttribute("enterkeyhint", "done");
+
+      // Create handler function
+      const handler = (e: KeyboardEvent) => {
+        // Android keyboards: keyCode 229 during composition, then actual key on keyup
+        if (e.key === "Enter" || e.keyCode === 13) {
+          e.preventDefault();
+          guardedSave();
+        }
+      };
+
+      // Use keyup instead of keydown - fires AFTER composition (keyCode 229) is done
+      nativeInput.addEventListener("keyup", handler);
+
+      // Store for cleanup
+      eventListenerCleanup.push({ el: nativeInput, handler });
+    }
+  };
+
+  // Attach to both input refs
+  attachEnterListener(nameInputRef.value);
+  attachEnterListener(daysInputRef.value);
+});
+
+// Cleanup event listeners on unmount
+onBeforeUnmount(() => {
+  eventListenerCleanup.forEach(({ el, handler }) => {
+    el.removeEventListener("keyup", handler);
+  });
+  eventListenerCleanup.length = 0;
+});
+
 function resetForm() {
   name.value = "";
   description.value = "";
   daysInAdvance.value = 0;
   error.value = null;
+}
+
+function handleKeyUp(event: KeyboardEvent) {
+  // Check if Enter key is pressed (without Shift for textarea)
+  // Use keyup instead of keydown - fires AFTER composition (keyCode 229) is done
+  if ((event.key === "Enter" || event.keyCode === 13) && !event.shiftKey) {
+    event.preventDefault();
+    event.stopPropagation();
+    guardedSave();
+  }
+}
+
+function handleFormSubmit(event: Event) {
+  event.preventDefault();
+  guardedSave();
+}
+
+function guardedSave() {
+  // Guard against duplicate calls while save is in progress
+  if (isSaving) {
+    return;
+  }
+
+  isSaving = true;
+
+  try {
+    handleSave();
+  }
+  finally {
+    // Reset flag after a short delay to prevent rapid duplicate submissions
+    setTimeout(() => {
+      isSaving = false;
+    }, 100);
+  }
 }
 
 function handleSave() {
@@ -81,7 +171,7 @@ function handleDelete() {
 </script>
 
 <template>
-  <div class="inline-form border border-default rounded-lg p-3 bg-default space-y-2.5">
+  <form class="inline-form border border-default rounded-lg p-3 bg-default space-y-2.5" @submit="handleFormSubmit">
     <!-- Error message display -->
     <div v-if="error" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
       {{ error }}
@@ -97,10 +187,10 @@ function handleDelete() {
     <div class="space-y-1">
       <label class="block text-xs font-medium text-highlighted">Meal Name</label>
       <UInput
+        ref="nameInputRef"
         v-model="name"
         placeholder="e.g., Grilled Chicken Salad"
         size="lg"
-        @keydown.enter="handleSave"
       />
     </div>
 
@@ -112,6 +202,7 @@ function handleDelete() {
         placeholder="Notes..."
         :rows="2"
         class="text-base resize-none"
+        @keyup="handleKeyUp"
       />
     </div>
 
@@ -119,6 +210,7 @@ function handleDelete() {
     <div class="space-y-1">
       <label class="block text-xs font-medium text-highlighted">Prep Days in Advance</label>
       <UInput
+        ref="daysInputRef"
         v-model.number="daysInAdvance"
         type="number"
         :min="0"
@@ -133,6 +225,7 @@ function handleDelete() {
     <!-- Action buttons -->
     <div class="flex gap-2 pt-1">
       <UButton
+        type="button"
         color="neutral"
         variant="outline"
         size="md"
@@ -142,10 +235,10 @@ function handleDelete() {
         Cancel
       </UButton>
       <UButton
+        type="submit"
         color="primary"
         size="md"
         class="flex-1"
-        @click="handleSave"
       >
         {{ editingMeal ? 'Update' : 'Add' }}
       </UButton>
@@ -159,9 +252,10 @@ function handleDelete() {
       icon="i-lucide-trash"
       size="md"
       class="w-full"
+      type="button"
       @click="handleDelete"
     >
       Delete Meal
     </UButton>
-  </div>
+  </form>
 </template>
