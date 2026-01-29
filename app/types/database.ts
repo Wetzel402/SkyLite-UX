@@ -40,7 +40,6 @@ export type TodoColumn = Omit<Prisma.TodoColumnGetPayload<{
         avatar: true;
       };
     };
-    todos: true;
     _count: {
       select: {
         todos: true;

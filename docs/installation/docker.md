@@ -5,12 +5,13 @@ layout: default
 nav_order: 3
 permalink: /installation/docker/
 ---
+
 # Docker
 
 ## Tags
 
 - **latest** (not currently implemented) - The default most recent release
-- **beta** - Get a preview of the most recent features and bug fixes 
+- **beta** - Get a preview of the most recent features and bug fixes
 - **YYYY.MM.Micro** - If you need a specific version you can specify the version number.
 
 ## Docker CLI
