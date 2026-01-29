@@ -27,15 +27,18 @@ The Google Photos integration uses the **Photos Picker API** to allow users to s
 
 1. **User Selection**: Users click "Select Albums" in Settings
 2. **Picker Opens**: Google's Photos Picker modal displays user's albums
-3. **Albums Saved**: Selected albums are stored in the database
-4. **Display**: Home page cycles through photos from selected albums
+3. **Albums Saved**: Selected albums are stored in the database with their Google Photos URLs
+4. **Download**: Album cover photos are downloaded and cached locally (server-side)
+5. **Display**: Home page cycles through photos from local cache (no repeated Google API calls)
 
 ### Capabilities
 
 - **Album selection**: Choose specific albums via Google's picker interface
+- **Local caching**: Photos are downloaded and stored server-side for fast, reliable display
 - **No sensitive scopes**: Picker handles authentication automatically
 - **User control**: Explicit selection of which albums to display
 - **Privacy-friendly**: No broad access to entire photo library
+- **Persistent storage**: Photos survive container restarts and rebuilds
 
 ### Setup Instructions
 
@@ -120,6 +123,45 @@ Available in **Settings > Home Page**:
 | Transition Speed    | Time between photo changes      | 5-60 seconds                  |
 | Ken Burns Intensity | Pan/zoom effect strength        | 0-2.0x (0 = off, 2 = maximum) |
 
+### Local Photo Storage
+
+To ensure reliable display and avoid Google Photos API restrictions, selected album cover photos are downloaded and cached locally on the server.
+
+**Storage Location:**
+
+- **Default (Docker):** `/data/photos` (inside container, persisted via volume mount)
+- **Default (Local):** `storage/photos` (in project directory)
+- **Custom:** Set via `PHOTOS_STORAGE_PATH` environment variable
+
+**How It Works:**
+
+1. When you select albums, their cover photos are downloaded in the background
+2. Photos are cached at the configured storage path
+3. The Home screen serves photos from local cache (no API calls)
+4. If a cached photo is missing, it's re-downloaded on first request
+5. Photos persist across server restarts and container rebuilds
+
+**Storage Requirements:**
+
+- **Per photo:** ~300-600 KB (at 1920×1080 resolution)
+- **1000 photos:** ~300-600 MB total
+- **Size-aware caching:** Different resolutions cached separately (e.g., 1920×1080, 3840×2160)
+
+**Docker Configuration:**
+
+```yaml
+environment:
+  - PHOTOS_STORAGE_PATH=/data/photos  # Default location
+volumes:
+  - ./data:/data  # Ensures photos persist
+```
+
+**Important:** For Docker deployments, ensure your storage path is inside a mounted volume (like `/data`) to prevent photo loss during container rebuilds.
+
+**Local Development:**
+
+Photos are stored at `storage/photos/` by default. This directory is ignored by git and Docker to prevent committing large files.
+
 ### Troubleshooting
 
 **"No Photos Selected" message on Home page**
@@ -153,6 +195,13 @@ Available in **Settings > Home Page**:
 - Check that the Google Picker API script is loading
 - Verify there are no browser extensions blocking the script
 - Check browser console for loading errors
+
+**Photos disappear after container rebuild (Docker)**
+
+- Ensure `/data` volume is mounted: `-v ./data:/data`
+- Verify `PHOTOS_STORAGE_PATH` is set to `/data/photos` (default) or another path inside `/data`
+- Check that the `./data` directory on your host has proper permissions
+- Re-select albums after fixing volume configuration
 
 ### Differences from Old Implementation
 
@@ -190,21 +239,42 @@ Selected albums are stored in the `selected_albums` table with:
 
 - Album ID (from Google Photos)
 - Album title
-- Cover photo URL
+- Cover photo URL (Google Photos base URL)
+- Local image path (cached file location)
+- Cached dimensions (width × height)
+- Download timestamp
 - Media items count
 - Display order
 
 **API Endpoints:**
 
 - `GET /api/selected-albums` - Fetch user's selected albums
-- `POST /api/selected-albums` - Save album selections
-- `DELETE /api/selected-albums/[id]` - Remove an album
+- `POST /api/selected-albums` - Save album selections (triggers background download)
+- `DELETE /api/selected-albums/[id]` - Remove an album (deletes cached file)
+- `GET /api/integrations/google_photos/proxy-image` - Serve cached photos (downloads if missing)
+
+**Server-Side:**
+
+- `server/utils/photoStorage.ts` - Photo download and caching utilities
+  - `downloadAndSavePhoto()` - Downloads from Google Photos and saves locally
+  - `getPhotoPath()` - Resolves cached file paths with security validation
+  - `deletePhoto()` - Removes cached files
+- `server/api/selected-albums/index.post.ts` - Background photo downloader
+- `server/api/integrations/google_photos/proxy-image.get.ts` - Serves cached photos, downloads on cache miss
 
 **Client-Side:**
 
 - `usePhotosPicker` composable - Album selection logic
 - `usePhotos` composable - Photo fetching for display
 - Google Picker plugin - Loads Picker API
+
+**Security Features:**
+
+- **Path traversal protection:** Filename sanitization prevents directory escape
+- **Storage path validation:** Ensures files stay within designated directory
+- **URL validation:** Only whitelisted Google Photos domains allowed
+- **Dimension clamping:** Image sizes limited to 1-4096 pixels
+- **SSRF protection:** Validates URLs before downloading
 
 ---
 

@@ -95,8 +95,10 @@ services:
       # Google OAuth (optional - required for Calendar, Photos, Tasks)
       - GOOGLE_CLIENT_ID=
       - GOOGLE_CLIENT_SECRET=
+      # Photo storage (optional - default: /data/photos)
+      # - PHOTOS_STORAGE_PATH=/data/photos
     volumes:
-      - ./data:/data
+      - ./data:/data  # Contains database (skylite.db) and photos (/data/photos)
     ports:
       - 3000:3000
 ```
@@ -189,6 +191,34 @@ When set to `true`, allows Prisma to apply destructive schema changes automatica
 
 Valid log levels: `debug`, `info`, `warn`, `error`
 
+### Photo Storage
+
+| Variable               | Description                           | Default         |
+| ---------------------- | ------------------------------------- | --------------- |
+| `PHOTOS_STORAGE_PATH`  | Directory for downloaded photo cache  | `/data/photos`  |
+
+**Important for Docker deployments:**
+
+When using Google Photos integration, selected album cover photos are downloaded and cached locally for persistent display. By default, photos are stored at `/data/photos` inside the container, which is included in the `/data` volume mount.
+
+**Default behavior (recommended):**
+- Photos stored at `/data/photos` (persisted in `/data` volume)
+- Survives container restarts and rebuilds
+- Shared storage with SQLite database
+
+**Custom storage path:**
+```bash
+-e PHOTOS_STORAGE_PATH=/custom/path
+```
+
+If you change this path, ensure it's either:
+1. Inside the `/data` volume (e.g., `/data/custom-photos`)
+2. A separately mounted volume
+
+**Storage requirements:**
+- Approximately 300-600 KB per photo (at 1920×1080)
+- 1000 photos ≈ 300-600 MB
+
 ### Google Integrations
 
 To enable Google integrations (Calendar, Photos, Tasks), add these environment variables:
@@ -210,10 +240,10 @@ To enable Google integrations (Calendar, Photos, Tasks), add these environment v
 5. Add authorized redirect URIs (use `http://` for local/dev, `https://` for production):
    - `http://localhost:3000/api/integrations/google_calendar/callback` (or `https://your-domain.com/api/integrations/google_calendar/callback` for production)
    - `http://localhost:3000/api/integrations/google_tasks/callback` (or `https://your-domain.com/api/integrations/google_tasks/callback` for production)
-   - `http://localhost:3000/api/integrations/google_photos/callback` (coming soon - add if you want to preconfigure)
+   - `http://localhost:3000/api/integrations/google_photos/callback` (or `https://your-domain.com/api/integrations/google_photos/callback` for production)
 
 See the integration documentation for more details:
 
 - [Google Calendar](/integrations/calendar/#google-calendar)
 - [Google Tasks](/integrations/google-tasks/)
-- Google Photos (coming soon)
+- [Google Photos](/integrations/photos/)
