@@ -37,11 +37,10 @@ export default defineEventHandler(async () => {
 
     const settings = integration.settings as {
       accessToken?: string;
-      refreshToken?: string;
-      expiryDate?: number;
+      tokenExpiry?: number;
     };
 
-    if (!settings.refreshToken) {
+    if (!integration.apiKey) {
       throw createError({
         statusCode: 401,
         message: "No refresh token available. Please re-authorize the integration.",
@@ -52,9 +51,9 @@ export default defineEventHandler(async () => {
     const service = new GooglePhotosServerService(
       oauthConfig.clientId,
       oauthConfig.clientSecret,
-      settings.refreshToken,
+      integration.apiKey,
       settings.accessToken,
-      settings.expiryDate,
+      settings.tokenExpiry,
       integration.id,
       async (integrationId, accessToken, expiry) => {
         await prisma.integration.update({
@@ -63,7 +62,7 @@ export default defineEventHandler(async () => {
             settings: {
               ...settings,
               accessToken,
-              expiryDate: expiry,
+              tokenExpiry: expiry,
             },
           },
         });
