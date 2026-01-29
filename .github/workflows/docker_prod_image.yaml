@@ -27,7 +27,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER__HUB_PASSWORD }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Log in to DHI.io
         uses: docker/login-action@v3
