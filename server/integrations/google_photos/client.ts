@@ -22,7 +22,7 @@ export class GooglePhotosServerService {
     clientSecret: string,
     refreshToken: string,
     accessToken?: string,
-    expiry?: number,
+    tokenExpiry?: number,
     integrationId?: string,
     onTokenRefresh?: (
       integrationId: string,
@@ -38,7 +38,7 @@ export class GooglePhotosServerService {
     this.oauth2Client.setCredentials({
       refresh_token: refreshToken,
       access_token: accessToken,
-      expiry_date: expiry,
+      expiry_date: tokenExpiry,
     });
   }
 
@@ -118,6 +118,27 @@ export class GooglePhotosServerService {
     }
 
     return accessToken;
+  }
+
+  /**
+   * Gets the current access token and expiry, refreshing if necessary
+   */
+  async getAccessTokenWithExpiry(): Promise<{ accessToken: string; expiry: number }> {
+    await this.ensureValidToken();
+
+    const credentials = this.oauth2Client.credentials;
+    const accessToken = credentials.access_token;
+    const expiry = credentials.expiry_date;
+
+    if (!accessToken) {
+      throw new Error("No access token available after refresh");
+    }
+
+    if (!expiry) {
+      throw new Error("No expiry date available after refresh");
+    }
+
+    return { accessToken, expiry };
   }
 
   /**

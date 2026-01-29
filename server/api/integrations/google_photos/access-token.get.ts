@@ -2,6 +2,9 @@ import consola from "consola";
 
 import prisma from "~/lib/prisma";
 
+import { GooglePhotosServerService } from "../../../integrations/google_photos";
+import { getGoogleOAuthConfig } from "../../../utils/googleOAuthConfig";
+
 export default defineEventHandler(async (event) => {
   const origin = getHeader(event, "origin");
   const referer = getHeader(event, "referer");
@@ -62,15 +65,52 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const settings = integration.settings as { accessToken?: string };
+    const settings = integration.settings as {
+      accessToken?: string;
+      tokenExpiry?: number;
+    };
 
-    if (!settings.accessToken) {
-      consola.error("Access token not found in integration settings");
+    // Check if we have a refresh token
+    if (!integration.apiKey) {
       throw createError({
-        statusCode: 404,
-        message: "Access token not found",
+        statusCode: 401,
+        message: "Google Photos not authorized. Please authorize first.",
       });
     }
+
+    // Get OAuth config
+    const oauthConfig = getGoogleOAuthConfig();
+    if (!oauthConfig) {
+      throw createError({
+        statusCode: 500,
+        message: "Google OAuth credentials not configured",
+      });
+    }
+
+    // Create service to handle token refresh if needed
+    const service = new GooglePhotosServerService(
+      oauthConfig.clientId,
+      oauthConfig.clientSecret,
+      integration.apiKey,
+      settings.accessToken,
+      settings.tokenExpiry,
+      integration.id,
+      async (integrationId, accessToken, expiry) => {
+        await prisma.integration.update({
+          where: { id: integrationId },
+          data: {
+            settings: {
+              ...settings,
+              accessToken,
+              tokenExpiry: expiry,
+            },
+          },
+        });
+      },
+    );
+
+    // Get access token and expiry (will refresh if needed)
+    const { accessToken, expiry } = await service.getAccessTokenWithExpiry();
 
     consola.success("Access token retrieved successfully", {
       integrationId: integration.id,
@@ -78,7 +118,8 @@ export default defineEventHandler(async (event) => {
     });
 
     return {
-      accessToken: settings.accessToken,
+      accessToken,
+      expiryDate: expiry,
     };
   }
   catch (error) {

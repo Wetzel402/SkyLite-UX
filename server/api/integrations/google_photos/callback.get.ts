@@ -83,10 +83,10 @@ export default defineEventHandler(async (event) => {
       },
       update: {
         enabled: true,
+        apiKey: tokens.refresh_token,
         settings: {
           accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-          expiryDate: tokens.expiry_date,
+          tokenExpiry: tokens.expiry_date,
           scope: tokens.scope,
         },
       },
@@ -95,10 +95,10 @@ export default defineEventHandler(async (event) => {
         type: "photos",
         service: "google",
         enabled: true,
+        apiKey: tokens.refresh_token,
         settings: {
           accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-          expiryDate: tokens.expiry_date,
+          tokenExpiry: tokens.expiry_date,
           scope: tokens.scope,
         },
       },

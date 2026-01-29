@@ -46,11 +46,10 @@ export default defineEventHandler(async (event) => {
 
     const settings = integration.settings as {
       accessToken?: string;
-      refreshToken?: string;
-      expiryDate?: number;
+      tokenExpiry?: number;
     };
 
-    if (!settings.refreshToken) {
+    if (!integration.apiKey) {
       throw createError({
         statusCode: 401,
         message: "No refresh token available. Please re-authorize the integration.",
@@ -61,9 +60,9 @@ export default defineEventHandler(async (event) => {
     const service = new GooglePhotosServerService(
       oauthConfig.clientId,
       oauthConfig.clientSecret,
-      settings.refreshToken,
+      integration.apiKey,
       settings.accessToken,
-      settings.expiryDate,
+      settings.tokenExpiry,
       integration.id,
       async (integrationId, accessToken, expiry) => {
         // Persist refreshed token to database
@@ -73,7 +72,7 @@ export default defineEventHandler(async (event) => {
             settings: {
               ...settings,
               accessToken,
-              expiryDate: expiry,
+              tokenExpiry: expiry,
             },
           },
         });
@@ -164,6 +163,24 @@ export default defineEventHandler(async (event) => {
     }
 
     consola.error("Error in get-picker-media:", error);
+
+    // Check if it's an authorization/token error
+    const errorMessage = error.message || String(error);
+    const isAuthError = errorMessage.includes("invalid_grant")
+      || errorMessage.includes("unauthorized")
+      || errorMessage.includes("401")
+      || errorMessage.includes("403")
+      || error.code === 401
+      || error.code === 403;
+
+    if (isAuthError) {
+      consola.error("Google Photos auth error - refresh token may be invalid");
+      throw createError({
+        statusCode: 401,
+        message: "Google Photos authorization expired. Please re-authorize the integration in settings.",
+      });
+    }
+
     throw createError({
       statusCode: 500,
       message: `Failed to get media items: ${error.message || error}`,

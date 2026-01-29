@@ -95,11 +95,10 @@ export default defineEventHandler(async (event) => {
 
     const settings = integration.settings as {
       accessToken?: string;
-      refreshToken?: string;
-      expiryDate?: number;
+      tokenExpiry?: number;
     };
 
-    if (!settings.refreshToken) {
+    if (!integration.apiKey) {
       throw createError({
         statusCode: 401,
         message: "No refresh token available. Please re-authorize the integration.",
@@ -123,9 +122,9 @@ export default defineEventHandler(async (event) => {
     const service = new GooglePhotosServerService(
       oauthConfig.clientId,
       oauthConfig.clientSecret,
-      settings.refreshToken,
+      integration.apiKey,
       settings.accessToken,
-      settings.expiryDate,
+      settings.tokenExpiry,
       integration.id,
       async (integrationId, accessToken, expiry) => {
         // Persist refreshed token to database
@@ -135,7 +134,7 @@ export default defineEventHandler(async (event) => {
             settings: {
               ...settings,
               accessToken,
-              expiryDate: expiry,
+              tokenExpiry: expiry,
             },
           },
         });
@@ -154,7 +153,15 @@ export default defineEventHandler(async (event) => {
     }
     catch (fetchError: any) {
       // Check if it's a token/auth error
-      if (fetchError.message?.includes("refresh") || fetchError.message?.includes("token") || fetchError.message?.includes("401") || fetchError.message?.includes("403")) {
+      const errorMessage = fetchError.message || String(fetchError);
+      const isAuthError = errorMessage.includes("invalid_grant")
+        || errorMessage.includes("unauthorized")
+        || errorMessage.includes("401")
+        || errorMessage.includes("403")
+        || fetchError.code === 401
+        || fetchError.code === 403;
+
+      if (isAuthError) {
         consola.error("Google Photos auth error, refresh token may be invalid:", fetchError);
         throw createError({
           statusCode: 401,
@@ -163,7 +170,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // Check if it's a URL expiration error
-      if (fetchError.message?.includes("404") || fetchError.message?.includes("410")) {
+      if (errorMessage.includes("404") || errorMessage.includes("410")) {
         consola.warn("Google Photos URL expired for photo:", photoId);
         throw createError({
           statusCode: 410,
