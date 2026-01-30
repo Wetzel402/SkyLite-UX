@@ -5,7 +5,7 @@ import type { GeminiGenerateRequest } from "./types";
 import { getGeminiConfig } from "../../utils/geminiConfig";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const GEMINI_MODEL = "gemini-3-flash-preview"; // Gemini 3 Flash preview
+const GEMINI_MODEL = "gemini-1.5-flash-002"; // Latest stable Gemini 1.5 Flash
 
 export class GeminiClient {
   private apiKey: string | null = null;
@@ -46,7 +46,7 @@ export class GeminiClient {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
       const url = `${GEMINI_BASE_URL}/models/${GEMINI_MODEL}:generateContent?key=${this.apiKey}`;
