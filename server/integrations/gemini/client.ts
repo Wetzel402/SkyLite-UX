@@ -5,7 +5,7 @@ import type { GeminiGenerateRequest } from "./types";
 import { getGeminiConfig } from "../../utils/geminiConfig";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const GEMINI_MODEL = "gemini-1.5-flash-latest"; // Latest stable Flash model
+const GEMINI_MODEL = "gemini-3-flash-preview"; // Gemini 3 Flash preview
 
 export class GeminiClient {
   private apiKey: string | null = null;
