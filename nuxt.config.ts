@@ -29,6 +29,8 @@ export default defineNuxtConfig({
     // Also supports GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET for backwards compatibility
     googleClientId: "",
     googleClientSecret: "",
+    // Gemini AI API Key (for countdown messages) - can be overridden by NUXT_GEMINI_API_KEY env var
+    geminiApiKey: "",
     // Database URL - can be overridden by NUXT_DATABASE_URL or DATABASE_URL env vars
     // docker-entrypoint.sh exports DATABASE_URL, Nuxt auto-reads NUXT_DATABASE_URL
     // eslint-disable-next-line node/no-process-env

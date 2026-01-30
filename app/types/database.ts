@@ -16,6 +16,14 @@ export type UserWithTodos = Prisma.UserGetPayload<{
 }>;
 
 export type Todo = Prisma.TodoGetPayload<Record<string, never>>;
+
+// Countdown-specific type
+export type CountdownTodo = Todo & {
+  isCountdown: true;
+  countdownMessage: string | null;
+  messageGeneratedAt: Date | null;
+};
+
 export type TodoWithUser = Prisma.TodoGetPayload<{
   include: {
     todoColumn: {
@@ -124,11 +132,19 @@ export type CreateIntegrationInput = Omit<Integration, "id" | "createdAt" | "upd
 export type UpdateIntegrationInput = Partial<CreateIntegrationInput>;
 
 export type CreateUserInput = Omit<User, "id" | "createdAt" | "updatedAt" | "avatar" | "color">;
-export type CreateTodoInput = Omit<Todo, "id" | "createdAt" | "updatedAt">;
+export type CreateTodoInput = Omit<Todo, "id" | "createdAt" | "updatedAt"> & {
+  isCountdown?: boolean;
+  countdownMessage?: string | null;
+  messageGeneratedAt?: Date | null;
+};
 export type CreateShoppingListInput = Omit<ShoppingList, "id" | "createdAt" | "updatedAt" | "items">;
 export type CreateShoppingListItemInput = Omit<ShoppingListItem, "id" | "shoppingListId">;
 
-export type UpdateTodoInput = Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">>;
+export type UpdateTodoInput = Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">> & {
+  isCountdown?: boolean;
+  countdownMessage?: string | null;
+  messageGeneratedAt?: Date | null;
+};
 export type UpdateShoppingListItemInput = Partial<CreateShoppingListItemInput>;
 
 export type TodoList = {
@@ -150,6 +166,9 @@ export type TodoListItem = BaseListItem & {
   dueDate: Date | null;
   todoColumnId: string;
   shoppingListId: string;
+  isCountdown?: boolean;
+  countdownMessage?: string | null;
+  messageGeneratedAt?: Date | null;
 };
 
 export type TodoWithOrder = TodoWithUser & { order: number };

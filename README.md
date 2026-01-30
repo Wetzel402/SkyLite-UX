@@ -32,6 +32,7 @@ Beautiful ambient display perfect for a family command center:
 
 - **Photo Slideshow** - Google Photos integration with Ken Burns effect
 - **Interactive Widgets** - All widgets are clickable and navigate to their pages
+- **Countdown Widget** - Display upcoming events with AI-generated whimsical messages powered by Google Gemini
 - **Today's Menu** - Shows all meals planned for today with meal type icons (🍳🥗🍽️)
 - **7-Day Weather Forecast** - Current conditions plus daily forecasts
 - **Upcoming Events** - Next 5 events from Google Calendar with smart date formatting
@@ -42,6 +43,7 @@ Beautiful ambient display perfect for a family command center:
 
 - **Family Calendar** - Unified calendar with Google Calendar integration
 - **Todo Lists** - Organize tasks with due dates and priorities, Google Tasks integration (read-only)
+- **Countdown Events** - Mark special todos as countdown events and display them on the home screen with AI-generated messages
 - **Shopping Lists** - Collaborative shopping lists with integration support
 - **Meal Planning** - Plan your meals for the week with breakfast, lunch, and dinner
 - **User Management** - Multi-user support with individual profiles
@@ -51,6 +53,7 @@ Beautiful ambient display perfect for a family command center:
 - **Google Photos** - Display photos from Google Photos albums in slideshow
 - **Google Calendar** - View and manage calendar events
 - **Google Tasks** - View Google Tasks alongside local todos (read-only)
+- **Google Gemini** - AI-powered message generation for countdown events (optional, free tier)
 - **Weather** - Display current weather and forecast
 - **Mealie** - Meal planning integration
 - **Tandoor** - Recipe and meal planning integration

@@ -98,7 +98,7 @@ services:
       # Photo storage (optional - default: /data/photos)
       # - PHOTOS_STORAGE_PATH=/data/photos
     volumes:
-      - ./data:/data  # Contains database (skylite.db) and photos (/data/photos)
+      - ./data:/data # Contains database (skylite.db) and photos (/data/photos)
     ports:
       - 3000:3000
 ```
@@ -193,29 +193,33 @@ Valid log levels: `debug`, `info`, `warn`, `error`
 
 ### Photo Storage
 
-| Variable               | Description                           | Default         |
-| ---------------------- | ------------------------------------- | --------------- |
-| `PHOTOS_STORAGE_PATH`  | Directory for downloaded photo cache  | `/data/photos`  |
+| Variable              | Description                          | Default        |
+| --------------------- | ------------------------------------ | -------------- |
+| `PHOTOS_STORAGE_PATH` | Directory for downloaded photo cache | `/data/photos` |
 
 **Important for Docker deployments:**
 
 When using Google Photos integration, selected album cover photos are downloaded and cached locally for persistent display. By default, photos are stored at `/data/photos` inside the container, which is included in the `/data` volume mount.
 
 **Default behavior (recommended):**
+
 - Photos stored at `/data/photos` (persisted in `/data` volume)
 - Survives container restarts and rebuilds
 - Shared storage with SQLite database
 
 **Custom storage path:**
+
 ```bash
 -e PHOTOS_STORAGE_PATH=/custom/path
 ```
 
 If you change this path, ensure it's either:
+
 1. Inside the `/data` volume (e.g., `/data/custom-photos`)
 2. A separately mounted volume
 
 **Storage requirements:**
+
 - Approximately 300-600 KB per photo (at 1920×1080)
 - 1000 photos ≈ 300-600 MB
 

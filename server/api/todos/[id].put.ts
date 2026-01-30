@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
         todoColumnId: body.todoColumnId,
         order: body.order,
+        ...(body.isCountdown !== undefined && { isCountdown: body.isCountdown }),
+        ...(body.countdownMessage !== undefined && { countdownMessage: body.countdownMessage }),
+        ...(body.messageGeneratedAt !== undefined && { messageGeneratedAt: body.messageGeneratedAt ? new Date(body.messageGeneratedAt) : null }),
       },
       include: {
         todoColumn: {

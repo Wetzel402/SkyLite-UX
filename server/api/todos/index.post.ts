@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
         todoColumnId: body.todoColumnId,
         order: (maxOrder._max.order || 0) + 1,
+        isCountdown: body.isCountdown || false,
+        countdownMessage: body.countdownMessage || null,
+        messageGeneratedAt: body.messageGeneratedAt ? new Date(body.messageGeneratedAt) : null,
       },
       include: {
         todoColumn: {

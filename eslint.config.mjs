@@ -77,6 +77,10 @@ export default withNuxt(antfu({
         /create-picker-session\.post\.ts$/i,
         /get-picker-media\.get\.ts$/i,
         /proxy-image\.get\.ts$/i,
+        /generate-countdown-message\.post\.ts$/i,
+        // PascalCase components
+        /HomeCountdownWidget\.vue$/i,
+        /TodoCountdownCheckbox\.vue$/i,
       ],
     }],
   },

@@ -151,9 +151,9 @@ To ensure reliable display and avoid Google Photos API restrictions, selected al
 
 ```yaml
 environment:
-  - PHOTOS_STORAGE_PATH=/data/photos  # Default location
+  - PHOTOS_STORAGE_PATH=/data/photos # Default location
 volumes:
-  - ./data:/data  # Ensures photos persist
+  - ./data:/data # Ensures photos persist
 ```
 
 **Important:** For Docker deployments, ensure your storage path is inside a mounted volume (like `/data`) to prevent photo loss during container rebuilds.

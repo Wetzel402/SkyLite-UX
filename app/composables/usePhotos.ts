@@ -1,5 +1,3 @@
-import { consola } from "consola";
-
 export function usePhotos() {
   const photos = ref<Array<{
     id: string;

@@ -1285,6 +1285,18 @@ async function handleOpenPhotosPicker() {
                     @update:model-value="updateHomeSettingsComposable({ mealsEnabled: $event })"
                   />
                 </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col">
+                    <label class="text-sm text-highlighted">Countdown</label>
+                    <span class="text-xs text-muted">Display the earliest countdown event on the home screen</span>
+                  </div>
+                  <USwitch
+                    :model-value="homeSettings?.countdownEnabled ?? false"
+                    color="primary"
+                    size="lg"
+                    @update:model-value="updateHomeSettingsComposable({ countdownEnabled: $event })"
+                  />
+                </div>
               </div>
             </div>
           </div>

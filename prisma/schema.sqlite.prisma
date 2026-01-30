@@ -52,6 +52,11 @@ model Todo {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Countdown-specific fields
+  isCountdown          Boolean   @default(false)
+  countdownMessage     String?   // Cached AI-generated message
+  messageGeneratedAt   DateTime? // When message was last generated
+
   todoColumnId String?
   todoColumn   TodoColumn? @relation(fields: [todoColumnId], references: [id], onDelete: Cascade)
 

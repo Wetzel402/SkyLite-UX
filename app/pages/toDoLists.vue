@@ -209,6 +209,7 @@ async function handleTodoSave(todoData: TodoListItem) {
             completed: todoData.checked,
             order: todoData.order,
             todoColumnId: todoData.todoColumnId,
+            isCountdown: todoData.isCountdown || false,
           };
           const updatedTodos = [...cachedTodos.value];
           updatedTodos[todoIndex] = updatedTodo;
@@ -225,6 +226,7 @@ async function handleTodoSave(todoData: TodoListItem) {
           completed: todoData.checked,
           order: todoData.order,
           todoColumnId: todoData.todoColumnId,
+          isCountdown: todoData.isCountdown || false,
         });
         consola.debug("Todo Lists: Todo updated successfully");
       }
@@ -249,6 +251,9 @@ async function handleTodoSave(todoData: TodoListItem) {
         todoColumnId: todoData.todoColumnId,
         createdAt: new Date(),
         updatedAt: new Date(),
+        isCountdown: todoData.isCountdown || false,
+        countdownMessage: null,
+        messageGeneratedAt: null,
       };
 
       if (cachedTodos.value && Array.isArray(cachedTodos.value)) {
@@ -265,6 +270,9 @@ async function handleTodoSave(todoData: TodoListItem) {
           completed: todoData.checked,
           order: todoData.order,
           todoColumnId: todoData.todoColumnId,
+          isCountdown: todoData.isCountdown || false,
+          countdownMessage: null,
+          messageGeneratedAt: null,
         });
         consola.debug("Todo Lists: Todo created successfully");
 

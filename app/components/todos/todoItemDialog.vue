@@ -26,6 +26,7 @@ const todoDescription = ref("");
 const todoPriority = ref<Priority>("MEDIUM");
 const todoDueDate = ref<DateValue | null>(null);
 const todoColumnId = ref<string | undefined>(undefined);
+const todoIsCountdown = ref(false);
 const todoError = ref<string | null>(null);
 
 const priorityOptions = [
@@ -51,6 +52,9 @@ watch(() => [props.isOpen, props.todo], ([isOpen, todo]) => {
       if ("todoColumnId" in todo) {
         todoColumnId.value = todo.todoColumnId || undefined;
       }
+      if ("isCountdown" in todo) {
+        todoIsCountdown.value = todo.isCountdown || false;
+      }
     }
   }
 }, { immediate: true });
@@ -61,6 +65,7 @@ function resetForm() {
   todoPriority.value = "MEDIUM";
   todoDueDate.value = null;
   todoColumnId.value = undefined;
+  todoIsCountdown.value = false;
   todoError.value = null;
 }
 
@@ -90,6 +95,7 @@ function handleSave() {
     todoColumnId: todoColumnId.value || (props.todoColumns.length > 0 ? props.todoColumns[0]?.id ?? undefined : undefined),
     checked: props.todo?.checked || false,
     order: props.todo?.order || 0,
+    isCountdown: todoIsCountdown.value,
   };
 
   emit("save", todoData as unknown as TodoListItem);
@@ -209,6 +215,13 @@ function handleDelete() {
               </template>
             </UPopover>
           </div>
+        </div>
+
+        <div class="space-y-2">
+          <TodoCountdownCheckbox v-model="todoIsCountdown" />
+          <p class="text-xs text-muted ml-6">
+            Display this event on the home screen with days remaining and AI-generated messages
+          </p>
         </div>
       </div>
 
