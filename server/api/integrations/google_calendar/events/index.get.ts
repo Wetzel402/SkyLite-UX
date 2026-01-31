@@ -164,15 +164,36 @@ export default defineEventHandler(async (event) => {
     return { events: expandedEvents, calendars: settings.calendars || [] };
   }
   catch (error: unknown) {
-    const err = error as { code?: number; message?: string; response?: { data?: unknown } };
+    const err = error as {
+      code?: number;
+      statusCode?: number;
+      message?: string;
+      response?: { status?: number; data?: { error?: string; error_description?: string } };
+    };
 
     consola.error("Integrations Google Calendar Events: Error details:", {
       code: err?.code,
+      statusCode: err?.statusCode,
       message: err?.message,
-      response: err?.response?.data,
+      responseStatus: err?.response?.status,
+      responseData: err?.response?.data,
     });
 
-    if (err?.code === 401 || err?.message?.includes("invalid_grant") || err?.message?.includes("Invalid Credentials")) {
+    // Check for authentication/authorization errors
+    // Per Google OAuth2 docs, invalid_grant means refresh token is expired/revoked
+    const isAuthError = err?.code === 401
+      || err?.statusCode === 401
+      || err?.response?.status === 401
+      || err?.message?.includes("invalid_grant")
+      || err?.message?.includes("Invalid Credentials")
+      || err?.message?.includes("Refresh token expired")
+      || err?.message?.includes("Token has been expired or revoked")
+      || err?.response?.data?.error === "invalid_grant";
+
+    if (isAuthError) {
+      consola.warn(`Google Calendar integration ${integration.name} needs re-authorization`);
+
+      // Mark integration as needing reauth and clear tokens
       await prisma.integration.update({
         where: { id: integrationId },
         data: {
@@ -180,6 +201,8 @@ export default defineEventHandler(async (event) => {
           settings: {
             ...(integration.settings as object),
             needsReauth: true,
+            accessToken: null,
+            tokenExpiry: null,
           },
         },
       });
@@ -190,9 +213,10 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // For non-auth errors, throw as 500 (server error)
     consola.error("Integrations Google Calendar Events: Failed to fetch events:", error);
     throw createError({
-      statusCode: 400,
+      statusCode: 500,
       message: error instanceof Error ? error.message : "Failed to fetch Google Calendar events",
     });
   }

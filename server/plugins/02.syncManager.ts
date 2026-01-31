@@ -165,7 +165,23 @@ async function performIntegrationSync(
   }
   catch (err) {
     error = err instanceof Error ? err.message : String(err);
-    consola.error(`Sync Manager: Failed to sync integration ${integration.name} (${integration.id}):`, err);
+    const errObj = err as { code?: number; statusCode?: number };
+
+    // Check if this is an authentication error (401)
+    const isAuthError = errObj?.code === 401 || errObj?.statusCode === 401 || error?.includes("authentication expired") || error?.includes("Refresh token expired");
+
+    if (isAuthError) {
+      consola.warn(`Sync Manager: Integration ${integration.name} (${integration.id}) needs re-authorization. Disabling automatic sync.`);
+
+      // Clear the sync interval to prevent continuous failed attempts
+      clearIntegrationSync(integration.id);
+
+      // Note: The API endpoint should have already marked the integration as needsReauth
+      // We just stop trying to sync it automatically
+    }
+    else {
+      consola.error(`Sync Manager: Failed to sync integration ${integration.name} (${integration.id}):`, err);
+    }
   }
   finally {
     const syncInterval = syncIntervals.get(integration.id);

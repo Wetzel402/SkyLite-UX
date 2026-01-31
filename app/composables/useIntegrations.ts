@@ -53,27 +53,42 @@ export function useIntegrations() {
       await refreshNuxtData("integrations");
 
       if (response.enabled) {
-        const service = await createIntegrationService(response);
-        if (service) {
-          integrationServices.set(response.id, service);
-          await service.initialize();
+        consola.info(`Use Integrations: Initializing service for ${response.name} (${response.id})...`);
+        try {
+          const service = await createIntegrationService(response);
+          if (service) {
+            integrationServices.set(response.id, service);
+            consola.debug(`Use Integrations: Service created, calling initialize()...`);
+            await service.initialize();
+            consola.info(`Use Integrations: Service initialized successfully for ${response.name}`);
+          }
+          else {
+            consola.warn(`Use Integrations: Failed to create service for ${response.name}`);
+          }
+        }
+        catch (initError) {
+          consola.error(`Use Integrations: Service initialization failed for ${response.name}:`, initError);
+          // Continue anyway - integration is saved, just not initialized
         }
       }
 
       if (response.enabled) {
         try {
+          consola.debug(`Use Integrations: Registering ${response.name} with sync manager...`);
           await $fetch("/api/sync/register", {
             method: "POST",
             body: response,
           });
           consola.debug("Use Integrations: Integration registered with sync manager:", response.name);
 
+          consola.debug(`Use Integrations: Triggering immediate sync for ${response.name}...`);
           const { triggerImmediateSync } = useSyncManager();
           await triggerImmediateSync(response.type, response.id);
-          consola.debug("Use Integrations: Immediate sync triggered for new integration:", response.name);
+          consola.info("Use Integrations: Immediate sync completed for new integration:", response.name);
         }
         catch (syncError) {
           consola.warn("Use Integrations: Failed to register integration with sync manager:", syncError);
+          // Continue anyway - integration is created
         }
       }
 
