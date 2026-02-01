@@ -14,6 +14,7 @@
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/KJn3YfWxn7)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/y3knik/skylite-ux)
+[![Android APK](https://img.shields.io/badge/Android-APK-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/y3knik/SkyLite-UX/releases)
 [![NUXT](https://img.shields.io/badge/Nuxt-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/docs/getting-started/introduction)
 [![NUXT UI](https://img.shields.io/badge/NuxtUI-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://ui.nuxt.com)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/docs/installation/using-vite)
@@ -57,6 +58,25 @@ Beautiful ambient display perfect for a family command center:
 - **Weather** - Display current weather and forecast
 - **Mealie** - Meal planning integration
 - **Tandoor** - Recipe and meal planning integration
+
+## Mobile App (Android)
+
+Skylite UX is available as a native Android app with full offline support:
+
+- **📱 Native Android APK** - Download from [GitHub Releases](https://github.com/y3knik/SkyLite-UX/releases)
+- **🔄 Offline Support** - Add meals and todos while disconnected, auto-syncs when online
+- **📲 Progressive Web App** - Install directly from your browser on any device
+- **🎨 Mobile-Optimized UI** - Collapsible columns, no horizontal scrollbars, responsive design
+- **⚡ Fast & Lightweight** - Static generation with Capacitor for native performance
+
+### Download & Install
+
+1. Download the latest `app-release.apk` from [Releases](https://github.com/y3knik/SkyLite-UX/releases)
+2. Enable "Install from Unknown Sources" in Android settings
+3. Open the APK file and install
+4. Configure your server URL in Mobile Settings on first launch
+
+Alternatively, use the Progressive Web App (PWA) by visiting your Skylite instance in a mobile browser and selecting "Add to Home Screen".
 
 ## Installation
 
