@@ -374,6 +374,261 @@ flowchart TB
 
 ---
 
+## Mobile Architecture
+
+Skylite UX is available as a native Android application using Capacitor, providing offline-first functionality with a mobile-optimized UI.
+
+```mermaid
+flowchart TB
+    subgraph Build["Build Process"]
+        Source["Nuxt Source<br/>(SSG Mode)"]
+        Generate["nuxt generate<br/>(Static Build)"]
+        Capacitor["Capacitor Sync<br/>(Copy to Android)"]
+        Gradle["Gradle Build<br/>(APK/AAB)"]
+    end
+
+    subgraph Mobile["Mobile App"]
+        WebView["WebView<br/>(Capacitor)"]
+        IndexedDB[("IndexedDB<br/>(Offline Queue)")]
+        Preferences["Native Storage<br/>(Settings)"]
+    end
+
+    subgraph Server["Self-Hosted Server"]
+        API["Skylite API<br/>(3000)"]
+    end
+
+    Source --> Generate
+    Generate --> Capacitor
+    Capacitor --> Gradle
+    Gradle --> WebView
+    WebView <-->|"Online"| API
+    WebView <-->|"Offline"| IndexedDB
+    WebView <--> Preferences
+```
+
+### Mobile Platform Details
+
+| Aspect                | Details                                                |
+| --------------------- | ------------------------------------------------------ |
+| **Platform**          | Android (APK/AAB)                                      |
+| **Framework**         | Capacitor 6.2.0                                        |
+| **Build Mode**        | Static Site Generation (SSG)                           |
+| **Rendering**         | Client-side only (SSR disabled)                        |
+| **Offline Support**   | IndexedDB-based queue with auto-sync                   |
+| **Native Features**   | Preferences API for server URL and settings            |
+| **PWA Support**       | Progressive Web App as alternative installation method |
+| **Distribution**      | GitHub Releases (APK), Google Play Store (planned)     |
+
+### Static Site Generation (SSG)
+
+The mobile app uses static site generation instead of server-side rendering:
+
+```typescript
+// nuxt.config.ts
+export default defineNuxtConfig({
+  // Disable SSR for Capacitor builds
+  ssr: process.env.CAPACITOR_BUILD !== "true",
+
+  // Disable server plugins during static generation
+  nitro: {
+    plugins: process.env.CAPACITOR_BUILD === "true"
+      ? []
+      : ["../server/plugins/01.logging.ts", "../server/plugins/02.syncManager.ts"],
+    prerender: process.env.CAPACITOR_BUILD === "true"
+      ? { routes: [] }
+      : undefined,
+  },
+})
+```
+
+**Why Static Generation?**
+
+- Self-contained app that works without a bundled server
+- Smaller APK size (no Node.js server code)
+- Better performance on mobile devices
+- Users connect to their own self-hosted Skylite server
+- Standard Capacitor architecture pattern
+
+### Offline-First Architecture
+
+The mobile app implements offline-first architecture with automatic synchronization:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Mobile UI
+    participant Queue as Offline Queue
+    participant IndexedDB
+    participant API as Remote API
+
+    User->>UI: Add/Edit Data
+
+    alt Online
+        UI->>API: POST /api/...
+        API-->>UI: Success
+        UI-->>User: Immediate update
+    else Offline
+        UI->>Queue: Queue operation
+        Queue->>IndexedDB: Persist
+        UI-->>User: Optimistic update
+        Note over Queue: Waiting for network
+    end
+
+    opt Network Restored
+        Queue->>IndexedDB: Fetch pending
+        IndexedDB-->>Queue: Operations
+        Queue->>API: Batch sync
+        API-->>Queue: Success
+        Queue->>IndexedDB: Clear queue
+    end
+```
+
+**Offline Features:**
+
+- **Offline Queue**: All create/update/delete operations queued in IndexedDB
+- **Optimistic Updates**: UI updates immediately, syncs in background
+- **Auto-Sync**: Automatic synchronization when network is restored
+- **Conflict Resolution**: Server data takes precedence on sync
+- **Queue Management**: View pending operations in `/offline-queue` page
+
+**Supported Offline Operations:**
+
+| Feature          | Create | Update | Delete |
+| ---------------- | ------ | ------ | ------ |
+| Todos            | ✅      | ✅      | ✅      |
+| Meals            | ✅      | ✅      | ✅      |
+| Shopping Items   | ✅      | ✅      | ✅      |
+| Calendar Events  | ❌      | ❌      | ❌      |
+
+### Mobile-Optimized UI
+
+The mobile app features responsive design with mobile-specific enhancements:
+
+**Collapsible Columns:**
+```vue
+<!-- Todo lists and shopping lists collapse by default on mobile -->
+<div v-if="isListExpanded(list.id)" class="hidden md:block">
+  <!-- Column content -->
+</div>
+```
+
+**Responsive Layout:**
+- Fixed 50px sidebar on all screen sizes
+- Content area adjusts: `left-[50px]` for modals and overlays
+- No horizontal scrollbars: `overflow-x-hidden` on container elements
+- Touch-optimized tap targets (minimum 44x44px)
+
+**State Preservation:**
+- Accordion states preserved after data operations
+- Vue `nextTick()` ensures correct render timing
+- Watchers restore UI state after API responses
+
+### Server Configuration
+
+The mobile app requires configuration of the self-hosted server URL:
+
+```typescript
+// On first launch, user is redirected to /mobile-settings
+const { Preferences } = await import("@capacitor/preferences");
+await Preferences.set({
+  key: "serverUrl",
+  value: "https://skylite.example.com"
+});
+
+// All API calls are intercepted and routed to configured server
+window.__CAPACITOR_SERVER_URL__ = serverUrl;
+```
+
+**Configuration Flow:**
+
+1. User launches app for first time
+2. No server URL → redirect to `/mobile-settings`
+3. User enters server URL (e.g., `https://skylite.example.com`)
+4. URL saved to native Preferences
+5. All `$fetch` calls intercepted and routed to configured server
+6. App functions normally, syncing with user's self-hosted instance
+
+### Build Process
+
+Mobile builds use GitHub Actions with automated APK generation:
+
+```yaml
+# .github/workflows/build-apk.yml
+- name: Build APK
+  run: |
+    export CAPACITOR_BUILD=true
+    npm run generate
+    npx cap sync android
+    cd android && ./gradlew assembleRelease
+```
+
+**Build Steps:**
+
+1. **Static Generation**: `nuxt generate` with `CAPACITOR_BUILD=true`
+2. **Capacitor Sync**: Copy built files to `android/app/src/main/assets/public`
+3. **Gradle Build**: Compile Android APK with signed release configuration
+4. **Upload Release**: Attach APK to GitHub release automatically
+
+**Build Outputs:**
+
+- `app-release.apk` - Unsigned APK for sideloading
+- `app-release.aab` - Signed bundle for Play Store (future)
+
+### Mobile vs. Web Comparison
+
+| Feature               | Web (SSR)                 | Mobile (SSG)                     |
+| --------------------- | ------------------------- | -------------------------------- |
+| **Rendering**         | Server + Client           | Client-only                      |
+| **Server Required**   | Yes (Nitro)               | No (static files)                |
+| **Installation**      | Browser URL               | APK install or PWA               |
+| **Offline Support**   | Service Worker (limited)  | Full offline queue with IndexedDB|
+| **Server URL**        | Same domain               | Configurable (user's server)     |
+| **Native Features**   | None                      | Native storage, notifications    |
+| **Distribution**      | Self-hosted URL           | GitHub Releases, Play Store      |
+| **Updates**           | Automatic (reload page)   | Manual (download new APK)        |
+
+### Progressive Web App (PWA)
+
+As an alternative to the native APK, users can install Skylite as a PWA:
+
+```typescript
+// nuxt.config.ts
+pwa: {
+  registerType: "autoUpdate",
+  manifest: {
+    name: "SkyLite UX",
+    short_name: "SkyLite",
+    theme_color: "#0ea5e9",
+    display: "standalone",
+    icons: [
+      { src: "/skylite-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/skylite-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
+}
+```
+
+**PWA Features:**
+
+- Install from browser on any device (Android, iOS, desktop)
+- Works with self-hosted server (no Capacitor configuration needed)
+- Service worker for offline caching
+- Home screen icon with app-like experience
+- No app store required
+
+**PWA vs. Native APK:**
+
+| Aspect               | PWA                     | Native APK                |
+| -------------------- | ----------------------- | ------------------------- |
+| **Installation**     | Add to Home Screen      | APK install               |
+| **Offline Support**  | Service Worker cache    | Full offline queue        |
+| **Native APIs**      | Limited                 | Full Capacitor access     |
+| **Updates**          | Automatic               | Manual (new APK)          |
+| **File Size**        | Cached as needed        | ~8MB APK                  |
+| **Distribution**     | Web browser             | GitHub Releases           |
+
+---
+
 ## API Endpoints
 
 The application exposes 71+ RESTful API endpoints organized by resource.
