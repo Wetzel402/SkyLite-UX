@@ -108,6 +108,12 @@ export async function downloadAndSavePhoto(
     });
 
     if (!response.ok) {
+      // Provide more specific error for auth failures
+      if (response.status === 401 || response.status === 403) {
+        const authError = new Error(`Failed to download image: ${response.status} ${response.statusText}`);
+        (authError as { code?: number }).code = response.status;
+        throw authError;
+      }
       throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
     }
 

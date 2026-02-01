@@ -49,9 +49,11 @@ export class GooglePhotosServerService {
     const credentials = this.oauth2Client.credentials;
     const now = Date.now();
     const expiryDate = credentials.expiry_date;
+    const accessToken = credentials.access_token;
 
-    // Refresh if expired or expiring in 30 seconds
-    const needsRefresh = !expiryDate || expiryDate < now + 30000;
+    // Per Google OAuth2 best practices, refresh token 5 minutes before expiry
+    // Also refresh if access_token is missing
+    const needsRefresh = !accessToken || !expiryDate || expiryDate < now + 300000;
 
     if (!needsRefresh) {
       return;
@@ -94,8 +96,23 @@ export class GooglePhotosServerService {
           }
         }
       }
-      catch (error) {
-        consola.error("Google Photos: Failed to refresh access token:", error);
+      catch (error: unknown) {
+        const err = error as { code?: number; message?: string; response?: { status?: number; data?: { error?: string } } };
+
+        // Check for refresh token expiration or revocation (including HTTP 401 responses)
+        if (
+          err?.response?.status === 401
+          || err?.message?.includes("invalid_grant")
+          || err?.message?.includes("Token has been expired or revoked")
+          || err?.response?.data?.error === "invalid_grant"
+        ) {
+          consola.error("Google Photos: Refresh token is invalid or expired. User needs to re-authorize.");
+          const authError = new Error("Refresh token expired. Please re-authorize the integration.");
+          (authError as { code?: number }).code = 401;
+          throw authError;
+        }
+
+        consola.error("Google Photos: Failed to refresh access token:", err);
         throw error;
       }
       finally {
@@ -191,6 +208,14 @@ export class GooglePhotosServerService {
     });
 
     if (!response.ok) {
+      // Check for authentication errors
+      if (response.status === 401 || response.status === 403) {
+        consola.error(`Google Photos: Auth error (${response.status}) when fetching image`);
+        const authError = new Error(`Authentication failed: ${response.status} ${response.statusText}`);
+        (authError as { code?: number }).code = response.status;
+        throw authError;
+      }
+
       throw new Error(
         `Failed to fetch image: ${response.status} ${response.statusText}`,
       );
