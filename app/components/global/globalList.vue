@@ -74,6 +74,24 @@ const showItemEdit = computed(() => {
 function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyListWithIntegration & { source: "integration" | "native" } {
   return "source" in list && (list.source === "integration" || list.source === "native");
 }
+
+// Track which lists are expanded on mobile (all collapsed by default)
+const expandedLists = ref<Set<string>>(new Set());
+
+function toggleListExpanded(listId: string) {
+  const newSet = new Set(expandedLists.value);
+  if (newSet.has(listId)) {
+    newSet.delete(listId);
+  }
+  else {
+    newSet.add(listId);
+  }
+  expandedLists.value = newSet;
+}
+
+function isListExpanded(listId: string) {
+  return expandedLists.value.has(listId);
+}
 </script>
 
 <template>
@@ -106,15 +124,19 @@ function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyList
             </UButton>
           </div>
         </div>
-        <div v-else class="h-full">
-          <div class="h-full overflow-x-auto pb-4">
-            <div class="flex gap-6 min-w-max h-full">
+        <div v-else class="h-full overflow-x-hidden">
+          <!-- Mobile: vertical stack, Desktop: horizontal scroll -->
+          <div class="h-full overflow-y-auto overflow-x-hidden md:overflow-y-hidden md:overflow-x-auto md:pb-4">
+            <div class="flex flex-col md:flex-row md:gap-6 md:min-w-max md:h-full overflow-x-hidden md:overflow-x-visible">
               <div
                 v-for="(list, listIndex) in sortedLists"
                 :key="list.id"
-                class="flex-shrink-0 w-80 h-full flex flex-col bg-default rounded-lg border border-default shadow-sm"
+                class="flex-shrink-0 w-full md:w-80 flex flex-col bg-default md:rounded-lg border-b md:border border-default md:shadow-sm md:h-full"
               >
-                <div class="p-4 border-b border-default bg-default rounded-t-lg">
+                <div
+                  class="p-4 md:border-b border-default bg-default md:rounded-t-lg cursor-pointer md:cursor-default"
+                  @click.stop="toggleListExpanded(list.id)"
+                >
                   <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-2 flex-1 min-w-0">
                       <div
@@ -144,8 +166,13 @@ function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyList
                       <h2 class="text-lg font-semibold text-highlighted truncate">
                         {{ list.name }}
                       </h2>
+                      <!-- Mobile expand/collapse indicator -->
+                      <UIcon
+                        :name="isListExpanded(list.id) ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                        class="md:hidden h-5 w-5 text-muted flex-shrink-0 ml-2"
+                      />
                     </div>
-                    <div class="flex gap-1">
+                    <div class="hidden md:flex gap-1">
                       <div
                         v-if="showReorder"
                         class="flex flex-col gap-1 items-center justify-center"
@@ -153,6 +180,7 @@ function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyList
                       >
                         <template v-if="listIndex > 0 && listIndex < sortedLists.length - 1">
                           <UButton
+                            class="hidden md:inline-flex"
                             icon="i-lucide-chevron-left"
                             size="xs"
                             variant="ghost"
@@ -161,6 +189,16 @@ function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyList
                             @click="_emit('reorderList', list.id, 'up')"
                           />
                           <UButton
+                            class="md:hidden"
+                            icon="i-lucide-chevron-up"
+                            size="xs"
+                            variant="ghost"
+                            color="neutral"
+                            aria-label="Move list up"
+                            @click="_emit('reorderList', list.id, 'up')"
+                          />
+                          <UButton
+                            class="hidden md:inline-flex"
                             icon="i-lucide-chevron-right"
                             size="xs"
                             variant="ghost"
@@ -168,10 +206,20 @@ function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyList
                             aria-label="Move list right"
                             @click="_emit('reorderList', list.id, 'down')"
                           />
+                          <UButton
+                            class="md:hidden"
+                            icon="i-lucide-chevron-down"
+                            size="xs"
+                            variant="ghost"
+                            color="neutral"
+                            aria-label="Move list down"
+                            @click="_emit('reorderList', list.id, 'down')"
+                          />
                         </template>
                         <template v-else-if="listIndex > 0">
                           <div style="height: 16px;" />
                           <UButton
+                            class="hidden md:inline-flex"
                             icon="i-lucide-chevron-left"
                             size="xs"
                             variant="ghost"
@@ -179,16 +227,35 @@ function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyList
                             aria-label="Move list left"
                             @click="_emit('reorderList', list.id, 'up')"
                           />
+                          <UButton
+                            class="md:hidden"
+                            icon="i-lucide-chevron-up"
+                            size="xs"
+                            variant="ghost"
+                            color="neutral"
+                            aria-label="Move list up"
+                            @click="_emit('reorderList', list.id, 'up')"
+                          />
                           <div style="height: 16px;" />
                         </template>
                         <template v-else-if="listIndex < sortedLists.length - 1">
                           <div style="height: 16px;" />
                           <UButton
+                            class="hidden md:inline-flex"
                             icon="i-lucide-chevron-right"
                             size="xs"
                             variant="ghost"
                             color="neutral"
                             aria-label="Move list right"
+                            @click="_emit('reorderList', list.id, 'down')"
+                          />
+                          <UButton
+                            class="md:hidden"
+                            icon="i-lucide-chevron-down"
+                            size="xs"
+                            variant="ghost"
+                            color="neutral"
+                            aria-label="Move list down"
                             @click="_emit('reorderList', list.id, 'down')"
                           />
                           <div style="height: 16px;" />
@@ -226,7 +293,11 @@ function hasIntegrationProperties(list: AnyListWithIntegration): list is AnyList
                   <div v-else-if="!list.items || list.items.length === 0 && showProgress" class="text-sm text-muted py-4.5" />
                 </div>
 
-                <div class="flex-1 p-4 overflow-y-auto">
+                <!-- Content - always visible on desktop, collapsible on mobile -->
+                <div
+                  class="flex-1 p-4 overflow-y-auto"
+                  :class="{ 'hidden md:block': !isListExpanded(list.id) }"
+                >
                   <div v-if="typeof showAdd === 'function' ? showAdd(list) : showAdd" class="flex justify-center mb-4">
                     <UButton
                       size="xl"

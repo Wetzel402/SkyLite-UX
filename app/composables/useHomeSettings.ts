@@ -15,7 +15,7 @@ export function useHomeSettings() {
     }
     catch (e: any) {
       error.value = e.message || "Failed to fetch home settings";
-      console.error("Error fetching home settings:", e);
+      // Error fetching home settings
     }
     finally {
       loading.value = false;
@@ -40,7 +40,7 @@ export function useHomeSettings() {
     }
     catch (e: any) {
       error.value = e.message || "Failed to update home settings";
-      console.error("Error updating home settings:", e);
+      // Error updating home settings
       // Revert optimistic update on error by refetching
       await fetchHomeSettings();
     }

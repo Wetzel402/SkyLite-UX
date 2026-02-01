@@ -2,11 +2,14 @@ import { consola } from "consola";
 
 import type { CreateTodoInput, TodoWithOrder, UpdateTodoInput } from "~/types/database";
 
+import { queueTodoCreation } from "~/utils/offlineDb";
+
 export function useTodos() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
   const { data: todos } = useNuxtData<TodoWithOrder[]>("todos");
+  const { isOnline, updatePendingCount } = useOfflineSync();
 
   const currentTodos = computed(() => todos.value || []);
 
@@ -30,6 +33,35 @@ export function useTodos() {
 
   const createTodo = async (todoData: CreateTodoInput) => {
     try {
+      // If offline, queue for later sync
+      if (!isOnline.value) {
+        const tempId = await queueTodoCreation(todoData);
+        await updatePendingCount();
+        consola.info("Use Todos: Todo queued for sync (offline):", tempId);
+
+        // Return a temporary todo object for optimistic UI
+        const tempTodo: TodoWithOrder = {
+          id: tempId,
+          ...todoData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          order: 0,
+          completed: todoData.completed || false,
+          title: todoData.title || "",
+          description: todoData.description || null,
+          dueDate: todoData.dueDate || null,
+          priority: todoData.priority || null,
+          todoColumnId: todoData.todoColumnId || null,
+          isCountdown: todoData.isCountdown || false,
+          countdownMessage: todoData.countdownMessage || null,
+          messageGeneratedAt: todoData.messageGeneratedAt || null,
+          todoColumn: null,
+        };
+
+        return tempTodo;
+      }
+
+      // Online - create normally
       const newTodo = await $fetch<TodoWithOrder>("/api/todos", {
         method: "POST",
         body: todoData,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { format } from "date-fns";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 import type { Meal, MealType } from "~/types/database";
 
@@ -84,13 +84,29 @@ onMounted(() => {
   expandedDay.value = getDefaultExpandedDay();
 });
 
+// Track if we should preserve the expanded day across data reloads
+const preserveExpandedDay = ref(false);
+const preservedDay = ref<number | null>(null);
+
 // Watch for week changes
 watch(() => props.weekStart, () => {
   // Reset expanded day when week changes
   expandedDay.value = getDefaultExpandedDay();
+  preserveExpandedDay.value = false;
+  preservedDay.value = null;
 
   // Close any open forms when week changes
   closeInlineForm();
+});
+
+// Watch for meals changes to preserve accordion state
+watch(() => props.meals, () => {
+  if (preserveExpandedDay.value && preservedDay.value !== null) {
+    expandedDay.value = preservedDay.value;
+    // Reset the preserve flag after applying
+    preserveExpandedDay.value = false;
+    preservedDay.value = null;
+  }
 });
 
 const mealGrid = computed(() => {
@@ -178,11 +194,14 @@ function closeInlineForm() {
 }
 
 // Handle form save
-function handleInlineFormSave(data: { name: string; description: string; daysInAdvance: number }) {
+async function handleInlineFormSave(data: { name: string; description: string; daysInAdvance: number }) {
   if (!inlineFormState.value)
     return;
 
   const { dayOfWeek, mealType, editingMeal } = inlineFormState.value;
+
+  // Store the day we're on before closing the form
+  const currentDay = dayOfWeek;
 
   if (editingMeal) {
     // Emit edit event to parent
@@ -197,15 +216,28 @@ function handleInlineFormSave(data: { name: string; description: string; daysInA
   }
 
   closeInlineForm();
+
+  // Keep the accordion expanded on the day where we just added/edited
+  // Use nextTick to ensure it persists after parent reloads data
+  await nextTick();
+  expandedDay.value = currentDay;
 }
 
 // Handle form delete
-function handleInlineFormDelete() {
+async function handleInlineFormDelete() {
   if (!inlineFormState.value?.editingMeal)
     return;
 
+  // Store the day before closing
+  const currentDay = inlineFormState.value.dayOfWeek;
+
   emit("deleteMeal", inlineFormState.value.editingMeal);
   closeInlineForm();
+
+  // Keep the accordion expanded on the same day
+  // Use nextTick to ensure it persists after parent reloads data
+  await nextTick();
+  expandedDay.value = currentDay;
 }
 
 // Accordion animation hooks
@@ -249,68 +281,71 @@ function onAccordionLeave(el: Element) {
     <!-- Move mode overlay (mobile) -->
     <div
       v-if="movingMeal && isMobile"
-      class="fixed inset-0 z-40 bg-black/80 p-4 overflow-y-auto"
+      class="fixed top-0 left-[50px] right-0 bottom-0 z-40 bg-black/80 overflow-y-auto p-4"
     >
-      <!-- Header -->
-      <div class="bg-default rounded-lg p-4 mb-4 sticky top-0 z-10 shadow-lg">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold text-lg">
-            Move "{{ movingMeal.name }}"
-          </h3>
-          <UButton
-            icon="i-lucide-x"
-            variant="ghost"
-            size="lg"
-            aria-label="Cancel move"
-            @click="cancelMoveMode"
-          />
-        </div>
-        <p class="text-sm text-muted">
-          Tap a destination slot below
-        </p>
-      </div>
-
-      <!-- Destination picker (scrollable list of days) -->
-      <div class="space-y-4 pb-4">
-        <div
-          v-for="dayOfWeek in 7"
-          :key="dayOfWeek - 1"
-          class="bg-default rounded-lg overflow-hidden shadow-md"
-        >
-          <!-- Day header -->
-          <div class="p-3 bg-muted/10 font-semibold text-sm border-b border-default">
-            {{ dayNames[dayOfWeek - 1] }} - {{ getDayDate(dayOfWeek - 1) }}
+      <div class="w-full max-w-full">
+        <!-- Header -->
+        <div class="bg-default rounded-lg p-4 mb-4 sticky top-0 z-10 shadow-lg">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-lg truncate pr-2">
+              Move "{{ movingMeal.name }}"
+            </h3>
+            <UButton
+              icon="i-lucide-x"
+              variant="ghost"
+              size="lg"
+              aria-label="Cancel move"
+              class="flex-shrink-0"
+              @click="cancelMoveMode"
+            />
           </div>
+          <p class="text-sm text-muted">
+            Tap a destination slot below
+          </p>
+        </div>
 
-          <!-- Meal type buttons -->
-          <div class="p-3 space-y-2">
-            <button
-              v-for="mealType in mealTypes"
-              :key="mealType"
-              :disabled="dayOfWeek - 1 === movingMeal.dayOfWeek && mealType === movingMeal.mealType"
-              class="w-full p-3 border-2 rounded-lg text-left active:bg-primary/5 transition-colors"
-              :class="[
-                dayOfWeek - 1 === movingMeal.dayOfWeek && mealType === movingMeal.mealType
-                  ? 'border-default bg-muted/10 text-muted cursor-not-allowed'
-                  : 'border-primary/30 hover:bg-primary/5 hover:border-primary',
-              ]"
-              @click="moveMealToSlot(dayOfWeek - 1, mealType)"
-            >
-              <span class="text-sm font-medium">{{ mealTypeLabels[mealType] }}</span>
-              <span
-                v-if="dayOfWeek - 1 === movingMeal.dayOfWeek && mealType === movingMeal.mealType"
-                class="text-xs text-muted ml-2"
+        <!-- Destination picker (scrollable list of days) -->
+        <div class="space-y-4 pb-4">
+          <div
+            v-for="dayOfWeek in 7"
+            :key="dayOfWeek - 1"
+            class="bg-default rounded-lg overflow-hidden shadow-md"
+          >
+            <!-- Day header -->
+            <div class="p-3 bg-muted/10 font-semibold text-sm border-b border-default">
+              {{ dayNames[dayOfWeek - 1] }} - {{ getDayDate(dayOfWeek - 1) }}
+            </div>
+
+            <!-- Meal type buttons -->
+            <div class="p-3 space-y-2">
+              <button
+                v-for="mealType in mealTypes"
+                :key="mealType"
+                :disabled="dayOfWeek - 1 === movingMeal.dayOfWeek && mealType === movingMeal.mealType"
+                class="w-full p-3 border-2 rounded-lg text-left active:bg-primary/5 transition-colors"
+                :class="[
+                  dayOfWeek - 1 === movingMeal.dayOfWeek && mealType === movingMeal.mealType
+                    ? 'border-default bg-muted/10 text-muted cursor-not-allowed'
+                    : 'border-primary/30 hover:bg-primary/5 hover:border-primary',
+                ]"
+                @click="moveMealToSlot(dayOfWeek - 1, mealType)"
               >
-                (current)
-              </span>
-            </button>
+                <span class="text-sm font-medium">{{ mealTypeLabels[mealType] }}</span>
+                <span
+                  v-if="dayOfWeek - 1 === movingMeal.dayOfWeek && mealType === movingMeal.mealType"
+                  class="text-xs text-muted ml-2"
+                >
+                  (current)
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Mobile Layout: Vertical day-by-day layout with ACCORDION -->
-    <div v-if="isMobile" class="space-y-3">
+    <div v-if="isMobile" class="space-y-3 overflow-x-hidden">
       <div
         v-for="dayOfWeek in 7"
         :key="dayOfWeek - 1"

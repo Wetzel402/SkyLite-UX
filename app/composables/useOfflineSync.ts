@@ -3,8 +3,11 @@ import { onMounted, onUnmounted, readonly, ref } from "vue";
 
 import {
   getPendingMeals,
+  getPendingTodos,
   removePendingMeal,
+  removePendingTodo,
   updatePendingMealStatus,
+  updatePendingTodoStatus,
 } from "~/utils/offlineDb";
 
 // @ts-ignore - Capacitor is added via script tag in Capacitor builds
@@ -90,8 +93,9 @@ export function useOfflineSync() {
 
   // Load pending count
   async function updatePendingCount() {
-    const pending = await getPendingMeals();
-    _pendingCount.value = pending.length;
+    const pendingMeals = await getPendingMeals();
+    const pendingTodos = await getPendingTodos();
+    _pendingCount.value = pendingMeals.length + pendingTodos.length;
   }
 
   // Sync pending meals to server
@@ -137,9 +141,53 @@ export function useOfflineSync() {
     }
   }
 
+  // Sync pending todos to server
+  async function syncPendingTodos() {
+    if (!_isOnline.value || _isSyncing.value)
+      return;
+
+    _isSyncing.value = true;
+    _syncError.value = null;
+
+    try {
+      const pending = await getPendingTodos();
+
+      for (const item of pending) {
+        try {
+          await updatePendingTodoStatus(item.id, "syncing");
+
+          await $fetch("/api/todos", {
+            method: "POST",
+            body: item.todoData,
+          });
+
+          await removePendingTodo(item.id);
+        }
+        catch (error) {
+          await updatePendingTodoStatus(
+            item.id,
+            "error",
+            error instanceof Error ? error.message : "Sync failed",
+          );
+        }
+      }
+
+      _lastSyncTime.value = new Date();
+      await updatePendingCount();
+      await refreshNuxtData("todos");
+    }
+    catch (error) {
+      _syncError.value = error instanceof Error ? error.message : "Sync failed";
+    }
+    finally {
+      _isSyncing.value = false;
+    }
+  }
+
   async function triggerSync() {
     if (_isOnline.value) {
       await syncPendingMeals();
+      await syncPendingTodos();
     }
   }
 

@@ -285,17 +285,19 @@ watch(currentWeekStart, () => {
 </script>
 
 <template>
-  <div class="flex w-full flex-col rounded-lg">
+  <div class="flex h-screen w-full flex-col overflow-x-hidden overflow-y-hidden">
     <!-- Header -->
-    <div class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default">
+    <div class="py-5 sm:px-4 flex-shrink-0 bg-default border-b border-default">
       <GlobalDateHeader />
     </div>
 
     <!-- Sync Status Bar -->
-    <SyncStatusBar />
+    <div class="flex-shrink-0">
+      <SyncStatusBar />
+    </div>
 
     <!-- Week Navigation -->
-    <div class="p-4 border-b border-default bg-default">
+    <div class="p-4 border-b border-default bg-default flex-shrink-0">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <h2 class="text-xl font-bold">
@@ -337,7 +339,7 @@ watch(currentWeekStart, () => {
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 overflow-y-auto p-4">
+    <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4">
       <div v-if="loading" class="flex items-center justify-center h-64">
         <div class="text-center">
           <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-primary-500" />

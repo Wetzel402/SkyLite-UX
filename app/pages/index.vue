@@ -35,7 +35,7 @@ async function performNavigation() {
     await router.push(targetRoute).catch((error) => {
       // Ignore navigation errors related to preloading
       if (error.name === "FetchError" || error.message?.includes("preload")) {
-        console.warn("[Index] Ignoring preload error, navigation should still work:", error.name);
+        // Ignoring preload error, navigation should still work
       }
       else {
         throw error; // Re-throw other errors
@@ -43,8 +43,6 @@ async function performNavigation() {
     });
   }
   catch (error) {
-    console.error("[Index] Navigation error:", error);
-
     // Fallback: direct navigation
     if (!hasNavigated) {
       hasNavigated = true;
@@ -62,7 +60,6 @@ onMounted(async () => {
   // Set a timeout fallback - if navigation hasn't happened after 2 seconds, force it
   navigationTimeout = setTimeout(() => {
     if (!hasNavigated) {
-      console.warn("[Index] Navigation timeout - forcing navigation to mealplanner");
       hasNavigated = true;
       window.location.href = isCapacitor ? "/mealplanner" : "/home";
     }

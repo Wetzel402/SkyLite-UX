@@ -118,7 +118,7 @@ function handleDelete() {
     @click="emit('close')"
   >
     <div
-      class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
+      class="w-full mx-4 sm:w-[425px] sm:mx-0 max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
       <div class="flex items-center justify-between p-4 border-b border-default">
@@ -160,8 +160,8 @@ function handleDelete() {
           />
         </div>
 
-        <div class="flex gap-4">
-          <div class="w-1/2 space-y-2">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="w-full sm:w-1/2 space-y-2">
             <label class="block text-sm font-medium text-highlighted">Priority</label>
             <USelect
               v-model="todoPriority"
@@ -173,7 +173,7 @@ function handleDelete() {
             />
           </div>
 
-          <div class="w-1/2 space-y-2">
+          <div class="w-full sm:w-1/2 space-y-2">
             <label class="block text-sm font-medium text-highlighted">Due Date</label>
             <UPopover>
               <UButton

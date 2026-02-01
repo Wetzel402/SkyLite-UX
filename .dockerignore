@@ -1,0 +1,66 @@
+# Build outputs
+node_modules
+.nuxt
+.output
+.nitro
+.cache
+dist
+
+# Version control
+.git
+.gitignore
+.github
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+storage
+data
+*.db
+*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+docs
+*.md
+
+# Development files
+.vscode
+.idea
+.fleet
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+
+# Temporary files
+tmp
+temp
+tmpclaude-*
+
+# APK builds
+apk-download
+
+# Prisma (except schema files which are needed)
+prisma/data
+
+# Mobile/Capacitor
+android
+ios

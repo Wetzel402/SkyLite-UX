@@ -21,10 +21,10 @@ const navigationItems = computed(() => {
     { to: "/mobile-settings", icon: "i-lucide-settings", label: "Settings" },
   ];
 
-  // In Capacitor, only show meal planner and mobile settings
+  // In Capacitor, show meal planner, todo lists, and mobile settings
   if (isCapacitor) {
     return allItems.filter(item =>
-      item.to === "/mealplanner" || item.to === "/mobile-settings",
+      item.to === "/mealplanner" || item.to === "/toDoLists" || item.to === "/mobile-settings",
     );
   }
 

@@ -19,6 +19,89 @@ const { data: todos } = useNuxtData<Todo[]>("todos");
 const { updateTodo, createTodo, deleteTodo, toggleTodo, reorderTodo, clearCompleted, loading: todosLoading, fetchTodos } = useTodos();
 const { updateTodoColumn, createTodoColumn, deleteTodoColumn, reorderTodoColumns, loading: columnsLoading } = useTodoColumns();
 
+// Debug logging for data state
+watch(() => todoColumns.value, (newVal) => {
+  consola.info(`[toDoLists] todo-columns data changed: ${newVal?.length || 0} columns`, newVal);
+}, { immediate: true });
+
+watch(() => todos.value, (newVal) => {
+  consola.info(`[toDoLists] todos data changed: ${newVal?.length || 0} todos`, newVal);
+}, { immediate: true });
+
+// Track if data has been fetched to avoid refetching empty arrays
+const todosFetched = ref(false);
+const todoColumnsFetched = ref(false);
+
+// In Capacitor, fetch data if missing (appInit may have skipped if no server URL)
+onMounted(async () => {
+  const isCapacitor = typeof window !== "undefined" && "Capacitor" in window;
+  if (isCapacitor) {
+    consola.info("[toDoLists] Capacitor detected - checking if data needs fetching");
+
+    // Check if todos or todo-columns are missing/invalid (don't treat empty arrays as missing if already fetched)
+    const needsTodosFetch = !todosFetched.value && (!todos.value || !Array.isArray(todos.value));
+    const needsColumnsFetch = !todoColumnsFetched.value && (!todoColumns.value || !Array.isArray(todoColumns.value));
+
+    if (needsTodosFetch || needsColumnsFetch) {
+      consola.info("[toDoLists] Data missing in Capacitor - fetching now", {
+        needsTodosFetch,
+        needsColumnsFetch,
+      });
+
+      try {
+        // Fetch directly from API using $fetch
+        const promises = [];
+
+        if (needsTodosFetch) {
+          consola.info("[toDoLists] Fetching todos from API");
+          promises.push(
+            $fetch<Todo[]>("/api/todos").then((data) => {
+              consola.info("[toDoLists] Todos fetched:", data?.length || 0);
+              todos.value = data;
+              todosFetched.value = true;
+            }),
+          );
+        }
+
+        if (needsColumnsFetch) {
+          consola.info("[toDoLists] Fetching todo-columns from API");
+          promises.push(
+            $fetch<TodoColumn[]>("/api/todo-columns").then((data) => {
+              consola.info("[toDoLists] Todo-columns fetched:", data?.length || 0);
+              todoColumns.value = data;
+              todoColumnsFetched.value = true;
+            }),
+          );
+        }
+
+        await Promise.all(promises);
+        consola.info("[toDoLists] Data fetched successfully - todos:", todos.value?.length, "columns:", todoColumns.value?.length);
+      }
+      catch (err) {
+        consola.error("[toDoLists] Failed to fetch data:", err);
+      }
+    }
+    else {
+      consola.info("[toDoLists] Data already available, no fetch needed");
+      todosFetched.value = true;
+      todoColumnsFetched.value = true;
+    }
+  }
+  else {
+    // Non-Capacitor environment - fetch if data missing
+    if (!todosFetched.value && (!todos.value || !Array.isArray(todos.value))) {
+      await fetchTodos();
+      todosFetched.value = true;
+    }
+  }
+
+  // Fetch Google Tasks and Calendar Reminders
+  await Promise.all([
+    fetchGoogleTasks(),
+    fetchCalendarReminders(),
+  ]);
+});
+
 // Google Tasks and Calendar Reminders
 const googleTasks = ref<any[]>([]);
 const calendarReminders = ref<any[]>([]);
@@ -68,8 +151,12 @@ const editingTodoTyped = computed<TodoListItem | undefined>(() =>
 );
 
 const todoLists = computed<TodoListWithIntegration[]>(() => {
-  if (!todoColumns.value || !todos.value)
+  consola.debug("[toDoLists] Computing todoLists. todoColumns:", todoColumns.value?.length || 0, "todos:", todos.value?.length || 0);
+
+  if (!todoColumns.value || !todos.value) {
+    consola.warn("[toDoLists] Missing data - todoColumns:", !!todoColumns.value, "todos:", !!todos.value);
     return [];
+  }
 
   const localColumns = todoColumns.value.map(column => ({
     id: column.id,
@@ -160,6 +247,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
     }
   }
 
+  consola.info("[toDoLists] Computed todoLists result:", allColumns.length, "lists with", allColumns.reduce((sum, col) => sum + (col.items?.length || 0), 0), "total items");
   return allColumns;
 });
 
@@ -618,24 +706,15 @@ async function handleToggleTodo(itemId: string, completed: boolean) {
     consola.error("Todo Lists: Failed to toggle todo:", error);
   }
 }
-
-// Fetch Google Tasks and Calendar Reminders on mount
-onMounted(async () => {
-  await Promise.all([
-    fetchTodos(),
-    fetchGoogleTasks(),
-    fetchCalendarReminders(),
-  ]);
-});
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-2rem)] w-full flex-col rounded-lg">
-    <div class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default">
+  <div class="flex h-screen w-full flex-col overflow-x-hidden overflow-y-hidden">
+    <div class="py-5 sm:px-4 flex-shrink-0 bg-default border-b border-default">
       <GlobalDateHeader />
     </div>
 
-    <div class="flex flex-1 flex-col min-h-0 p-4">
+    <div class="flex-1 min-h-0 md:p-4 overflow-x-hidden">
       <GlobalList
         :lists="todoLists"
         :loading="columnsLoading || todosLoading"

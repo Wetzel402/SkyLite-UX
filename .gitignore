@@ -36,3 +36,8 @@ apk-download/
 
 # Photo storage (downloaded from Google Photos)
 storage/
+
+# Local development scripts
+*.ps1
+*.bat
+*.mjs

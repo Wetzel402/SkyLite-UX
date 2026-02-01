@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { consola } from "consola";
 import { onMounted, onUnmounted, ref } from "vue";
 
 import { useOfflineSync } from "~/composables/useOfflineSync";
@@ -128,6 +129,26 @@ async function saveSettings() {
 
     // Update the local value to the trimmed version
     serverUrl.value = trimmedUrl;
+
+    // Trigger data refetch now that server URL is configured
+    try {
+      consola.info("[Mobile Settings] Server URL saved - refreshing all data");
+      await Promise.all([
+        refreshNuxtData("todos"),
+        refreshNuxtData("todo-columns"),
+        refreshNuxtData("meal-plans"),
+        refreshNuxtData("calendar-events"),
+        refreshNuxtData("native-shopping-lists"),
+        refreshNuxtData("users"),
+        refreshNuxtData("integrations"),
+        refreshNuxtData("app-settings"),
+      ]);
+      consola.info("[Mobile Settings] Data refresh completed");
+    }
+    catch (refreshError) {
+      consola.warn("[Mobile Settings] Some data failed to refresh:", refreshError);
+      // Don't throw - the server URL was still saved successfully
+    }
 
     saveSuccess.value = true;
   }
