@@ -328,49 +328,105 @@ flowchart LR
 
 ---
 
-## Deployment Architecture
+## Desktop/Server Architecture
 
-Skylight is designed for self-hosted deployment using Docker.
+Skylite UX is designed for self-hosted deployment using Docker, accessible via web browsers on desktop and mobile devices.
+
+### Web Application Architecture
 
 ```mermaid
 flowchart TB
-    subgraph DockerHost["Docker Host"]
-        subgraph Network["skylite-network (bridge)"]
-            App["skylite-ux<br/>Node.js 20 + Nuxt 4<br/>Port: 3000"]
-            DB[("postgres<br/>PostgreSQL 16<br/>Port: 5432")]
-        end
-        Volume[("postgres-data<br/>Persistent Volume")]
+    subgraph Clients["Client Devices"]
+        Desktop["Desktop Browser<br/>(Chrome, Firefox, Safari)"]
+        Tablet["Tablet Browser<br/>(iPad, Android)"]
+        MobileWeb["Mobile Browser<br/>(iOS Safari, Chrome)"]
     end
 
-    Users["Users"] -->|":3000"| App
+    subgraph DockerHost["Docker Host / Server"]
+        subgraph Network["skylite-network (bridge)"]
+            App["skylite-ux<br/>Node.js 20 + Nuxt 4<br/>SSR Enabled<br/>Port: 3000"]
+            DB[("Database<br/>SQLite or PostgreSQL")]
+        end
+        Volume[("Data Volume<br/>Persistent Storage")]
+    end
+
+    Desktop -->|"HTTP/HTTPS :3000"| App
+    Tablet -->|"HTTP/HTTPS :3000"| App
+    MobileWeb -->|"HTTP/HTTPS :3000"| App
     App -->|"DATABASE_URL"| DB
     DB --> Volume
 ```
 
-### Docker Configuration
+### Rendering Model
+
+**Server-Side Rendering (SSR)**
+
+- **Initial Load**: Server renders HTML with data
+- **Hydration**: Client-side Vue takes over after load
+- **Navigation**: Client-side routing (SPA mode)
+- **SEO**: Fully rendered HTML for search engines
+- **Performance**: Fast initial page load
+
+### Docker Deployment
 
 **Container: skylite-ux**
 
-- Base image: Node.js 20
-- Build: Multi-stage Dockerfile
-- Exposed port: 3000
-- Auto-migration on startup
-- Health check enabled
+- **Base image**: Node.js 20
+- **Build**: Multi-stage Dockerfile
+- **Exposed port**: 3000
+- **Features**:
+  - Auto-migration on startup
+  - Health check enabled
+  - Supports SQLite (default) or PostgreSQL
 
-**Container: postgres**
+**Container: postgres (optional)**
 
-- Image: postgres:16
-- Internal port: 5432
-- Persistent volume: postgres-data
-- Health check: pg_isready
+- **Image**: postgres:16
+- **Internal port**: 5432
+- **Persistent volume**: postgres-data
+- **Health check**: pg_isready
+
+### Database Options
+
+**SQLite (Default - Recommended)**
+
+- Runs inside the same container
+- No external database needed
+- Perfect for single-user or family deployments
+- Ideal for: Raspberry Pi, home servers, low-resource devices
+- Storage: `/data/skylite.db` (persisted in volume)
+
+**PostgreSQL (Optional)**
+
+- Separate container for database
+- Better for multi-user deployments or high concurrency
+- Requires additional configuration
+- Connection via `DATABASE_URL` environment variable
 
 ### Environment Variables
 
-| Variable               | Required | Description                  |
-| ---------------------- | -------- | ---------------------------- |
-| `DATABASE_URL`         | Yes      | PostgreSQL connection string |
-| `GOOGLE_CLIENT_ID`     | No       | Google OAuth client ID       |
-| `GOOGLE_CLIENT_SECRET` | No       | Google OAuth client secret   |
+| Variable               | Required | Description                  | Default              |
+| ---------------------- | -------- | ---------------------------- | -------------------- |
+| `DATABASE_URL`         | No       | Database connection string   | `file:/data/skylite.db` |
+| `NUXT_PUBLIC_TZ`       | Yes      | Timezone (e.g., America/Chicago) | -                |
+| `GOOGLE_CLIENT_ID`     | No       | Google OAuth client ID       | -                    |
+| `GOOGLE_CLIENT_SECRET` | No       | Google OAuth client secret   | -                    |
+| `NUXT_PUBLIC_LOG_LEVEL`| No       | Logging level (debug/info/warn/error) | info      |
+
+### Network Architecture
+
+**Access Methods:**
+
+1. **Local Network**: `http://192.168.1.100:3000`
+2. **Reverse Proxy**: `https://skylite.example.com` (Nginx, Caddy, Traefik)
+3. **VPN/Tailscale**: `http://100.64.0.5:3000`
+4. **Direct Port Forward**: `http://your-public-ip:3000` (not recommended)
+
+**Recommended Setup:**
+
+- Use reverse proxy with HTTPS for production
+- Enable HTTPS for OAuth integrations (Google requires HTTPS redirect URIs)
+- Use local network or VPN for home deployments
 
 ---
 
@@ -649,6 +705,8 @@ The application exposes 71+ RESTful API endpoints organized by resource.
 
 ## Data Flow
 
+### Desktop/Server Data Flow
+
 ```mermaid
 sequenceDiagram
     participant User
@@ -656,7 +714,7 @@ sequenceDiagram
     participant Nuxt as Nuxt Frontend
     participant Nitro as Nitro Server
     participant Prisma
-    participant DB as PostgreSQL
+    participant DB as Database (SQLite/PG)
     participant External as External APIs
 
     User->>Browser: Interacts with UI
@@ -677,9 +735,20 @@ sequenceDiagram
     Browser-->>User: Display changes
 ```
 
+### Mobile Data Flow
+
+Mobile data flow is documented in the [Mobile Architecture](#mobile-architecture) section above, featuring:
+- **Online**: Direct API calls to self-hosted server
+- **Offline**: IndexedDB queue with optimistic updates
+- **Sync**: Automatic batch sync when network restored
+
 ---
 
 ## Architecture Summary
+
+Skylite UX supports multiple deployment models with a unified codebase:
+
+### Desktop/Server Architecture
 
 | Aspect                | Details                            |
 | --------------------- | ---------------------------------- |
@@ -688,9 +757,37 @@ sequenceDiagram
 | **Language**          | TypeScript (full stack)            |
 | **Frontend**          | Nuxt 4, Vue 3, Pinia, Tailwind CSS |
 | **Backend**           | Nitro, Node.js 20                  |
-| **Database**          | PostgreSQL 16 with Prisma ORM      |
+| **Database**          | SQLite or PostgreSQL with Prisma   |
 | **Deployment**        | Docker with Docker Compose         |
+| **Access**            | Web browsers (desktop/mobile)      |
 | **Real-time**         | WebSocket-based sync system        |
+
+### Mobile Architecture
+
+| Aspect                | Details                                |
+| --------------------- | -------------------------------------- |
+| **Platform**          | Android (APK/AAB)                      |
+| **Framework**         | Capacitor 6.2.0                        |
+| **Build Mode**        | Static Site Generation (SSG)           |
+| **Rendering**         | Client-side only (no SSR)              |
+| **Language**          | TypeScript (client-side)               |
+| **Frontend**          | Nuxt 4, Vue 3, Tailwind CSS            |
+| **Backend**           | Connects to self-hosted server API     |
+| **Local Storage**     | IndexedDB for offline queue            |
+| **Distribution**      | GitHub Releases, Google Play (planned) |
+| **Offline Support**   | Full offline queue with auto-sync      |
+
+### Deployment Comparison
+
+| Feature               | Desktop/Server (SSR)  | Mobile (SSG)                     |
+| --------------------- | --------------------- | -------------------------------- |
+| **Rendering**         | Server + Client       | Client-only                      |
+| **Backend Included**  | Yes (Nitro)           | No (connects to remote server)   |
+| **Installation**      | Docker container      | APK install or PWA               |
+| **Offline Support**   | Limited (cache)       | Full (IndexedDB queue)           |
+| **Database**          | SQLite or PostgreSQL  | Remote (via API)                 |
+| **Updates**           | Docker image pull     | Manual APK download              |
+| **Ideal For**         | Home servers, NAS     | Phones, tablets, on-the-go       |
 
 ### Design Principles
 
@@ -698,4 +795,6 @@ sequenceDiagram
 - **Type Safety**: TypeScript across the entire stack
 - **Modularity**: Plugin-based integration system
 - **Modern Patterns**: Vue 3 Composition API, file-based routing
-- **Docker-native**: Containerized deployment with orchestration support
+- **Multi-platform**: Single codebase for web, desktop, and mobile
+- **Offline-first**: Mobile app works without constant connectivity
+- **Docker-native**: Containerized server deployment with orchestration support
