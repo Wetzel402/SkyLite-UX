@@ -26,6 +26,8 @@ export default withNuxt(antfu({
     ".nuxt/**",
     ".output/**",
     "dist/**",
+    // Documentation with code examples
+    "docs/**",
     // Pre-existing files with lint issues (to be fixed separately)
     ".plan/**",
     "app/app.vue",

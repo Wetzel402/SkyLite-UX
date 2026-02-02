@@ -5,6 +5,7 @@ type WeatherResponse = {
   temperature: number;
   weatherCode: number;
   weatherDescription: string;
+  location?: string;
   daily: Array<{
     date: string;
     tempMax: number;
@@ -98,6 +99,86 @@ export default defineEventHandler(async (event): Promise<WeatherResponse> => {
   const temperatureUnit = query.temperatureUnit as string || "celsius";
 
   try {
+    // Fetch location name via reverse geocoding (Nominatim/OpenStreetMap)
+    let locationName: string | undefined;
+    try {
+      // Nominatim reverse geocoding - free, no API key needed
+      // Using zoom=10 for city-level results
+      const geocodeUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&addressdetails=1`;
+      consola.debug("Fetching location name from Nominatim (OpenStreetMap)");
+
+      // Make request with custom User-Agent (required by Nominatim)
+      const geocodeData: any = await new Promise((resolve, reject) => {
+        let req: ReturnType<typeof https.get>;
+
+        const timeout = setTimeout(() => {
+          req.destroy();
+          reject(new Error("Geocoding request timeout"));
+        }, 10000);
+
+        req = https.get(geocodeUrl, {
+          headers: {
+            "User-Agent": "SkyLite-UX/1.0 (Family Dashboard)",
+          },
+        }, (res) => {
+          if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+            res.resume();
+            clearTimeout(timeout);
+            req.destroy();
+            reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+            return;
+          }
+
+          let data = "";
+          res.on("data", chunk => data += chunk);
+          res.on("end", () => {
+            clearTimeout(timeout);
+            try {
+              resolve(JSON.parse(data));
+            }
+            catch {
+              req.destroy();
+              reject(new Error("Failed to parse geocoding response"));
+            }
+          });
+        }).on("error", (err) => {
+          clearTimeout(timeout);
+          req.destroy();
+          reject(err);
+        });
+      });
+
+      if (geocodeData?.address) {
+        const addr = geocodeData.address;
+        // Build location string: "City, Province/State" or "City, Country"
+        const parts: string[] = [];
+
+        // Try city/town/village
+        if (addr.city)
+          parts.push(addr.city);
+        else if (addr.town)
+          parts.push(addr.town);
+        else if (addr.village)
+          parts.push(addr.village);
+        else if (addr.municipality)
+          parts.push(addr.municipality);
+
+        // Add state/province or country
+        if (addr.state)
+          parts.push(addr.state);
+        else if (addr.province)
+          parts.push(addr.province);
+        else if (addr.country)
+          parts.push(addr.country);
+
+        locationName = parts.join(", ");
+        consola.debug(`Resolved location: ${locationName}`);
+      }
+    }
+    catch (geocodeError) {
+      consola.warn("Failed to fetch location name, continuing without it:", geocodeError);
+    }
+
     // Build query string manually
     const params = new URLSearchParams({
       latitude: lat.toString(),
@@ -157,6 +238,7 @@ export default defineEventHandler(async (event): Promise<WeatherResponse> => {
       temperature: Math.round(weather.current.temperature_2m),
       weatherCode: weather.current.weather_code,
       weatherDescription: getWeatherDescription(weather.current.weather_code),
+      location: locationName,
       daily: dailyForecast,
     };
   }

@@ -13,6 +13,7 @@ const weather = ref<{
   temperature: number;
   description: string;
   code: number;
+  location?: string;
   daily?: Array<{
     date: string;
     tempMax: number;
@@ -68,6 +69,21 @@ const temperature = computed(() => {
   const temp = weather.value.temperature;
   const unit = homeSettings.value?.temperatureUnit === "fahrenheit" ? "°F" : "°C";
   return `${Math.round(temp)}${unit}`;
+});
+
+const todayHighLow = computed(() => {
+  if (!weather.value?.daily || weather.value.daily.length === 0)
+    return null;
+
+  const today = weather.value.daily[0];
+  if (!today)
+    return null;
+
+  const unit = homeSettings.value?.temperatureUnit === "fahrenheit" ? "°F" : "°C";
+  return {
+    high: `${today.tempMax}${unit}`,
+    low: `${today.tempMin}${unit}`,
+  };
 });
 
 // Helper function to get weather icon for forecast
@@ -210,6 +226,7 @@ async function fetchWeather() {
       temperature: number;
       weatherCode: number;
       weatherDescription: string;
+      location?: string;
       daily?: Array<{
         date: string;
         tempMax: number;
@@ -229,6 +246,7 @@ async function fetchWeather() {
       temperature: response.temperature,
       description: response.weatherDescription,
       code: response.weatherCode,
+      location: response.location,
       daily: response.daily,
     };
   }
@@ -594,16 +612,33 @@ function formatEventTime(dateString: string | Date) {
         <NuxtLink
           v-if="homeSettings?.weatherEnabled && weather"
           to="/settings"
-          class="text-white text-right bg-black/30 backdrop-blur-sm hover:bg-black/40 rounded-lg p-4 transition-colors cursor-pointer block"
+          class="text-white bg-black/30 backdrop-blur-sm hover:bg-black/40 rounded-lg p-4 transition-colors cursor-pointer block"
         >
-          <div class="text-4xl">
-            {{ weatherIcon }}
-          </div>
-          <div class="text-xl mt-2">
-            {{ temperature }}
-          </div>
-          <div class="text-sm opacity-80">
-            {{ weather.description }}
+          <!-- Top Row: Left (Location, High/Low, Condition) and Right (Icon, Temp) -->
+          <div class="flex justify-between items-start">
+            <!-- Left Side -->
+            <div class="text-left">
+              <div v-if="weather.location" class="text-sm opacity-70 mb-1">
+                {{ weather.location }}
+              </div>
+              <!-- Today's High/Low -->
+              <div v-if="todayHighLow" class="text-sm opacity-80 mb-1">
+                H: {{ todayHighLow.high }} L: {{ todayHighLow.low }}
+              </div>
+              <div class="text-sm opacity-80">
+                {{ weather.description }}
+              </div>
+            </div>
+
+            <!-- Right Side -->
+            <div class="text-right">
+              <div class="text-4xl">
+                {{ weatherIcon }}
+              </div>
+              <div class="text-xl mt-2">
+                {{ temperature }}
+              </div>
+            </div>
           </div>
 
           <!-- Weekly Forecast -->
@@ -619,8 +654,9 @@ function formatEventTime(dateString: string | Date) {
               <div class="text-3xl my-2">
                 {{ getWeatherIconForCode(day.weatherCode) }}
               </div>
-              <div class="text-base opacity-90 font-medium">
-                {{ day.tempMax }}°
+              <div class="text-sm opacity-90">
+                <div class="font-medium">{{ day.tempMax }}°</div>
+                <div class="opacity-70">{{ day.tempMin }}°</div>
               </div>
             </div>
           </div>
