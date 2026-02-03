@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import type { CalendarDate, DateValue } from "@internationalized/date";
+import type { DateValue } from "@internationalized/date";
 
-import { getLocalTimeZone, parseDate } from "@internationalized/date";
+import { CalendarDate, getLocalTimeZone, parseDate } from "@internationalized/date";
 
-import type {
-  Priority,
-  RecurrencePattern,
-  RecurrenceType,
-  TodoColumnBasic,
-  TodoListItem,
-} from "~/types/database";
+import type { Priority, TodoColumnBasic, TodoListItem } from "~/types/database";
 
+import { useRecurrence } from "~/composables/useRecurrence";
 import { useStableDate } from "~/composables/useStableDate";
+
+import type { ICalEvent } from "../../../server/integrations/iCal/types";
 
 const props = defineProps<{
   todo: TodoListItem | null;
@@ -26,6 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const { parseStableDate } = useStableDate();
+const { parseRecurrenceFromICal, generateRecurrenceRule, resetRecurrenceFields } = useRecurrence();
 
 const todoTitle = ref("");
 const todoDescription = ref("");
@@ -34,34 +32,44 @@ const todoDueDate = ref<DateValue | null>(null);
 const todoColumnId = ref<string | undefined>(undefined);
 const todoError = ref<string | null>(null);
 
-// Recurrence fields
 const isRecurring = ref(false);
-const recurrenceType = ref<RecurrenceType>("daily");
+const recurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("daily");
 const recurrenceInterval = ref(1);
-const recurrenceDaysOfWeek = ref<number[]>([]);
-const recurrenceDayOfMonth = ref(1);
+const recurrenceEndType = ref<"never" | "count" | "until">("never");
+const recurrenceCount = ref(10);
+const recurrenceUntil = ref<DateValue>(new CalendarDate(2025, 12, 31));
+const recurrenceDays = ref<number[]>([]);
+const recurrenceMonthlyType = ref<"day" | "weekday">("day");
+const recurrenceMonthlyWeekday = ref<{ week: number; day: number }>({
+  week: 1,
+  day: 1,
+});
+const recurrenceYearlyType = ref<"day" | "weekday">("day");
+const recurrenceYearlyWeekday = ref<{
+  week: number;
+  day: number;
+  month: number;
+}>({ week: 1, day: 1, month: 0 });
+
+const recurrenceState = {
+  isRecurring,
+  recurrenceType,
+  recurrenceInterval,
+  recurrenceEndType,
+  recurrenceCount,
+  recurrenceUntil,
+  recurrenceDays,
+  recurrenceMonthlyType,
+  recurrenceMonthlyWeekday,
+  recurrenceYearlyType,
+  recurrenceYearlyWeekday,
+};
 
 const priorityOptions = [
   { label: "Low", value: "LOW" },
   { label: "Medium", value: "MEDIUM" },
   { label: "High", value: "HIGH" },
   { label: "Urgent", value: "URGENT" },
-];
-
-const recurrenceTypeOptions = [
-  { label: "Daily", value: "daily" },
-  { label: "Weekly", value: "weekly" },
-  { label: "Monthly", value: "monthly" },
-];
-
-const daysOfWeekOptions = [
-  { label: "Sun", value: 0 },
-  { label: "Mon", value: 1 },
-  { label: "Tue", value: 2 },
-  { label: "Wed", value: 3 },
-  { label: "Thu", value: 4 },
-  { label: "Fri", value: 5 },
-  { label: "Sat", value: 6 },
 ];
 
 watch(
@@ -75,8 +83,8 @@ watch(
           todoDescription.value = todo.description || "";
           todoPriority.value = todo.priority || "MEDIUM";
           if (todo.dueDate) {
-            const date =
-              todo.dueDate instanceof Date
+            const date
+              = todo.dueDate instanceof Date
                 ? todo.dueDate
                 : parseStableDate(todo.dueDate);
             todoDueDate.value = parseDate(date.toISOString().split("T")[0]!);
@@ -85,25 +93,30 @@ watch(
         if ("todoColumnId" in todo) {
           todoColumnId.value = todo.todoColumnId || undefined;
         }
-        // Load recurrence pattern if it exists
-        if ("recurrencePattern" in todo && todo.recurrencePattern) {
-          const pattern = todo.recurrencePattern as RecurrencePattern;
-          isRecurring.value = true;
-          recurrenceType.value = pattern.type;
-          recurrenceInterval.value = pattern.interval;
-
-          if (pattern.type === "weekly" && "daysOfWeek" in pattern) {
-            recurrenceDaysOfWeek.value = pattern.daysOfWeek;
-          }
-          if (pattern.type === "monthly" && "dayOfMonth" in pattern) {
-            recurrenceDayOfMonth.value = pattern.dayOfMonth;
-          }
+        if ("rrule" in todo && todo.rrule) {
+          const rrule = todo.rrule as ICalEvent["rrule"];
+          const icalEvent: ICalEvent = {
+            type: "VEVENT",
+            uid: todo.id || "",
+            summary: todo.name || "",
+            description: todo.description || undefined,
+            dtstart: todo.dueDate
+              ? new Date(todo.dueDate).toISOString().replace(/\.\d{3}Z$/, "Z")
+              : new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+            dtend: todo.dueDate
+              ? new Date(todo.dueDate).toISOString().replace(/\.\d{3}Z$/, "Z")
+              : new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+            rrule,
+          };
+          parseRecurrenceFromICal(icalEvent, recurrenceState);
         }
       }
     }
   },
   { immediate: true },
 );
+
+const showDeleteConfirm = ref(false);
 
 function resetForm() {
   todoTitle.value = "";
@@ -112,11 +125,7 @@ function resetForm() {
   todoDueDate.value = null;
   todoColumnId.value = undefined;
   todoError.value = null;
-  isRecurring.value = false;
-  recurrenceType.value = "daily";
-  recurrenceInterval.value = 1;
-  recurrenceDaysOfWeek.value = [];
-  recurrenceDayOfMonth.value = 1;
+  resetRecurrenceFields(recurrenceState);
   showDeleteConfirm.value = false;
 }
 
@@ -131,49 +140,26 @@ function handleSave() {
     return;
   }
 
-  // Validate recurrence fields
   if (isRecurring.value) {
     if (recurrenceInterval.value < 1) {
       todoError.value = "Interval must be at least 1";
       return;
     }
     if (
-      recurrenceType.value === "weekly" &&
-      recurrenceDaysOfWeek.value.length === 0
+      recurrenceType.value === "weekly"
+      && recurrenceDays.value.length === 0
     ) {
       todoError.value = "Please select at least one day of the week";
       return;
     }
-    if (
-      recurrenceType.value === "monthly" &&
-      (recurrenceDayOfMonth.value < 1 || recurrenceDayOfMonth.value > 31)
-    ) {
-      todoError.value = "Day of month must be between 1 and 31";
-      return;
-    }
   }
 
-  // Build recurrence pattern
-  let recurrencePattern: RecurrencePattern | null = null;
+  let rrule: ICalEvent["rrule"] | null = null;
   if (isRecurring.value) {
-    if (recurrenceType.value === "daily") {
-      recurrencePattern = {
-        type: "daily",
-        interval: recurrenceInterval.value,
-      };
-    } else if (recurrenceType.value === "weekly") {
-      recurrencePattern = {
-        type: "weekly",
-        interval: recurrenceInterval.value,
-        daysOfWeek: recurrenceDaysOfWeek.value,
-      };
-    } else if (recurrenceType.value === "monthly") {
-      recurrencePattern = {
-        type: "monthly",
-        interval: recurrenceInterval.value,
-        dayOfMonth: recurrenceDayOfMonth.value,
-      };
-    }
+    const startDate = todoDueDate.value
+      ? todoDueDate.value.toDate(getLocalTimeZone())
+      : new Date();
+    rrule = generateRecurrenceRule(recurrenceState, startDate);
   }
 
   const todoData = {
@@ -189,13 +175,13 @@ function handleSave() {
         })()
       : null,
     todoColumnId:
-      todoColumnId.value ||
-      (props.todoColumns.length > 0
+      todoColumnId.value
+      || (props.todoColumns.length > 0
         ? (props.todoColumns[0]?.id ?? undefined)
         : undefined),
     checked: props.todo?.checked || false,
     order: props.todo?.order || 0,
-    recurrencePattern,
+    rrule,
   };
 
   emit("save", todoData as unknown as TodoListItem);
@@ -203,14 +189,13 @@ function handleSave() {
   emit("close");
 }
 
-const showDeleteConfirm = ref(false);
-
 function handleDelete() {
   if (props.todo?.id) {
     // If it's a recurring todo, show confirmation with options
     if (props.todo.recurringGroupId) {
       showDeleteConfirm.value = true;
-    } else {
+    }
+    else {
       emit("delete", props.todo.id);
       emit("close");
     }
@@ -230,16 +215,6 @@ function confirmDeleteAndStop() {
     emit("delete", props.todo.id, true);
     showDeleteConfirm.value = false;
     emit("close");
-  }
-}
-
-function toggleDayOfWeek(day: number) {
-  if (recurrenceDaysOfWeek.value.includes(day)) {
-    recurrenceDaysOfWeek.value = recurrenceDaysOfWeek.value.filter(
-      (d) => d !== day,
-    );
-  } else {
-    recurrenceDaysOfWeek.value = [...recurrenceDaysOfWeek.value, day];
   }
 }
 </script>
@@ -278,9 +253,7 @@ function toggleDayOfWeek(day: number) {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Title</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Title</label>
           <UInput
             v-model="todoTitle"
             placeholder="Todo title"
@@ -290,9 +263,7 @@ function toggleDayOfWeek(day: number) {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Description</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Description</label>
           <UTextarea
             v-model="todoDescription"
             placeholder="Todo description (optional)"
@@ -304,9 +275,7 @@ function toggleDayOfWeek(day: number) {
 
         <div class="flex gap-4">
           <div class="w-1/2 space-y-2">
-            <label class="block text-sm font-medium text-highlighted"
-              >Priority</label
-            >
+            <label class="block text-sm font-medium text-highlighted">Priority</label>
             <USelect
               v-model="todoPriority"
               :items="priorityOptions"
@@ -318,9 +287,7 @@ function toggleDayOfWeek(day: number) {
           </div>
 
           <div class="w-1/2 space-y-2">
-            <label class="block text-sm font-medium text-highlighted"
-              >Due Date</label
-            >
+            <label class="block text-sm font-medium text-highlighted">Due Date</label>
             <UPopover>
               <UButton
                 color="neutral"
@@ -363,102 +330,10 @@ function toggleDayOfWeek(day: number) {
           </div>
         </div>
 
-        <div class="space-y-3 pt-2 border-t border-default">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <UIcon
-                name="i-lucide-repeat"
-                class="h-4 w-4 transition-colors"
-                :class="isRecurring ? 'text-primary' : 'text-muted'"
-              />
-              <label
-                class="text-sm font-medium cursor-pointer transition-colors"
-                :class="isRecurring ? 'text-primary' : 'text-highlighted'"
-                @click="isRecurring = !isRecurring"
-              >
-                Repeat
-                <span v-if="isRecurring" class="text-xs text-primary/70 ml-1"
-                  >(enabled)</span
-                >
-              </label>
-            </div>
-            <UToggle v-model="isRecurring" size="md" />
-          </div>
-
-          <div
-            v-if="isRecurring"
-            class="space-y-3 pl-4 border-l-2 border-primary/20"
-          >
-            <div class="flex gap-3">
-              <div class="flex-1 space-y-2">
-                <label class="block text-xs font-medium text-muted"
-                  >Frequency</label
-                >
-                <USelect
-                  v-model="recurrenceType"
-                  :items="recurrenceTypeOptions"
-                  option-attribute="label"
-                  value-attribute="value"
-                  class="w-full"
-                  :ui="{ base: 'w-full' }"
-                />
-              </div>
-
-              <div class="w-24 space-y-2">
-                <label class="block text-xs font-medium text-muted"
-                  >Every</label
-                >
-                <UInput
-                  v-model.number="recurrenceInterval"
-                  type="number"
-                  min="1"
-                  class="w-full"
-                  :ui="{ base: 'w-full' }"
-                />
-              </div>
-            </div>
-
-            <div v-if="recurrenceType === 'weekly'" class="space-y-2">
-              <label class="block text-xs font-medium text-muted"
-                >Days of Week</label
-              >
-              <div class="flex flex-wrap gap-2">
-                <UButton
-                  v-for="day in daysOfWeekOptions"
-                  :key="day.value"
-                  :color="
-                    recurrenceDaysOfWeek.includes(day.value)
-                      ? 'primary'
-                      : 'neutral'
-                  "
-                  :variant="
-                    recurrenceDaysOfWeek.includes(day.value)
-                      ? 'solid'
-                      : 'outline'
-                  "
-                  size="xs"
-                  @click="toggleDayOfWeek(day.value)"
-                >
-                  {{ day.label }}
-                </UButton>
-              </div>
-            </div>
-
-            <div v-if="recurrenceType === 'monthly'" class="space-y-2">
-              <label class="block text-xs font-medium text-muted"
-                >Day of Month</label
-              >
-              <UInput
-                v-model.number="recurrenceDayOfMonth"
-                type="number"
-                min="1"
-                max="31"
-                class="w-full"
-                :ui="{ base: 'w-full' }"
-              />
-            </div>
-          </div>
-        </div>
+        <GlobalRecurrenceForm
+          :state="recurrenceState"
+          @update:state="recurrenceState = $event"
+        />
       </div>
 
       <div class="flex justify-between p-4 border-t border-default">
@@ -472,7 +347,11 @@ function toggleDayOfWeek(day: number) {
           Delete
         </UButton>
         <div class="flex gap-2" :class="{ 'ml-auto': !todo?.id }">
-          <UButton color="neutral" variant="ghost" @click="emit('close')">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="emit('close')"
+          >
             Cancel
           </UButton>
           <UButton color="primary" @click="handleSave">

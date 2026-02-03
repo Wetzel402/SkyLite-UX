@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { BaseListItem, Priority, ShoppingListItem, TodoListItem } from "~/types/database";
+import type {
+  BaseListItem,
+  Priority,
+  ShoppingListItem,
+  TodoListItem,
+} from "~/types/database";
 import type { ReorderDirectionEvent, ToggleEvent } from "~/types/ui";
 
 defineProps<{
@@ -22,17 +27,24 @@ function isShoppingItem(item: BaseListItem): item is ShoppingListItem {
   return "quantity" in item && "unit" in item;
 }
 
-function isTodoItem(item: BaseListItem): item is TodoListItem & { priority?: Priority; dueDate?: Date | null } {
+function isTodoItem(
+  item: BaseListItem,
+): item is TodoListItem & { priority?: Priority; dueDate?: Date | null } {
   return "shoppingListId" in item;
 }
 
 function getPriorityColor(priority: Priority) {
   switch (priority) {
-    case "LOW": return "text-green-600 bg-green-50 dark:bg-green-950";
-    case "MEDIUM": return "text-yellow-600 bg-yellow-50 dark:bg-yellow-950";
-    case "HIGH": return "text-orange-600 bg-orange-50 dark:bg-orange-950";
-    case "URGENT": return "text-red-600 bg-red-50 dark:bg-red-950";
-    default: return "text-muted bg-muted";
+    case "LOW":
+      return "text-green-600 bg-green-50 dark:bg-green-950";
+    case "MEDIUM":
+      return "text-yellow-600 bg-yellow-50 dark:bg-yellow-950";
+    case "HIGH":
+      return "text-orange-600 bg-orange-50 dark:bg-orange-950";
+    case "URGENT":
+      return "text-red-600 bg-red-50 dark:bg-red-950";
+    default:
+      return "text-muted bg-muted";
   }
 }
 </script>
@@ -48,7 +60,9 @@ function getPriorityColor(priority: Priority) {
       color="primary"
       size="xl"
       aria-label="`Mark ${item.name} as ${item.checked ? 'incomplete' : 'complete'}`"
-      @update:model-value="emit('toggle', { itemId: item.id, checked: Boolean($event) })"
+      @update:model-value="
+        emit('toggle', { itemId: item.id, checked: Boolean($event) })
+      "
       @click.stop
     />
     <div class="flex-1 min-w-0">
@@ -89,7 +103,8 @@ function getPriorityColor(priority: Priority) {
           v-if="isShoppingItem(item) && showQuantity && item.quantity"
           class="text-xs text-muted"
         >
-          {{ item.quantity > 1 ? item.quantity : "" }} {{ item.unit === null || item.unit === "" ? "" : item.unit }}
+          {{ item.quantity > 1 ? item.quantity : "" }}
+          {{ item.unit === null || item.unit === "" ? "" : item.unit }}
         </span>
       </div>
       <p

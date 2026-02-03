@@ -15,14 +15,18 @@ const emit = defineEmits<{
 const name = ref("");
 const error = ref<string | null>(null);
 
-watch(() => [props.isOpen, props.list], ([isOpen, list]) => {
-  if (isOpen) {
-    resetForm();
-    if (list && typeof list === "object" && "name" in list) {
-      name.value = list.name || "";
+watch(
+  () => [props.isOpen, props.list],
+  ([isOpen, list]) => {
+    if (isOpen) {
+      resetForm();
+      if (list && typeof list === "object" && "name" in list) {
+        name.value = list.name || "";
+      }
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
 function resetForm() {
   name.value = "";
@@ -56,9 +60,11 @@ function handleDelete() {
       class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-default">
+      <div
+        class="flex items-center justify-between p-4 border-b border-default"
+      >
         <h3 class="text-base font-semibold leading-6">
-          {{ list ? 'Edit Shopping List' : 'Create Shopping List' }}
+          {{ list ? "Edit Shopping List" : "Create Shopping List" }}
         </h3>
         <UButton
           color="neutral"
@@ -71,12 +77,17 @@ function handleDelete() {
       </div>
 
       <div class="p-4 space-y-6">
-        <div v-if="error" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
+        <div
+          v-if="error"
+          class="bg-error/10 text-error rounded-md px-3 py-2 text-sm"
+        >
           {{ error }}
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">List Name</label>
+          <label class="block text-sm font-medium text-highlighted"
+            >List Name</label
+          >
           <UInput
             v-model="name"
             placeholder="Groceries, Hardware Store, etc."
@@ -104,18 +115,11 @@ function handleDelete() {
           </UButton>
         </div>
         <div class="flex gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            @click="emit('close')"
-          >
+          <UButton color="neutral" variant="ghost" @click="emit('close')">
             Cancel
           </UButton>
-          <UButton
-            color="primary"
-            @click="handleSave"
-          >
-            {{ list ? 'Update List' : 'Create List' }}
+          <UButton color="primary" @click="handleSave">
+            {{ list ? "Update List" : "Create List" }}
           </UButton>
         </div>
       </div>

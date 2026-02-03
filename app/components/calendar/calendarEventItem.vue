@@ -62,7 +62,9 @@ const isAllDay = computed(() => {
   const endHours = displayEnd.value.getHours();
   const endMinutes = displayEnd.value.getMinutes();
 
-  return startHours === 0 && startMinutes === 0 && endHours === 0 && endMinutes === 0;
+  return (
+    startHours === 0 && startMinutes === 0 && endHours === 0 && endMinutes === 0
+  );
 });
 
 const isSameDateTime = computed(() => {
@@ -78,7 +80,8 @@ function isPast(date: Date) {
 }
 
 function isEventPast(event: CalendarEvent): boolean {
-  const endDate = event.end instanceof Date ? event.end : parseStableDate(event.end);
+  const endDate =
+    event.end instanceof Date ? event.end : parseStableDate(event.end);
   return isPast(endDate);
 }
 
@@ -107,8 +110,14 @@ function handleKeydown(e: KeyboardEvent) {
 <template>
   <div
     class="focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90 cursor-pointer"
-    :class="typeof eventColorClasses === 'string' ? eventColorClasses : className"
-    v-bind="typeof eventColorClasses === 'object' && eventColorClasses !== null ? eventColorClasses : undefined"
+    :class="
+      typeof eventColorClasses === 'string' ? eventColorClasses : className
+    "
+    v-bind="
+      typeof eventColorClasses === 'object' && eventColorClasses !== null
+        ? eventColorClasses
+        : undefined
+    "
     :data-past-event="isEventPast(event) || undefined"
     tabindex="0"
     role="button"
@@ -131,9 +140,7 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
       <div class="flex items-center justify-between gap-2 mt-1 min-h-[1.25rem]">
         <div class="text-xs opacity-70">
-          <template v-if="isAllDay">
-            All day
-          </template>
+          <template v-if="isAllDay"> All day </template>
           <template v-else>
             <NuxtTime
               :datetime="displayStart"
@@ -142,7 +149,8 @@ function handleKeydown(e: KeyboardEvent) {
               :hour12="true"
             />
             <template v-if="!isSameDateTime">
-              - <NuxtTime
+              -
+              <NuxtTime
                 :datetime="displayEnd"
                 hour="numeric"
                 minute="2-digit"
@@ -194,7 +202,8 @@ function handleKeydown(e: KeyboardEvent) {
                   :hour12="true"
                 />
                 <template v-if="!isSameDateTime">
-                  - <NuxtTime
+                  -
+                  <NuxtTime
                     :datetime="displayEnd"
                     hour="numeric"
                     minute="2-digit"
@@ -254,7 +263,8 @@ function handleKeydown(e: KeyboardEvent) {
                   :hour12="true"
                 />
                 <template v-if="!isSameDateTime">
-                  - <NuxtTime
+                  -
+                  <NuxtTime
                     :datetime="displayEnd"
                     hour="numeric"
                     minute="2-digit"

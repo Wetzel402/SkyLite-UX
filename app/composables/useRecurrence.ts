@@ -40,17 +40,25 @@ export function useRecurrence() {
 
         const freq = rrule.freq?.toLowerCase();
         if (freq && ["daily", "weekly", "monthly", "yearly"].includes(freq)) {
-          state.recurrenceType.value = freq as "daily" | "weekly" | "monthly" | "yearly";
+          state.recurrenceType.value = freq as
+            | "daily"
+            | "weekly"
+            | "monthly"
+            | "yearly";
         }
 
         state.recurrenceInterval.value = rrule.interval || 1;
 
         if (state.recurrenceType.value === "weekly" && rrule.byday) {
-          state.recurrenceDays.value = rrule.byday.map((day: string) => dayNames.indexOf(day)).filter((day: number) => day !== -1);
+          state.recurrenceDays.value = rrule.byday
+            .map((day: string) => dayNames.indexOf(day))
+            .filter((day: number) => day !== -1);
         }
 
         if (state.recurrenceType.value === "monthly" && rrule.byday) {
-          const bydayStr = Array.isArray(rrule.byday) ? rrule.byday[0] : rrule.byday;
+          const bydayStr = Array.isArray(rrule.byday)
+            ? rrule.byday[0]
+            : rrule.byday;
           if (bydayStr) {
             const weekMatch = bydayStr.match(/^(-?\d+)([A-Z]{2})$/);
             if (weekMatch) {
@@ -66,8 +74,14 @@ export function useRecurrence() {
           }
         }
 
-        if (state.recurrenceType.value === "yearly" && rrule.byday && rrule.bymonth) {
-          const bydayStr = Array.isArray(rrule.byday) ? rrule.byday[0] : rrule.byday;
+        if (
+          state.recurrenceType.value === "yearly" &&
+          rrule.byday &&
+          rrule.bymonth
+        ) {
+          const bydayStr = Array.isArray(rrule.byday)
+            ? rrule.byday[0]
+            : rrule.byday;
           if (bydayStr) {
             const weekMatch = bydayStr.match(/^(-?\d+)([A-Z]{2})$/);
             if (weekMatch) {
@@ -77,8 +91,14 @@ export function useRecurrence() {
 
               if (dayIndex !== -1) {
                 state.recurrenceYearlyType.value = "weekday";
-                const month = Array.isArray(rrule.bymonth) ? (rrule.bymonth[0] || 1) - 1 : (rrule.bymonth || 1) - 1;
-                state.recurrenceYearlyWeekday.value = { week, day: dayIndex, month };
+                const month = Array.isArray(rrule.bymonth)
+                  ? (rrule.bymonth[0] || 1) - 1
+                  : (rrule.bymonth || 1) - 1;
+                state.recurrenceYearlyWeekday.value = {
+                  week,
+                  day: dayIndex,
+                  month,
+                };
               }
             }
           }
@@ -87,8 +107,7 @@ export function useRecurrence() {
         if (rrule.count) {
           state.recurrenceEndType.value = "count";
           state.recurrenceCount.value = rrule.count;
-        }
-        else if (rrule.until) {
+        } else if (rrule.until) {
           state.recurrenceEndType.value = "until";
           const untilICal = ical.Time.fromString(rrule.until, "UTC");
           if (untilICal) {
@@ -99,16 +118,13 @@ export function useRecurrence() {
               untilDate.getUTCDate(),
             );
           }
-        }
-        else {
+        } else {
           state.recurrenceEndType.value = "never";
         }
-      }
-      else {
+      } else {
         resetRecurrenceFields(state);
       }
-    }
-    catch (err) {
+    } catch (err) {
       consola.error("Error parsing iCal event:", err);
       resetRecurrenceFields(state);
     }
@@ -124,22 +140,33 @@ export function useRecurrence() {
 
     const rruleObj: ICalEvent["rrule"] = {
       freq: state.recurrenceType.value.toUpperCase(),
-      ...(state.recurrenceInterval.value > 1 && { interval: state.recurrenceInterval.value }),
+      ...(state.recurrenceInterval.value > 1 && {
+        interval: state.recurrenceInterval.value,
+      }),
     };
 
-    if (state.recurrenceType.value === "weekly" && state.recurrenceDays.value.length > 0) {
+    if (
+      state.recurrenceType.value === "weekly" &&
+      state.recurrenceDays.value.length > 0
+    ) {
       rruleObj.byday = state.recurrenceDays.value
-        .map(day => dayNames[day] || "SU")
+        .map((day) => dayNames[day] || "SU")
         .filter((day): day is string => Boolean(day));
     }
 
-    if (state.recurrenceType.value === "monthly" && state.recurrenceMonthlyType.value === "weekday") {
+    if (
+      state.recurrenceType.value === "monthly" &&
+      state.recurrenceMonthlyType.value === "weekday"
+    ) {
       const week = state.recurrenceMonthlyWeekday.value.week;
       const day = dayNames[state.recurrenceMonthlyWeekday.value.day];
       rruleObj.byday = [`${week}${day}`];
     }
 
-    if (state.recurrenceType.value === "yearly" && state.recurrenceYearlyType.value === "weekday") {
+    if (
+      state.recurrenceType.value === "yearly" &&
+      state.recurrenceYearlyType.value === "weekday"
+    ) {
       const week = state.recurrenceYearlyWeekday.value.week;
       const day = dayNames[state.recurrenceYearlyWeekday.value.day];
       const month = state.recurrenceYearlyWeekday.value.month + 1;
@@ -149,8 +176,10 @@ export function useRecurrence() {
 
     if (state.recurrenceEndType.value === "count") {
       rruleObj.count = state.recurrenceCount.value;
-    }
-    else if (state.recurrenceEndType.value === "until" && state.recurrenceUntil.value) {
+    } else if (
+      state.recurrenceEndType.value === "until" &&
+      state.recurrenceUntil.value
+    ) {
       const untilDate = state.recurrenceUntil.value.toDate(getLocalTimeZone());
       if (untilDate) {
         const endOfDay = new Date(untilDate);
@@ -194,9 +223,8 @@ export function useRecurrence() {
 
     const firstDay = sortedDays[0] ?? startDay;
     if (startDay !== firstDay) {
-      const daysToAdd = firstDay >= startDay
-        ? firstDay - startDay
-        : 7 - startDay + firstDay;
+      const daysToAdd =
+        firstDay >= startDay ? firstDay - startDay : 7 - startDay + firstDay;
 
       return new Date(start.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
     }

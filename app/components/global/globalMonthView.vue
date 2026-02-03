@@ -22,11 +22,21 @@ const emit = defineEmits<{
   (e: "eventClick", event: CalendarEvent, mouseEvent: MouseEvent): void;
 }>();
 
-const { isToday, handleEventClick: _handleEventClick, scrollToDate, getAllEventsForDay, isPlaceholderEvent, sortEvents, computedEventHeight: getEventHeight } = useCalendar();
+const {
+  isToday,
+  handleEventClick: _handleEventClick,
+  scrollToDate,
+  getAllEventsForDay,
+  isPlaceholderEvent,
+  sortEvents,
+  computedEventHeight: getEventHeight,
+} = useCalendar();
 
 const { getStableDate } = useStableDate();
 
-const computedEventHeight = computed(() => getEventHeight("month", props.eventHeight));
+const computedEventHeight = computed(() =>
+  getEventHeight("month", props.eventHeight),
+);
 
 const eventGap = 4;
 
@@ -34,11 +44,14 @@ onMounted(() => {
   scrollToDate(getStableDate(), "month");
 });
 
-watch(() => props.weeks, () => {
-  nextTick(() => {
-    scrollToDate(getStableDate(), "month");
-  });
-});
+watch(
+  () => props.weeks,
+  () => {
+    nextTick(() => {
+      scrollToDate(getStableDate(), "month");
+    });
+  },
+);
 
 function handleEventClick(event: CalendarEvent, e: MouseEvent) {
   _handleEventClick(event, e, emit);
@@ -47,7 +60,9 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
 
 <template>
   <div class="h-full w-full">
-    <div class="sticky top-[80px] z-30 grid grid-cols-7 border-b border-default bg-muted/80 backdrop-blur-md">
+    <div
+      class="sticky top-[80px] z-30 grid grid-cols-7 border-b border-default bg-muted/80 backdrop-blur-md"
+    >
       <div
         v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
         :key="day"
@@ -57,11 +72,7 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
       </div>
     </div>
     <div class="grid h-full w-full grid-cols-7">
-      <div
-        v-for="(week, weekIndex) in weeks"
-        :key="weekIndex"
-        class="contents"
-      >
+      <div v-for="(week, weekIndex) in weeks" :key="weekIndex" class="contents">
         <div
           v-for="day in week"
           :key="day.toString()"
@@ -103,17 +114,23 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
               />
             </div>
 
-            <div v-show="getAllEventsForDay(events, day).length === 0" class="flex flex-col items-center justify-center gap-1 text-muted flex-1">
+            <div
+              v-show="getAllEventsForDay(events, day).length === 0"
+              class="flex flex-col items-center justify-center gap-1 text-muted flex-1"
+            >
               <UIcon name="i-lucide-calendar-off" class="w-6 h-6" />
               <span class="text-md text-muted">
-                {{ isToday(day) ? 'No events today' : 'No events' }}
+                {{ isToday(day) ? "No events today" : "No events" }}
               </span>
             </div>
             <UPopover v-if="hasMore">
               <UButton
                 variant="ghost"
                 class="w-full justify-start px-1 text-[10px] sm:px-2 sm:text-xs text-muted hover:bg-accented rounded-md transition-colors"
-                :style="{ marginTop: `${eventGap}px`, height: `${computedEventHeight}px` }"
+                :style="{
+                  marginTop: `${eventGap}px`,
+                  height: `${computedEventHeight}px`,
+                }"
                 @click.stop
               >
                 <span>
@@ -127,15 +144,13 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
                 >
                   <div class="space-y-2">
                     <div class="text-sm font-medium">
-                      <NuxtTime
-                        :datetime="day"
-                        weekday="short"
-                        day="numeric"
-                      />
+                      <NuxtTime :datetime="day" weekday="short" day="numeric" />
                     </div>
                     <div class="space-y-1">
                       <div
-                        v-for="event in sortEvents(getAllEventsForDay(events, day))"
+                        v-for="event in sortEvents(
+                          getAllEventsForDay(events, day),
+                        )"
                         v-show="!isPlaceholderEvent(event)"
                         :key="event.id"
                       >

@@ -73,7 +73,11 @@ export function useTimePicker() {
     };
   }
 
-  function getTimeInMinutes(hour: number, minute: number, amPm: string): number {
+  function getTimeInMinutes(
+    hour: number,
+    minute: number,
+    amPm: string,
+  ): number {
     const hour24 = convert12To24(hour, amPm);
     return hour24 * 60 + minute;
   }
@@ -95,7 +99,11 @@ export function useTimePicker() {
     return Math.round(minutes / 5) * 5;
   }
 
-  function getCurrentTime12Hour(): { hour: number; minute: number; amPm: string } {
+  function getCurrentTime12Hour(): {
+    hour: number;
+    minute: number;
+    amPm: string;
+  } {
     const now = new Date();
     const currentMinutes = now.getMinutes();
     const roundedMinutes = roundToNearest5Minutes(currentMinutes);

@@ -24,8 +24,7 @@ const chip = computed(() => ({ backgroundColor: color.value }));
 
 const textColor = computed(() => {
   const hex = color.value.replace("#", "");
-  if (hex.length !== 6)
-    return "374151";
+  if (hex.length !== 6) return "374151";
 
   const r = Number.parseInt(hex.substring(0, 2), 16);
   const g = Number.parseInt(hex.substring(2, 4), 16);
@@ -35,24 +34,34 @@ const textColor = computed(() => {
   return luminance > 0.5 ? "374151" : "FFFFFF";
 });
 
-watch(() => props.user, (newUser) => {
-  if (newUser) {
-    name.value = newUser.name || "";
-    email.value = newUser.email || "";
-    color.value = newUser.color || "#06b6d4";
-    avatar.value = newUser.avatar && !newUser.avatar.startsWith("https://ui-avatars.com/api/") ? newUser.avatar : "";
-    error.value = null;
-  }
-  else {
-    resetForm();
-  }
-}, { immediate: true });
+watch(
+  () => props.user,
+  (newUser) => {
+    if (newUser) {
+      name.value = newUser.name || "";
+      email.value = newUser.email || "";
+      color.value = newUser.color || "#06b6d4";
+      avatar.value =
+        newUser.avatar &&
+        !newUser.avatar.startsWith("https://ui-avatars.com/api/")
+          ? newUser.avatar
+          : "";
+      error.value = null;
+    } else {
+      resetForm();
+    }
+  },
+  { immediate: true },
+);
 
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    resetForm();
-  }
-});
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) {
+      resetForm();
+    }
+  },
+);
 
 function resetForm() {
   name.value = "";
@@ -98,9 +107,11 @@ function handleDelete() {
       class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-default">
+      <div
+        class="flex items-center justify-between p-4 border-b border-default"
+      >
         <h3 class="text-base font-semibold leading-6">
-          {{ user?.id ? 'Edit User' : 'Create User' }}
+          {{ user?.id ? "Edit User" : "Create User" }}
         </h3>
         <UButton
           color="neutral"
@@ -113,12 +124,17 @@ function handleDelete() {
       </div>
 
       <div class="p-4 space-y-6">
-        <div v-if="error" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
+        <div
+          v-if="error"
+          class="bg-error/10 text-error rounded-md px-3 py-2 text-sm"
+        >
           {{ error }}
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">Name *</label>
+          <label class="block text-sm font-medium text-highlighted"
+            >Name *</label
+          >
           <UInput
             v-model="name"
             placeholder="Enter user name"
@@ -128,7 +144,9 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">Email (optional)</label>
+          <label class="block text-sm font-medium text-highlighted"
+            >Email (optional)</label
+          >
           <UInput
             v-model="email"
             placeholder="Enter email address"
@@ -139,13 +157,11 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">Profile Color</label>
+          <label class="block text-sm font-medium text-highlighted"
+            >Profile Color</label
+          >
           <UPopover>
-            <UButton
-              label="Choose color"
-              color="neutral"
-              variant="outline"
-            >
+            <UButton label="Choose color" color="neutral" variant="outline">
               <template #leading>
                 <span :style="chip" class="size-3 rounded-full" />
               </template>
@@ -157,12 +173,14 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">Avatar</label>
+          <label class="block text-sm font-medium text-highlighted"
+            >Avatar</label
+          >
           <div class="flex items-center gap-4">
             <img
               :src="avatar || getDefaultAvatarUrl()"
               class="w-12 h-12 rounded-full border border-default"
-            >
+            />
             <UInput
               v-model="avatar"
               placeholder="Optional: Paste image URL"
@@ -186,18 +204,10 @@ function handleDelete() {
           Delete
         </UButton>
         <div class="flex gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            @click="emit('close')"
-          >
+          <UButton color="neutral" variant="ghost" @click="emit('close')">
             Cancel
           </UButton>
-          <UButton
-            color="primary"
-            :disabled="!name.trim()"
-            @click="handleSave"
-          >
+          <UButton color="primary" :disabled="!name.trim()" @click="handleSave">
             Save
           </UButton>
         </div>

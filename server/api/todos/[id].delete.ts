@@ -1,6 +1,8 @@
 import prisma from "~/lib/prisma";
-import { calculateNextDueDate } from "../../utils/recurrence";
-import type { RecurrencePattern } from "~/types/database";
+
+import type { ICalEvent } from "../../integrations/iCal/types";
+
+import { calculateNextDueDate } from "../../utils/rrule";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,22 +30,39 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // If it's recurring and we're not stopping recurrence, create the next instance
-    if (todo.recurringGroupId && todo.recurrencePattern && !stopRecurrence) {
-      const pattern = todo.recurrencePattern as RecurrencePattern;
+    if (todo.recurringGroupId && todo.rrule && !stopRecurrence) {
+      const todoRrule = todo.rrule as ICalEvent["rrule"];
 
-      // Use client's date if provided for timezone-aware recurrence calculation
+      const firstTodo = await prisma.todo.findFirst({
+        where: {
+          recurringGroupId: todo.recurringGroupId,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
+
+      if (!firstTodo || !firstTodo.dueDate) {
+        throw createError({
+          statusCode: 500,
+          message: "Failed to find original DTSTART for recurring todo",
+        });
+      }
+
+      const originalDTSTART = new Date(firstTodo.dueDate);
+      originalDTSTART.setHours(0, 0, 0, 0);
+
       const referenceDate = clientDate ? new Date(clientDate) : null;
       if (referenceDate) {
         referenceDate.setHours(0, 0, 0, 0);
       }
 
       const nextDueDate = calculateNextDueDate(
-        pattern,
+        todoRrule,
+        originalDTSTART,
         todo.dueDate,
         referenceDate,
       );
-      nextDueDate.setHours(23, 59, 59, 999);
 
       await prisma.$transaction(async (tx) => {
         const maxOrder = await tx.todo.aggregate({
@@ -65,19 +84,21 @@ export default defineEventHandler(async (event) => {
             todoColumnId: todo.todoColumnId,
             order: (maxOrder._max.order || 0) + 1,
             recurringGroupId: todo.recurringGroupId,
-            recurrencePattern: todo.recurrencePattern,
+            rrule: todo.rrule,
             completed: false,
           },
         });
       });
-    } else {
+    }
+    else {
       await prisma.todo.delete({
         where: { id },
       });
     }
 
     return { success: true };
-  } catch (error) {
+  }
+  catch (error) {
     if (error && typeof error === "object" && "statusCode" in error) {
       throw error;
     }

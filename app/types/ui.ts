@@ -21,7 +21,9 @@ export type TodoListWithIntegration = TodoList & {
   integrationIcon?: string | null;
 };
 
-export type AnyListWithIntegration = ShoppingListWithIntegration | TodoListWithIntegration;
+export type AnyListWithIntegration =
+  | ShoppingListWithIntegration
+  | TodoListWithIntegration;
 
 export type ToggleEvent = {
   itemId: string;

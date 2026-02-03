@@ -33,39 +33,50 @@ const calendarConfigs = ref<CalendarConfig[]>([]);
 const originalCalendarConfigs = ref<CalendarConfig[]>([]);
 const error = ref<string | null>(null);
 
-watch(() => props.isOpen, async (isOpen) => {
-  if (isOpen) {
-    await fetchUsers();
-    await loadCalendars();
-    originalCalendarConfigs.value = JSON.parse(
-      JSON.stringify(calendarConfigs.value),
-    );
-  }
-});
-
-watch(() => props.integration, (integration) => {
-  if (integration?.settings) {
-    const settings = integration.settings as { calendars?: CalendarConfig[] };
-    calendarConfigs.value = JSON.parse(JSON.stringify(settings.calendars || []));
-  }
-}, { immediate: true });
-
-watch(() => calendarConfigs.value.map(config => config.user), (userArrays) => {
-  calendarConfigs.value.forEach((config, index) => {
-    const userArray = userArrays[index];
-    const hasUsers = Array.isArray(userArray) && userArray.length > 0;
-    if (hasUsers) {
-      config.useUserColors = true;
+watch(
+  () => props.isOpen,
+  async (isOpen) => {
+    if (isOpen) {
+      await fetchUsers();
+      await loadCalendars();
+      originalCalendarConfigs.value = JSON.parse(
+        JSON.stringify(calendarConfigs.value),
+      );
     }
-    else {
-      config.useUserColors = false;
+  },
+);
+
+watch(
+  () => props.integration,
+  (integration) => {
+    if (integration?.settings) {
+      const settings = integration.settings as { calendars?: CalendarConfig[] };
+      calendarConfigs.value = JSON.parse(
+        JSON.stringify(settings.calendars || []),
+      );
     }
-  });
-}, { deep: true });
+  },
+  { immediate: true },
+);
+
+watch(
+  () => calendarConfigs.value.map((config) => config.user),
+  (userArrays) => {
+    calendarConfigs.value.forEach((config, index) => {
+      const userArray = userArrays[index];
+      const hasUsers = Array.isArray(userArray) && userArray.length > 0;
+      if (hasUsers) {
+        config.useUserColors = true;
+      } else {
+        config.useUserColors = false;
+      }
+    });
+  },
+  { deep: true },
+);
 
 async function loadCalendars() {
-  if (!props.integration?.id)
-    return;
+  if (!props.integration?.id) return;
 
   try {
     pending.value = true;
@@ -79,7 +90,7 @@ async function loadCalendars() {
     availableCalendars.value = result.calendars || [];
 
     result.calendars.forEach((cal) => {
-      const existing = calendarConfigs.value.find(c => c.id === cal.id);
+      const existing = calendarConfigs.value.find((c) => c.id === cal.id);
       if (!existing) {
         calendarConfigs.value.push({
           id: cal.id,
@@ -92,18 +103,16 @@ async function loadCalendars() {
         });
       }
     });
-  }
-  catch (err) {
-    error.value = err instanceof Error ? err.message : "Failed to load calendars";
-  }
-  finally {
+  } catch (err) {
+    error.value =
+      err instanceof Error ? err.message : "Failed to load calendars";
+  } finally {
     pending.value = false;
   }
 }
 
 async function handleSave() {
-  if (!props.integration?.id)
-    return;
+  if (!props.integration?.id) return;
 
   try {
     pending.value = true;
@@ -117,7 +126,8 @@ async function handleSave() {
       };
     });
 
-    const currentSettings = props.integration.settings as Record<string, unknown> || {};
+    const currentSettings =
+      (props.integration.settings as Record<string, unknown>) || {};
 
     await $fetch(`/api/integrations/${props.integration.id}`, {
       method: "PUT",
@@ -133,10 +143,12 @@ async function handleSave() {
 
     const disabledCalendars = originalCalendarConfigs.value
       .filter((original) => {
-        const updated = validatedCalendarConfigs.find(c => c.id === original.id);
+        const updated = validatedCalendarConfigs.find(
+          (c) => c.id === original.id,
+        );
         return original.enabled && updated && !updated.enabled;
       })
-      .map(c => c.id);
+      .map((c) => c.id);
 
     if (disabledCalendars.length > 0) {
       consola.debug(
@@ -148,11 +160,10 @@ async function handleSave() {
 
     emit("save");
     emit("close");
-  }
-  catch (err) {
-    error.value = err instanceof Error ? err.message : "Failed to save calendar selection";
-  }
-  finally {
+  } catch (err) {
+    error.value =
+      err instanceof Error ? err.message : "Failed to save calendar selection";
+  } finally {
     pending.value = false;
   }
 }
@@ -168,10 +179,10 @@ async function handleSave() {
       class="w-[600px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-default">
-        <h3 class="text-base font-semibold leading-6">
-          Select Calendars
-        </h3>
+      <div
+        class="flex items-center justify-between p-4 border-b border-default"
+      >
+        <h3 class="text-base font-semibold leading-6">Select Calendars</h3>
         <UButton
           color="neutral"
           variant="ghost"
@@ -183,16 +194,25 @@ async function handleSave() {
       </div>
 
       <div class="p-4 space-y-4">
-        <div v-if="error" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
+        <div
+          v-if="error"
+          class="bg-error/10 text-error rounded-md px-3 py-2 text-sm"
+        >
           {{ error }}
         </div>
 
-        <div v-if="pending" class="bg-info/10 text-info rounded-md px-3 py-2 text-sm flex items-center gap-2">
+        <div
+          v-if="pending"
+          class="bg-info/10 text-info rounded-md px-3 py-2 text-sm flex items-center gap-2"
+        >
           <UIcon name="i-lucide-loader-2" class="animate-spin h-4 w-4" />
           Loading calendars...
         </div>
 
-        <div v-if="!pending && calendarConfigs.length === 0" class="bg-warning/10 text-warning rounded-md px-3 py-2 text-sm">
+        <div
+          v-if="!pending && calendarConfigs.length === 0"
+          class="bg-warning/10 text-warning rounded-md px-3 py-2 text-sm"
+        >
           No calendars found
         </div>
 
@@ -203,24 +223,26 @@ async function handleSave() {
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <UCheckbox
-                v-model="config.enabled"
-                :label="config.name"
-              />
+              <UCheckbox v-model="config.enabled" :label="config.name" />
             </div>
           </div>
 
-          <div v-if="config.accessRole === 'read'" class="bg-warning/10 text-warning rounded-md px-3 py-2 text-sm flex items-center gap-2">
+          <div
+            v-if="config.accessRole === 'read'"
+            class="bg-warning/10 text-warning rounded-md px-3 py-2 text-sm flex items-center gap-2"
+          >
             <UIcon name="i-lucide-alert-triangle" class="h-4 w-4" />
             <span>Read only: events cannot be created or edited</span>
           </div>
 
           <template v-if="config.enabled">
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-highlighted">Assigned Users</label>
+              <label class="block text-sm font-medium text-highlighted"
+                >Assigned Users</label
+              >
               <USelect
                 v-model="config.user"
-                :items="users.map(u => ({ label: u.name, value: u.id }))"
+                :items="users.map((u) => ({ label: u.name, value: u.id }))"
                 placeholder="Optional: Select user(s)"
                 class="w-full"
                 multiple
@@ -228,15 +250,18 @@ async function handleSave() {
             </div>
 
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-highlighted">Event Color</label>
+              <label class="block text-sm font-medium text-highlighted"
+                >Event Color</label
+              >
               <UPopover>
-                <UButton
-                  label="Choose color"
-                  color="neutral"
-                  variant="outline"
-                >
+                <UButton label="Choose color" color="neutral" variant="outline">
                   <template #leading>
-                    <span :style="{ backgroundColor: config.eventColor || '#06b6d4' }" class="size-3 rounded-full" />
+                    <span
+                      :style="{
+                        backgroundColor: config.eventColor || '#06b6d4',
+                      }"
+                      class="size-3 rounded-full"
+                    />
                   </template>
                 </UButton>
                 <template #content>
@@ -256,20 +281,18 @@ async function handleSave() {
       </div>
 
       <div class="flex justify-end gap-2 p-4 border-t border-default">
-        <UButton
-          color="neutral"
-          variant="ghost"
-          @click="emit('close')"
-        >
+        <UButton color="neutral" variant="ghost" @click="emit('close')">
           Cancel
         </UButton>
         <UButton
           color="primary"
           :loading="pending"
-          :disabled="pending || calendarConfigs.filter(c => c.enabled).length === 0"
+          :disabled="
+            pending || calendarConfigs.filter((c) => c.enabled).length === 0
+          "
           @click="handleSave"
         >
-          {{ pending ? 'Saving...' : 'Save' }}
+          {{ pending ? "Saving..." : "Save" }}
         </UButton>
       </div>
     </div>

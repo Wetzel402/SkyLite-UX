@@ -1,6 +1,8 @@
 import prisma from "~/lib/prisma";
-import type { RecurrencePattern } from "~/types/database";
-import { calculateNextDueDate } from "../../utils/recurrence";
+
+import type { ICalEvent } from "../../integrations/iCal/types";
+
+import { calculateNextDueDate } from "../../utils/rrule";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,30 +18,34 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // Generate recurringGroupId if recurrence pattern is provided
-    const recurringGroupId = body.recurrencePattern
-      ? crypto.randomUUID()
-      : null;
-
-    // Calculate due date: use provided date, or calculate from pattern if recurring
+    let rrule: ICalEvent["rrule"] | null = null;
     let dueDate: Date | null = null;
-    if (body.dueDate) {
-      dueDate = new Date(body.dueDate);
-    } else if (body.recurrencePattern) {
-      // For new recurring todos, use client's "today" if provided, otherwise server's today
-      // This handles timezone differences between client and server
-      const referenceDate = body.clientDate
-        ? new Date(body.clientDate)
-        : new Date();
-      referenceDate.setHours(0, 0, 0, 0);
+    let recurringGroupId: string | null = null;
 
-      const firstOccurrence = calculateNextDueDate(
-        body.recurrencePattern as RecurrencePattern,
-        null,
-        referenceDate,
-      );
-      firstOccurrence.setHours(23, 59, 59, 999);
-      dueDate = firstOccurrence;
+    if (body.rrule) {
+      rrule = body.rrule as ICalEvent["rrule"];
+      recurringGroupId = crypto.randomUUID();
+
+      if (body.dueDate) {
+        dueDate = new Date(body.dueDate);
+      }
+      else {
+        const referenceDate = body.clientDate
+          ? new Date(body.clientDate)
+          : new Date();
+        referenceDate.setHours(0, 0, 0, 0);
+
+        const firstOccurrence = calculateNextDueDate(
+          rrule,
+          referenceDate,
+          null,
+          referenceDate,
+        );
+        dueDate = firstOccurrence;
+      }
+    }
+    else if (body.dueDate) {
+      dueDate = new Date(body.dueDate);
     }
 
     const todo = await prisma.todo.create({
@@ -51,9 +57,7 @@ export default defineEventHandler(async (event) => {
         todoColumnId: body.todoColumnId,
         order: (maxOrder._max.order || 0) + 1,
         recurringGroupId,
-        recurrencePattern: body.recurrencePattern
-          ? (body.recurrencePattern as RecurrencePattern)
-          : null,
+        rrule,
       },
       include: {
         todoColumn: {
@@ -75,7 +79,8 @@ export default defineEventHandler(async (event) => {
     });
 
     return todo;
-  } catch (error) {
+  }
+  catch (error) {
     throw createError({
       statusCode: 500,
       message: `Failed to create todo: ${error}`,

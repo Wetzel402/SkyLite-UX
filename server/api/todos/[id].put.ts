@@ -1,6 +1,8 @@
 import prisma from "~/lib/prisma";
-import { calculateNextDueDate } from "../../utils/recurrence";
-import type { RecurrencePattern } from "~/types/database";
+
+import type { ICalEvent } from "../../integrations/iCal/types";
+
+import { calculateNextDueDate } from "../../utils/rrule";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -26,14 +28,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Determine the final recurrence pattern (from body or preserve existing)
-    const finalRecurrencePattern =
-      body.recurrencePattern !== undefined
-        ? body.recurrencePattern
-        : currentTodo.recurrencePattern;
+    let rrule: ICalEvent["rrule"] | null = null;
+    if (body.rrule !== undefined) {
+      rrule = body.rrule as ICalEvent["rrule"] | null;
+    }
+    else if (currentTodo.rrule) {
+      rrule = currentTodo.rrule as ICalEvent["rrule"];
+    }
 
-    // Determine recurringGroupId: keep existing, generate new if pattern exists, or null if no pattern
-    const recurringGroupId = finalRecurrencePattern
+    const recurringGroupId = rrule
       ? currentTodo.recurringGroupId || crypto.randomUUID()
       : null;
 
@@ -52,7 +55,7 @@ export default defineEventHandler(async (event) => {
             : currentTodo.dueDate,
         todoColumnId: body.todoColumnId,
         order: body.order,
-        recurrencePattern: finalRecurrencePattern as RecurrencePattern | null,
+        rrule,
         recurringGroupId,
       },
       include: {
@@ -74,27 +77,44 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // If todo is being marked complete (was incomplete before) and has a recurring pattern, create next instance
     if (
-      body.completed &&
-      !currentTodo.completed &&
-      todo.recurringGroupId &&
-      todo.recurrencePattern
+      body.completed
+      && !currentTodo.completed
+      && todo.recurringGroupId
+      && todo.rrule
     ) {
-      const pattern = todo.recurrencePattern as RecurrencePattern;
+      const todoRrule = todo.rrule as ICalEvent["rrule"];
 
-      // Use client's date if provided for timezone-aware recurrence calculation
+      const firstTodo = await prisma.todo.findFirst({
+        where: {
+          recurringGroupId: todo.recurringGroupId,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
+
+      if (!firstTodo || !firstTodo.dueDate) {
+        throw createError({
+          statusCode: 500,
+          message: "Failed to find original DTSTART for recurring todo",
+        });
+      }
+
+      const originalDTSTART = new Date(firstTodo.dueDate);
+      originalDTSTART.setHours(0, 0, 0, 0);
+
       const referenceDate = body.clientDate ? new Date(body.clientDate) : null;
       if (referenceDate) {
         referenceDate.setHours(0, 0, 0, 0);
       }
 
       const nextDueDate = calculateNextDueDate(
-        pattern,
+        todoRrule,
+        originalDTSTART,
         todo.dueDate,
         referenceDate,
       );
-      nextDueDate.setHours(23, 59, 59, 999);
 
       const maxOrder = await prisma.todo.aggregate({
         where: {
@@ -115,14 +135,15 @@ export default defineEventHandler(async (event) => {
           todoColumnId: todo.todoColumnId,
           order: (maxOrder._max.order || 0) + 1,
           recurringGroupId: todo.recurringGroupId,
-          recurrencePattern: todo.recurrencePattern,
+          rrule: todo.rrule,
           completed: false,
         },
       });
     }
 
     return todo;
-  } catch (error) {
+  }
+  catch (error) {
     if (error && typeof error === "object" && "statusCode" in error) {
       throw error;
     }

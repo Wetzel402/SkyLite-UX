@@ -17,7 +17,13 @@ const emit = defineEmits<{
 
 const { getStableDate } = useStableDate();
 
-const { isToday, getAllEventsForDay, handleEventClick: _handleEventClick, getLocalWeekDays, getEventsForDateRange } = useCalendar();
+const {
+  isToday,
+  getAllEventsForDay,
+  handleEventClick: _handleEventClick,
+  getLocalWeekDays,
+  getEventsForDateRange,
+} = useCalendar();
 
 const weekDays = computed(() => {
   const start = props.startDate || getStableDate();
@@ -45,7 +51,9 @@ const nextWeekEvents = computed(() => {
   const dayOfWeek = sunday.getDay();
   sunday.setDate(sunday.getDate() - dayOfWeek);
   const nextWeekSunday = new Date(sunday.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const nextWeekSaturday = new Date(nextWeekSunday.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const nextWeekSaturday = new Date(
+    nextWeekSunday.getTime() + 6 * 24 * 60 * 60 * 1000,
+  );
 
   return getEventsForDateRange(nextWeekSunday, nextWeekSaturday);
 });
@@ -90,13 +98,15 @@ function isLastDay(day: Date) {
         v-for="day in firstRow"
         :key="day.toISOString()"
         class="relative border-r border-b border-default last:border-r-0 flex flex-col"
-        style="height: 300px;"
+        style="height: 300px"
         :class="{
           'bg-muted/25': !isToday(day),
           'bg-info/10': isToday(day),
         }"
       >
-        <div class="flex items-center justify-between p-2 border-b border-default flex-shrink-0">
+        <div
+          class="flex items-center justify-between p-2 border-b border-default flex-shrink-0"
+        >
           <div class="text-sm font-medium text-muted">
             <NuxtTime :datetime="day" weekday="short" />
           </div>
@@ -112,10 +122,10 @@ function isLastDay(day: Date) {
         </div>
         <div
           class="overflow-y-auto px-2 py-1 space-y-1 relative z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex flex-col"
-          style="height: 240px;"
+          style="height: 240px"
         >
           <div
-            v-for="(event) in getAllEventsForDay(events, day)"
+            v-for="event in getAllEventsForDay(events, day)"
             :key="event.id"
             class="rounded"
           >
@@ -133,7 +143,7 @@ function isLastDay(day: Date) {
           >
             <UIcon name="i-lucide-calendar-off" class="w-8 h-8" />
             <span class="text-lg text-muted">
-              {{ isToday(day) ? 'No events today' : 'No events' }}
+              {{ isToday(day) ? "No events today" : "No events" }}
             </span>
           </div>
         </div>
@@ -142,7 +152,7 @@ function isLastDay(day: Date) {
         v-for="day in secondRow"
         :key="day.toISOString()"
         class="relative border-r border-default last:border-r-0 flex flex-col"
-        style="height: 300px;"
+        style="height: 300px"
         :class="{
           'bg-muted/25': day && !isToday(day) && !isLastDay(day),
           'bg-primary/10': day && isToday(day),
@@ -150,7 +160,9 @@ function isLastDay(day: Date) {
         }"
       >
         <template v-if="day && !isLastDay(day)">
-          <div class="flex items-center justify-between p-2 border-b border-default flex-shrink-0">
+          <div
+            class="flex items-center justify-between p-2 border-b border-default flex-shrink-0"
+          >
             <div class="text-sm font-medium text-muted">
               <NuxtTime :datetime="day" weekday="short" />
             </div>
@@ -166,10 +178,10 @@ function isLastDay(day: Date) {
           </div>
           <div
             class="overflow-y-auto px-2 py-1 space-y-1 relative z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex flex-col"
-            style="height: 240px;"
+            style="height: 240px"
           >
             <div
-              v-for="(event) in getAllEventsForDay(events, day)"
+              v-for="event in getAllEventsForDay(events, day)"
               :key="event.id"
               class="rounded"
             >
@@ -187,38 +199,40 @@ function isLastDay(day: Date) {
             >
               <UIcon name="i-lucide-calendar-off" class="w-6 h-6" />
               <span class="text-md text-muted">
-                {{ isToday(day) ? 'No events today' : 'No events' }}
+                {{ isToday(day) ? "No events today" : "No events" }}
               </span>
             </div>
           </div>
         </template>
 
         <template v-else-if="day && isLastDay(day)">
-          <div class="flex items-center justify-between p-2 border-b border-default flex-shrink-0">
-            <div class="text-sm font-medium text-primary">
-              Next Week
-            </div>
-            <div class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold bg-primary/20 text-white">
+          <div
+            class="flex items-center justify-between p-2 border-b border-default flex-shrink-0"
+          >
+            <div class="text-sm font-medium text-primary">Next Week</div>
+            <div
+              class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold bg-primary/20 text-white"
+            >
               <UIcon name="i-lucide-calendar-days" class="w-4 h-4" />
             </div>
           </div>
           <div
             class="overflow-y-auto px-2 py-1 space-y-1 relative z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex flex-col"
-            style="height: 240px;"
+            style="height: 240px"
           >
-            <div class="flex flex-col items-center justify-center gap-2 text-primary flex-1">
+            <div
+              class="flex flex-col items-center justify-center gap-2 text-primary flex-1"
+            >
               <div class="text-center">
                 <div class="text-lg font-semibold">
                   {{ nextWeekEventCount }}
                 </div>
                 <div class="text-xs opacity-75">
-                  {{ nextWeekEventCount === 1 ? 'event' : 'events' }}
+                  {{ nextWeekEventCount === 1 ? "event" : "events" }}
                 </div>
               </div>
               <div class="text-xs text-center opacity-75">
-                <div class="text-xs opacity-50 mt-2">
-                  Coming up next week
-                </div>
+                <div class="text-xs opacity-50 mt-2">Coming up next week</div>
               </div>
             </div>
           </div>

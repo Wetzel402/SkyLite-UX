@@ -2,11 +2,13 @@
 const route = useRoute();
 function isActivePath(path: string) {
   return route.path === path;
-};
+}
 </script>
 
 <template>
-  <div class="sticky top-0 left-0 h-[calc(100vh-80px)] w-[50px] bg-default flex flex-col items-center justify-evenly py-4 z-100">
+  <div
+    class="sticky top-0 left-0 h-[calc(100vh-80px)] w-[50px] bg-default flex flex-col items-center justify-evenly py-4 z-100"
+  >
     <UButton
       :class="isActivePath('/calendar') ? 'text-primary' : 'text-default'"
       to="/calendar"

@@ -12,5 +12,4 @@ const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
 export default prisma;
 
-if (import.meta.env?.DEV)
-  globalThis.prismaGlobal = prisma;
+if (import.meta.env?.DEV) globalThis.prismaGlobal = prisma;

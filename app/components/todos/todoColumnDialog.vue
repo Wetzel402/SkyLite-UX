@@ -15,15 +15,22 @@ const emit = defineEmits<{
 const columnName = ref("");
 const columnError = ref<string | null>(null);
 
-const watchSource = computed(() => ({ isOpen: props.isOpen, column: props.column }));
-watch(watchSource, ({ isOpen, column }) => {
-  if (isOpen) {
-    resetForm();
-    if (column) {
-      columnName.value = column.name || "";
+const watchSource = computed(() => ({
+  isOpen: props.isOpen,
+  column: props.column,
+}));
+watch(
+  watchSource,
+  ({ isOpen, column }) => {
+    if (isOpen) {
+      resetForm();
+      if (column) {
+        columnName.value = column.name || "";
+      }
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
 function resetForm() {
   columnName.value = "";
@@ -59,9 +66,11 @@ function handleDelete() {
       class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-default">
+      <div
+        class="flex items-center justify-between p-4 border-b border-default"
+      >
         <h3 class="text-base font-semibold leading-6">
-          {{ column?.id ? 'Edit Column' : 'Create Column' }}
+          {{ column?.id ? "Edit Column" : "Create Column" }}
         </h3>
         <UButton
           color="neutral"
@@ -74,12 +83,17 @@ function handleDelete() {
       </div>
 
       <div class="p-4 space-y-6">
-        <div v-if="columnError" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
+        <div
+          v-if="columnError"
+          class="bg-error/10 text-error rounded-md px-3 py-2 text-sm"
+        >
           {{ columnError }}
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted">Column Name</label>
+          <label class="block text-sm font-medium text-highlighted"
+            >Column Name</label
+          >
           <UInput
             v-model="columnName"
             placeholder="Enter column name"
@@ -101,18 +115,11 @@ function handleDelete() {
           Delete
         </UButton>
         <div class="flex gap-2" :class="{ 'ml-auto': !column?.id }">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            @click="emit('close')"
-          >
+          <UButton color="neutral" variant="ghost" @click="emit('close')">
             Cancel
           </UButton>
-          <UButton
-            color="primary"
-            @click="handleSave"
-          >
-            {{ column?.id ? 'Update Column' : 'Create Column' }}
+          <UButton color="primary" @click="handleSave">
+            {{ column?.id ? "Update Column" : "Create Column" }}
           </UButton>
         </div>
       </div>

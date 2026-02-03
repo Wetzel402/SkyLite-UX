@@ -58,7 +58,7 @@ model Todo {
   todoColumn   TodoColumn? @relation(fields: [todoColumnId], references: [id], onDelete: Cascade)
 
   recurringGroupId  String?
-  recurrencePattern Json?
+  rrule             Json?
 
   @@map("todos")
 }

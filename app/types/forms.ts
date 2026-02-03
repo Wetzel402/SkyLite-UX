@@ -3,7 +3,14 @@ export type FormData = Record<string, string | number>;
 export type FormField = {
   key: string;
   label: string;
-  type: "text" | "number" | "textarea" | "password" | "url" | "color" | "boolean";
+  type:
+    | "text"
+    | "number"
+    | "textarea"
+    | "password"
+    | "url"
+    | "color"
+    | "boolean";
   placeholder?: string;
   min?: number;
   required?: boolean;
