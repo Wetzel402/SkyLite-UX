@@ -153,34 +153,49 @@ export default defineEventHandler(async (event) => {
       },
     );
 
-    // Check if we have a local copy that matches the requested size
-    if (photo.localImagePath && photo.cachedWidth && photo.cachedHeight) {
-      // Only serve cached file if size matches (or no specific size requested)
-      const sizeMatches = (photo.cachedWidth === width && photo.cachedHeight === height);
+    // Check if we have a local copy - always prefer local over Google download
+    if (photo.localImagePath) {
+      try {
+        const localPath = getPhotoPath(photo.localImagePath);
 
-      if (sizeMatches) {
-        try {
-          const localPath = getPhotoPath(photo.localImagePath);
+        // Check if file exists
+        await stat(localPath);
 
-          // Check if file exists
-          await stat(localPath);
+        // Serve from local storage
+        const buffer = await readFile(localPath);
 
-          // Serve from local storage
-          const buffer = await readFile(localPath);
+        setHeader(event, "Content-Type", "image/jpeg");
+        setHeader(event, "Cache-Control", "public, max-age=31536000"); // Cache for 1 year (local file won't change)
 
-          setHeader(event, "Content-Type", "image/jpeg");
-          setHeader(event, "Cache-Control", "public, max-age=31536000"); // Cache for 1 year (local file won't change)
-
-          consola.info(`Serving photo from local storage: ${photo.localImagePath} (${width}x${height})`);
-          return buffer;
+        // Log size info for debugging
+        if (photo.cachedWidth && photo.cachedHeight) {
+          if (photo.cachedWidth !== width || photo.cachedHeight !== height) {
+            consola.info(`Serving cached photo (${photo.cachedWidth}x${photo.cachedHeight}) for requested (${width}x${height}) - browser will scale`);
+          }
+          else {
+            consola.info(`Serving photo from local storage: ${photo.localImagePath} (${width}x${height})`);
+          }
         }
-        catch (fileError) {
-          consola.warn(`Local file not found, will download: ${photo.localImagePath}`, fileError);
+        else {
+          consola.info(`Serving photo from local storage: ${photo.localImagePath}`);
+        }
+
+        return buffer;
+      }
+      catch (fileError: any) {
+        // Only fall back to download if file doesn't exist
+        if (fileError.code === "ENOENT") {
+          consola.warn(`Local file not found, will download: ${photo.localImagePath}`);
           // Fall through to download
         }
-      }
-      else {
-        consola.info(`Cached size (${photo.cachedWidth}x${photo.cachedHeight}) doesn't match requested (${width}x${height}), downloading fresh`);
+        else {
+          // For other errors (permissions, IO errors, etc.), surface the issue
+          consola.error(`Failed to read local photo file ${photo.localImagePath}:`, fileError);
+          throw createError({
+            statusCode: 500,
+            message: `Failed to read local photo file: ${fileError.message || "Unknown error"}`,
+          });
+        }
       }
     }
 
