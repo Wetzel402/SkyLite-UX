@@ -655,8 +655,12 @@ function formatEventTime(dateString: string | Date) {
                 {{ getWeatherIconForCode(day.weatherCode) }}
               </div>
               <div class="text-sm opacity-90">
-                <div class="font-medium">{{ day.tempMax }}°</div>
-                <div class="opacity-70">{{ day.tempMin }}°</div>
+                <div class="font-medium">
+                  {{ day.tempMax }}°
+                </div>
+                <div class="opacity-70">
+                  {{ day.tempMin }}°
+                </div>
               </div>
             </div>
           </div>

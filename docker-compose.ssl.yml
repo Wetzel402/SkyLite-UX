@@ -7,6 +7,7 @@ services:
       - DATABASE_URL=file:/data/skylite.db
       - NODE_ENV=production
       - PHOTOS_STORAGE_PATH=/data/photos
+      - NUXT_PHOTOS_STORAGE_PATH=/data/photos
     volumes:
       - ./data:/data
     # Don't expose port 3000 externally - only accessible via nginx

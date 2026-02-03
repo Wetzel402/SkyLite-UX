@@ -41,6 +41,9 @@ export default defineNuxtConfig({
     // docker-entrypoint.sh exports DATABASE_URL, Nuxt auto-reads NUXT_DATABASE_URL
     // eslint-disable-next-line node/no-process-env
     databaseUrl: process.env.NUXT_DATABASE_URL || process.env.DATABASE_URL || "",
+    // Photos storage path - can be overridden by NUXT_PHOTOS_STORAGE_PATH or PHOTOS_STORAGE_PATH env vars
+    // eslint-disable-next-line node/no-process-env
+    photosStoragePath: process.env.NUXT_PHOTOS_STORAGE_PATH || process.env.PHOTOS_STORAGE_PATH || "",
     public: {
       skyliteVersion: pkg.version,
       nuxtVersion: pkg.devDependencies.nuxt,

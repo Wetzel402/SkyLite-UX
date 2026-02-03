@@ -6,12 +6,23 @@ import { pipeline } from "node:stream/promises";
 
 /**
  * Storage configuration for photos
- * Configurable via PHOTOS_STORAGE_PATH environment variable
+ * Configurable via PHOTOS_STORAGE_PATH or NUXT_PHOTOS_STORAGE_PATH environment variable
  */
 function getStorageDirectory(): string {
-  // Check for custom storage path in environment
+  // Try to get from runtime config first (preferred for Nuxt/Nitro)
+  try {
+    const config = useRuntimeConfig();
+    if (config.photosStoragePath && typeof config.photosStoragePath === "string") {
+      return join(config.photosStoragePath);
+    }
+  }
+  catch {
+    // Runtime config not available (non-Nuxt context), fall back to env vars
+  }
+
+  // Fallback to direct environment variable
   // eslint-disable-next-line node/no-process-env
-  const customPath = process.env.PHOTOS_STORAGE_PATH;
+  const customPath = process.env.NUXT_PHOTOS_STORAGE_PATH || process.env.PHOTOS_STORAGE_PATH;
   if (customPath) {
     return join(customPath);
   }

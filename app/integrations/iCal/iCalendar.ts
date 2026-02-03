@@ -1,12 +1,10 @@
 import consola from "consola";
 
 import type { CalendarEvent } from "~/types/calendar";
-import type { CalendarIntegrationService, IntegrationStatus, UserWithColor } from "~/types/integrations";
+import type { CalendarIntegrationService, IntegrationStatus } from "~/types/integrations";
 
 import { DEFAULT_LOCAL_EVENT_COLOR } from "~/types/global";
 import { integrationRegistry } from "~/types/integrations";
-
-import type { ICalEvent } from "../../../server/integrations/iCal/types";
 
 import { ICalServerService } from "../../../server/integrations/iCal";
 
