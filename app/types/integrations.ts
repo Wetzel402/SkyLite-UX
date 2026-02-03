@@ -131,7 +131,7 @@ export async function createIntegrationService(
   ensureInitialized();
   try {
     const key = `${integration.type}:${integration.service}`;
-    const serviceFactory = getServiceFactories().find((sf) => sf.key === key);
+    const serviceFactory = getServiceFactories().find(sf => sf.key === key);
 
     if (!serviceFactory) {
       consola.warn(`No service factory found for integration type: ${key}`);
@@ -144,7 +144,8 @@ export async function createIntegrationService(
       integration.baseUrl || "",
       integration.settings as IntegrationSettings,
     );
-  } catch (error) {
+  }
+  catch (error) {
     consola.error(
       `Failed to create integration service for ${integration.type}:${integration.service}:`,
       error,
@@ -184,7 +185,7 @@ export type ServerCalendarIntegrationService = {
   deleteEvent?: (eventId: string) => Promise<void>;
 };
 
-export type ServerTypedIntegrationService =
-  | ServerShoppingIntegrationService
-  | ServerTodoIntegrationService
-  | ServerCalendarIntegrationService;
+export type ServerTypedIntegrationService
+  = | ServerShoppingIntegrationService
+    | ServerTodoIntegrationService
+    | ServerCalendarIntegrationService;

@@ -30,9 +30,9 @@ export default defineNuxtPlugin(() => {
 
   function connectEventSource() {
     if (
-      eventSource &&
-      (eventSource.readyState === EventSource.OPEN ||
-        eventSource.readyState === EventSource.CONNECTING)
+      eventSource
+      && (eventSource.readyState === EventSource.OPEN
+        || eventSource.readyState === EventSource.CONNECTING)
     ) {
       consola.debug("Sync Manager: Connection already exists, skipping");
       return;
@@ -73,7 +73,8 @@ export default defineNuxtPlugin(() => {
 
         if (eventSource && eventSource.readyState === EventSource.OPEN) {
           eventSourceData.value = event.data;
-        } else {
+        }
+        else {
           consola.debug(
             "Sync Manager: Ignoring message - EventSource not open (readyState:",
             eventSource?.readyState,
@@ -101,7 +102,8 @@ export default defineNuxtPlugin(() => {
             eventSource.close();
             eventSource = null;
             attemptReconnect();
-          } else if (eventSource.readyState === EventSource.CONNECTING) {
+          }
+          else if (eventSource.readyState === EventSource.CONNECTING) {
             eventSourceStatus.value = "CONNECTING";
           }
         }
@@ -116,7 +118,8 @@ export default defineNuxtPlugin(() => {
 
       eventSourceStatus.value = "CONNECTING";
       connectionStatus.value = "connecting";
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("Sync Manager: Failed to create EventSource:", error);
       connectionStatus.value = "error";
     }
@@ -138,7 +141,8 @@ export default defineNuxtPlugin(() => {
 
     if (reconnectAttempts < maxReconnectAttempts) {
       delay = reconnectDelay * reconnectAttempts;
-    } else {
+    }
+    else {
       const backoffAttempt = reconnectAttempts - maxReconnectAttempts;
       delay = Math.min(reconnectDelay * 2 ** backoffAttempt, maxBackoffDelay);
     }
@@ -150,7 +154,8 @@ export default defineNuxtPlugin(() => {
       consola.debug(
         `Sync Manager: Attempting to reconnect to sync stream (attempt ${attemptNumber}/${maxReconnectAttempts})`,
       );
-    } else {
+    }
+    else {
       consola.warn(
         `Sync Manager: Attempting to reconnect to sync stream (attempt ${attemptNumber}, retrying in ${delaySeconds} seconds)`,
       );
@@ -182,7 +187,8 @@ export default defineNuxtPlugin(() => {
       });
 
       watch(eventSourceData, (rawData) => {
-        if (!rawData) return;
+        if (!rawData)
+          return;
 
         try {
           const event: SyncEvent = JSON.parse(rawData);
@@ -238,7 +244,8 @@ export default defineNuxtPlugin(() => {
               }
               break;
           }
-        } catch (error) {
+        }
+        catch (error) {
           consola.error(
             "Sync Manager: Failed to parse sync event:",
             error,
@@ -272,8 +279,8 @@ export default defineNuxtPlugin(() => {
           ...nuxtApp.payload.data,
           [cacheKey]: data,
         };
-        const { data: integrationEventsData } =
-          useNuxtData<CalendarEvent[]>(cacheKey);
+        const { data: integrationEventsData }
+          = useNuxtData<CalendarEvent[]>(cacheKey);
         if (integrationEventsData) {
           integrationEventsData.value = data as CalendarEvent[];
         }
@@ -286,8 +293,8 @@ export default defineNuxtPlugin(() => {
           ...nuxtApp.payload.data,
           [cacheKey]: data,
         };
-        const { data: integrationListsData } =
-          useNuxtData<ShoppingListWithItemsAndCount[]>(cacheKey);
+        const { data: integrationListsData }
+          = useNuxtData<ShoppingListWithItemsAndCount[]>(cacheKey);
         if (integrationListsData) {
           integrationListsData.value = data as ShoppingListWithItemsAndCount[];
         }
@@ -300,8 +307,8 @@ export default defineNuxtPlugin(() => {
           ...nuxtApp.payload.data,
           [cacheKey]: data,
         };
-        const { data: integrationTodosData } =
-          useNuxtData<TodoWithUser[]>(cacheKey);
+        const { data: integrationTodosData }
+          = useNuxtData<TodoWithUser[]>(cacheKey);
         if (integrationTodosData) {
           integrationTodosData.value = data as TodoWithUser[];
         }
@@ -377,11 +384,14 @@ export default defineNuxtPlugin(() => {
         let cacheKey: string;
         if (integrationType === "calendar") {
           cacheKey = `${integrationType}-events-${integrationId}`;
-        } else if (integrationType === "shopping") {
+        }
+        else if (integrationType === "shopping") {
           cacheKey = `${integrationType}-lists-${integrationId}`;
-        } else if (integrationType === "todo") {
+        }
+        else if (integrationType === "todo") {
           cacheKey = `${integrationType}s-${integrationId}`;
-        } else {
+        }
+        else {
           cacheKey = `${integrationType}-${integrationId}`;
         }
         return nuxtApp.payload.data[cacheKey];
@@ -395,11 +405,14 @@ export default defineNuxtPlugin(() => {
         let cacheKey: string;
         if (integrationType === "calendar") {
           cacheKey = `${integrationType}-events-${integrationId}`;
-        } else if (integrationType === "shopping") {
+        }
+        else if (integrationType === "shopping") {
           cacheKey = `${integrationType}-lists-${integrationId}`;
-        } else if (integrationType === "todo") {
+        }
+        else if (integrationType === "todo") {
           cacheKey = `${integrationType}s-${integrationId}`;
-        } else {
+        }
+        else {
           cacheKey = `${integrationType}-${integrationId}`;
         }
         return nuxtApp.payload.data[cacheKey] !== undefined;
@@ -413,11 +426,14 @@ export default defineNuxtPlugin(() => {
         let cacheKey: string;
         if (integrationType === "calendar") {
           cacheKey = `${integrationType}-events-${integrationId}`;
-        } else if (integrationType === "shopping") {
+        }
+        else if (integrationType === "shopping") {
           cacheKey = `${integrationType}-lists-${integrationId}`;
-        } else if (integrationType === "todo") {
+        }
+        else if (integrationType === "todo") {
           cacheKey = `${integrationType}s-${integrationId}`;
-        } else {
+        }
+        else {
           cacheKey = `${integrationType}-${integrationId}`;
         }
 
@@ -451,7 +467,8 @@ export default defineNuxtPlugin(() => {
             `Sync Manager: Immediate sync triggered successfully for ${integrationType} integration ${integrationId}`,
           );
           return response;
-        } catch (error) {
+        }
+        catch (error) {
           consola.error(
             `Sync Manager: Failed to trigger immediate sync for ${integrationType} integration ${integrationId}:`,
             error,

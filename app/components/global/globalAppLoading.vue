@@ -14,7 +14,7 @@ defineProps<{
             src="/skylite.svg"
             alt="SkyLite Logo"
             class="skyliteLogo animate-pulse"
-          />
+          >
         </div>
         <p class="loadingText">
           {{ loadingMessage }}

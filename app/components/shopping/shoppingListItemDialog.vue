@@ -47,7 +47,8 @@ const fields = computed(() => {
 });
 
 const canDelete = computed(() => {
-  if (!props.integrationCapabilities) return true;
+  if (!props.integrationCapabilities)
+    return true;
 
   return props.integrationCapabilities.includes("delete_items");
 });
@@ -60,13 +61,14 @@ watch(
       if (item && typeof item === "object") {
         props.fields.forEach((field) => {
           const fieldKey = field.key;
-          const fieldValue = (item as unknown as Record<string, unknown>)[
-            fieldKey
+          const fieldValue = (item as ShoppingListItem)[
+            fieldKey as keyof ShoppingListItem
           ];
           if (fieldValue !== undefined) {
             if (field.type === "number") {
               formData.value[fieldKey] = Number(fieldValue);
-            } else {
+            }
+            else {
               formData.value[fieldKey] = fieldValue ? String(fieldValue) : "";
             }
           }
@@ -93,9 +95,9 @@ function handleSave() {
 
   const saveData: CreateShoppingListItemInput = {
     name:
-      formData.value.name?.toString().trim() ||
-      formData.value.notes?.toString().trim() ||
-      "Unknown",
+      formData.value.name?.toString().trim()
+      || formData.value.notes?.toString().trim()
+      || "Unknown",
     quantity: Number(formData.value.quantity) || 0,
     unit: formData.value.unit?.toString().trim() || "",
     notes: formData.value.notes?.toString().trim() || "",
@@ -259,7 +261,11 @@ function handleDelete() {
           Delete
         </UButton>
         <div class="flex gap-2" :class="{ 'ml-auto': !item?.id || !canDelete }">
-          <UButton color="neutral" variant="ghost" @click="emit('close')">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="emit('close')"
+          >
             Cancel
           </UButton>
           <UButton color="primary" @click="handleSave">

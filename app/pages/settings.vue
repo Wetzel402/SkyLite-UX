@@ -19,8 +19,8 @@ import {
   integrationRegistry,
 } from "~/types/integrations";
 
-const { users, loading, error, createUser, deleteUser, updateUser } =
-  useUsers();
+const { users, loading, error, createUser, deleteUser, updateUser }
+  = useUsers();
 
 const logoLoaded = ref(true);
 const {
@@ -72,7 +72,7 @@ const activeIntegrationTab = ref<string>("");
 
 const availableIntegrationTypes = computed(() => {
   const types = new Set<string>();
-  integrationRegistry.forEach((config) => types.add(config.type));
+  integrationRegistry.forEach(config => types.add(config.type));
   return Array.from(types);
 });
 
@@ -91,7 +91,7 @@ watch(
       nextTick(() => {
         const allIntegrations = integrations.value as Integration[];
         const integration = allIntegrations.find(
-          (i) => i.id === query.integrationId,
+          i => i.id === query.integrationId,
         );
         if (integration) {
           calendarSelectIntegration.value = integration;
@@ -105,7 +105,7 @@ watch(
 
 const filteredIntegrations = computed(() => {
   return (integrations.value as Integration[]).filter(
-    (integration) => integration.type === activeIntegrationTab.value,
+    integration => integration.type === activeIntegrationTab.value,
   );
 });
 
@@ -130,7 +130,8 @@ async function handleUserSave(userData: CreateUserInput) {
       try {
         await updateUser(selectedUser.value.id, userData);
         consola.debug("Settings: User updated successfully");
-      } catch (error) {
+      }
+      catch (error) {
         if (cachedUsers.value && previousUsers.length > 0) {
           cachedUsers.value.splice(
             0,
@@ -140,14 +141,16 @@ async function handleUserSave(userData: CreateUserInput) {
         }
         throw error;
       }
-    } else {
+    }
+    else {
       await createUser(userData);
       consola.debug("Settings: User created successfully");
     }
 
     isUserDialogOpen.value = false;
     selectedUser.value = null;
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Settings: Failed to save user:", error);
   }
 }
@@ -168,7 +171,8 @@ async function handleUserDelete(userId: string) {
     try {
       await deleteUser(userId);
       consola.debug("Settings: User deleted successfully");
-    } catch (error) {
+    }
+    catch (error) {
       if (cachedUsers.value && previousUsers.length > 0) {
         cachedUsers.value.splice(0, cachedUsers.value.length, ...previousUsers);
       }
@@ -177,7 +181,8 @@ async function handleUserDelete(userId: string) {
 
     isUserDialogOpen.value = false;
     selectedUser.value = null;
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Settings: Failed to delete user:", error);
   }
 }
@@ -232,7 +237,8 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
           message: "Integration updated successfully!",
           isLoading: false,
         };
-      } catch (error) {
+      }
+      catch (error) {
         if (cachedIntegrations.value && previousIntegrations.length > 0) {
           cachedIntegrations.value.splice(
             0,
@@ -242,7 +248,8 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
         }
         throw error;
       }
-    } else {
+    }
+    else {
       const { data: cachedIntegrations } = useNuxtData("integrations");
       const previousIntegrations = cachedIntegrations.value
         ? [...cachedIntegrations.value]
@@ -273,8 +280,8 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
         });
 
         if (
-          cachedIntegrations.value &&
-          Array.isArray(cachedIntegrations.value)
+          cachedIntegrations.value
+          && Array.isArray(cachedIntegrations.value)
         ) {
           const tempIndex = cachedIntegrations.value.findIndex(
             (i: Integration) => i.id === newIntegration.id,
@@ -289,7 +296,8 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
           message: "Integration created successfully!",
           isLoading: false,
         };
-      } catch (error) {
+      }
+      catch (error) {
         if (cachedIntegrations.value && previousIntegrations.length > 0) {
           cachedIntegrations.value.splice(
             0,
@@ -311,7 +319,8 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
       selectedIntegration.value = null;
       connectionTestResult.value = null;
     }, 1500);
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Settings: Failed to save integration:", error);
     connectionTestResult.value = {
       success: false,
@@ -324,7 +333,7 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
 
 function handleSelectCalendars(integrationId: string) {
   const integration = (integrations.value as Integration[]).find(
-    (i) => i.id === integrationId,
+    i => i.id === integrationId,
   );
   if (integration) {
     calendarSelectIntegration.value = integration;
@@ -339,7 +348,7 @@ async function handleCalendarsSaved() {
       calendarSelectIntegration.value.id,
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await new Promise(resolve => setTimeout(resolve, 2500));
 
     await refreshNuxtData("calendar-events");
   }
@@ -383,7 +392,8 @@ async function handleIntegrationDelete(integrationId: string) {
     try {
       await deleteIntegration(integrationId);
       consola.debug("Settings: Integration deleted successfully");
-    } catch (error) {
+    }
+    catch (error) {
       if (cachedIntegrations.value && previousIntegrations.length > 0) {
         cachedIntegrations.value.splice(
           0,
@@ -401,15 +411,16 @@ async function handleIntegrationDelete(integrationId: string) {
 
     isIntegrationDialogOpen.value = false;
     selectedIntegration.value = null;
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Settings: Failed to delete integration:", error);
   }
 }
 
 function openIntegrationDialog(integration: Integration | null = null) {
   if (
-    !activeIntegrationTab.value &&
-    availableIntegrationTypes.value.length > 0
+    !activeIntegrationTab.value
+    && availableIntegrationTypes.value.length > 0
   ) {
     activeIntegrationTab.value = availableIntegrationTypes.value[0] || "";
   }
@@ -459,16 +470,19 @@ async function handleToggleIntegration(
             );
           });
         }
-      } catch (serviceError) {
+      }
+      catch (serviceError) {
         consola.warn(
           `Failed to create integration service for ${integration.name}:`,
           serviceError,
         );
       }
-    } else {
+    }
+    else {
       try {
         integrationServices.delete(integrationId);
-      } catch (serviceError) {
+      }
+      catch (serviceError) {
         consola.warn(
           `Failed to remove integration service for ${integration.name}:`,
           serviceError,
@@ -489,7 +503,8 @@ async function handleToggleIntegration(
 
           await triggerImmediateSync(integration.type, integrationId);
         }
-      } else {
+      }
+      else {
         await updateIntegration(integrationId, { enabled });
 
         purgeIntegrationCache(integration.type, integrationId);
@@ -501,7 +516,8 @@ async function handleToggleIntegration(
       consola.debug(
         `Settings: Integration ${enabled ? "enabled" : "disabled"} successfully`,
       );
-    } catch (error) {
+    }
+    catch (error) {
       consola.warn(
         `Settings: Rolling back optimistic update for integration ${integrationId} due to error:`,
         error,
@@ -518,13 +534,15 @@ async function handleToggleIntegration(
       if (enabled) {
         try {
           integrationServices.delete(integrationId);
-        } catch (rollbackError) {
+        }
+        catch (rollbackError) {
           consola.warn(
             `Failed to rollback service creation for ${integration.name}:`,
             rollbackError,
           );
         }
-      } else {
+      }
+      else {
         try {
           const service = await createIntegrationService(integration);
           if (service) {
@@ -536,7 +554,8 @@ async function handleToggleIntegration(
               );
             });
           }
-        } catch (rollbackError) {
+        }
+        catch (rollbackError) {
           consola.warn(
             `Failed to rollback service removal for ${integration.name}:`,
             rollbackError,
@@ -546,7 +565,8 @@ async function handleToggleIntegration(
 
       throw error;
     }
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("Settings: Failed to toggle integration:", error);
   }
 }
@@ -582,7 +602,8 @@ function getIntegrationIconUrl(integration: Integration) {
 }
 
 function integrationNeedsReauth(integration?: Integration | null): boolean {
-  if (!integration) return false;
+  if (!integration)
+    return false;
   const settings = integration.settings as
     | { needsReauth?: boolean }
     | undefined;
@@ -605,7 +626,9 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
         >
           <div class="flex items-center justify-between mb-6">
             <div>
-              <h2 class="text-lg font-semibold text-highlighted">Users</h2>
+              <h2 class="text-lg font-semibold text-highlighted">
+                Users
+              </h2>
             </div>
             <UButton icon="i-lucide-user-plus" @click="openUserDialog()">
               Add User
@@ -617,7 +640,9 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
               name="i-lucide-loader-2"
               class="animate-spin h-8 w-8 mx-auto"
             />
-            <p class="text-default mt-2">Loading users...</p>
+            <p class="text-default mt-2">
+              Loading users...
+            </p>
           </div>
 
           <div v-else-if="error" class="text-center py-8 text-error">
@@ -628,8 +653,12 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
             <div class="flex items-center justify-center gap-2 text-default">
               <UIcon name="i-lucide-frown" class="h-10 w-10" />
               <div class="text-center">
-                <p class="text-lg">No users found</p>
-                <p class="text-dimmed">Create your first user to get started</p>
+                <p class="text-lg">
+                  No users found
+                </p>
+                <p class="text-dimmed">
+                  Create your first user to get started
+                </p>
               </div>
             </div>
           </div>
@@ -643,12 +672,12 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
               >
                 <img
                   :src="
-                    user.avatar ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=${(user.color || '#06b6d4').replace('#', '')}&color=374151&size=96`
+                    user.avatar
+                      || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=${(user.color || '#06b6d4').replace('#', '')}&color=374151&size=96`
                   "
                   class="w-10 h-10 rounded-full object-cover border border-muted"
                   :alt="user.name"
-                />
+                >
                 <div class="flex-1 min-w-0">
                   <p class="font-medium text-highlighted truncate">
                     {{ user.name }}
@@ -656,7 +685,9 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   <p v-if="user.email" class="text-sm text-muted truncate">
                     {{ user.email }}
                   </p>
-                  <p v-else class="text-sm text-muted">No email</p>
+                  <p v-else class="text-sm text-muted">
+                    No email
+                  </p>
                 </div>
                 <div class="flex items-center gap-2">
                   <UButton
@@ -710,7 +741,9 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
               name="i-lucide-loader-2"
               class="animate-spin h-8 w-8 mx-auto"
             />
-            <p class="text-default mt-2">Loading integrations...</p>
+            <p class="text-default mt-2">
+              Loading integrations...
+            </p>
           </div>
 
           <div v-else-if="servicesInitializing" class="text-center py-8">
@@ -732,9 +765,7 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
               <div class="text-center">
                 <p class="text-lg">
                   No
-                  {{
-                    getIntegrationTypeLabel(activeIntegrationTab)
-                  }}
+                  {{ getIntegrationTypeLabel(activeIntegrationTab) }}
                   integrations configured
                 </p>
                 <p class="text-dimmed">
@@ -767,7 +798,7 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                       :alt="`${integration.service} icon`"
                       class="h-5 w-5"
                       style="object-fit: contain"
-                    />
+                    >
                     <UIcon
                       v-else
                       :name="getIntegrationIcon(integration.type)"
@@ -831,7 +862,9 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <p class="font-medium text-highlighted">Dark Mode</p>
+                <p class="font-medium text-highlighted">
+                  Dark Mode
+                </p>
                 <p class="text-sm text-muted">
                   Toggle between light and dark themes (Coming Soon™)
                 </p>
@@ -847,7 +880,9 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
             </div>
             <div class="flex items-center justify-between">
               <div>
-                <p class="font-medium text-highlighted">Notifications</p>
+                <p class="font-medium text-highlighted">
+                  Notifications
+                </p>
                 <p class="text-sm text-muted">
                   Enable push notifications (Coming Soon™)
                 </p>
@@ -864,7 +899,9 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
         </div>
 
         <div class="bg-default rounded-lg shadow-sm border border-default p-6">
-          <h2 class="text-lg font-semibold text-highlighted mb-4">About</h2>
+          <h2 class="text-lg font-semibold text-highlighted mb-4">
+            About
+          </h2>
           <div
             class="flex items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg border border-muted"
           >
@@ -878,8 +915,12 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                 class="w-8 h-8"
                 style="object-fit: contain"
                 @error="logoLoaded = false"
+              >
+              <UIcon
+                v-else
+                name="i-lucide-sun"
+                class="w-6 h-6 text-primary"
               />
-              <UIcon v-else name="i-lucide-sun" class="w-6 h-6 text-primary" />
             </div>
             <div class="flex-1">
               <div class="flex items-center justify-between mb-1">

@@ -81,7 +81,11 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
       <div class="p-4">
         <div class="flex items-center justify-center mb-4">
           <h2 class="text-lg font-semibold text-highlighted">
-            <NuxtTime :datetime="currentDate" month="long" year="numeric" />
+            <NuxtTime
+              :datetime="currentDate"
+              month="long"
+              year="numeric"
+            />
           </h2>
         </div>
         <div class="grid grid-cols-7 gap-1 mb-2">
@@ -116,9 +120,9 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
                   :class="{
                     'text-dimmed': !isSameMonth(day, currentDate),
                     'text-highlighted':
-                      isSameMonth(day, currentDate) &&
-                      !isToday(day) &&
-                      !isSelectedDate(day),
+                      isSameMonth(day, currentDate)
+                      && !isToday(day)
+                      && !isSelectedDate(day),
                     'bg-primary text-white font-semibold': isSelectedDate(day),
                     'bg-info/10 text-info font-medium':
                       isToday(day) && !isSelectedDate(day),
@@ -136,9 +140,9 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
                 :class="{
                   'text-dimmed': !isSameMonth(day, currentDate),
                   'text-highlighted':
-                    isSameMonth(day, currentDate) &&
-                    !isToday(day) &&
-                    !isSelectedDate(day),
+                    isSameMonth(day, currentDate)
+                    && !isToday(day)
+                    && !isSelectedDate(day),
                   'bg-primary text-white font-semibold': isSelectedDate(day),
                   'bg-info/10 text-info font-medium':
                     isToday(day) && !isSelectedDate(day),

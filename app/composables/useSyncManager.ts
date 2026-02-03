@@ -44,11 +44,14 @@ export function useSyncManager() {
     let cacheKey: string;
     if (integrationType === "calendar") {
       cacheKey = `${integrationType}-events-${integrationId}`;
-    } else if (integrationType === "shopping") {
+    }
+    else if (integrationType === "shopping") {
       cacheKey = `${integrationType}-lists-${integrationId}`;
-    } else if (integrationType === "todo") {
+    }
+    else if (integrationType === "todo") {
       cacheKey = `${integrationType}s-${integrationId}`;
-    } else {
+    }
+    else {
       cacheKey = `${integrationType}-${integrationId}`;
     }
     return nuxtApp.payload.data[cacheKey];
@@ -56,8 +59,8 @@ export function useSyncManager() {
 
   const reconnect = () => {
     if (
-      nuxtApp.$reconnectSync &&
-      typeof nuxtApp.$reconnectSync === "function"
+      nuxtApp.$reconnectSync
+      && typeof nuxtApp.$reconnectSync === "function"
     ) {
       nuxtApp.$reconnectSync();
     }
@@ -76,7 +79,8 @@ export function useSyncManager() {
     Object.entries(data).forEach(([integrationId, syncInfo]) => {
       if (syncInfo.success) {
         status.successfulSyncs++;
-      } else {
+      }
+      else {
         status.failedSyncs++;
       }
 
@@ -111,7 +115,7 @@ export function useSyncManager() {
         syncData: data[integration.id],
         cachedData: getCachedIntegrationData(integrationType, integration.id),
       }))
-      .filter((item) => item.syncData);
+      .filter(item => item.syncData);
   };
 
   const getShoppingSyncData = (integrationsList?: Integration[]) => {
@@ -128,7 +132,8 @@ export function useSyncManager() {
 
   const hasFreshData = (integrationId: string) => {
     const data = getSyncData(integrationId);
-    if (!data || !data.success) return false;
+    if (!data || !data.success)
+      return false;
 
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     return data.lastSync > fiveMinutesAgo;
@@ -165,11 +170,14 @@ export function useSyncManager() {
     let cacheKey: string;
     if (integrationType === "calendar") {
       cacheKey = `${integrationType}-events-${integrationId}`;
-    } else if (integrationType === "shopping") {
+    }
+    else if (integrationType === "shopping") {
       cacheKey = `${integrationType}-lists-${integrationId}`;
-    } else if (integrationType === "todo") {
+    }
+    else if (integrationType === "todo") {
       cacheKey = `${integrationType}s-${integrationId}`;
-    } else {
+    }
+    else {
       cacheKey = `${integrationType}-${integrationId}`;
     }
     return nuxtApp.payload.data[cacheKey] !== undefined;
@@ -182,11 +190,14 @@ export function useSyncManager() {
     let cacheKey: string;
     if (integrationType === "calendar") {
       cacheKey = `${integrationType}-events-${integrationId}`;
-    } else if (integrationType === "shopping") {
+    }
+    else if (integrationType === "shopping") {
       cacheKey = `${integrationType}-lists-${integrationId}`;
-    } else if (integrationType === "todo") {
+    }
+    else if (integrationType === "todo") {
       cacheKey = `${integrationType}s-${integrationId}`;
-    } else {
+    }
+    else {
       cacheKey = `${integrationType}-${integrationId}`;
     }
 
@@ -221,8 +232,8 @@ export function useSyncManager() {
 
     if (removedCount > 0) {
       nuxtApp.payload.data[cacheKey] = filteredEvents;
-      const { data: integrationEventsData } =
-        useNuxtData<CalendarEvent[]>(cacheKey);
+      const { data: integrationEventsData }
+        = useNuxtData<CalendarEvent[]>(cacheKey);
       if (integrationEventsData) {
         integrationEventsData.value = filteredEvents;
       }
@@ -254,7 +265,8 @@ export function useSyncManager() {
         `Use Sync Manager: Immediate sync triggered successfully for ${integrationType} integration ${integrationId}`,
       );
       return response;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error(
         `Use Sync Manager: Failed to trigger immediate sync for ${integrationType} integration ${integrationId}:`,
         error,

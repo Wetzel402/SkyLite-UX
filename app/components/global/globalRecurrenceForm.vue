@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { DateValue } from "@internationalized/date";
 
-import { CalendarDate, getLocalTimeZone } from "@internationalized/date";
+import { getLocalTimeZone } from "@internationalized/date";
+import { computed } from "vue";
 
-import type { RecurrenceState } from "~/composables/useRecurrence";
-
-import { useRecurrence } from "~/composables/useRecurrence";
+import type { RecurrenceState } from "~/types/recurrence";
 
 const props = defineProps<{
   state: RecurrenceState;
@@ -16,9 +15,9 @@ const emit = defineEmits<{
   (e: "update:state", state: RecurrenceState): void;
 }>();
 
-const { resetRecurrenceFields: resetRecurrenceFieldsComposable } = useRecurrence();
-
-const dayNames = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+const recurrenceUntilModel = computed(
+  () => props.state.recurrenceUntil.value as DateValue | null,
+);
 
 const recurrenceTypeOptions = [
   { value: "daily", label: "Daily" },
@@ -76,18 +75,52 @@ const monthOptions = [
   { value: 11, label: "December" },
 ];
 
+function updateState<K extends keyof RecurrenceState>(
+  key: K,
+  value: RecurrenceState[K] extends Ref<infer T> ? T : never,
+) {
+  if (props.disabled)
+    return;
+  (props.state[key] as Ref).value = value;
+  emit("update:state", props.state);
+}
+
+function updateNestedState(
+  obj: Ref<
+    { week: number; day: number } | { week: number; day: number; month: number }
+  >,
+  key: "week" | "day" | "month",
+  value: number,
+) {
+  if (props.disabled)
+    return;
+  obj.value = { ...obj.value, [key]: value };
+  emit("update:state", props.state);
+}
+
+function updateUntilDate(value: DateValue | null) {
+  if (props.disabled || !value)
+    return;
+  const state = props.state;
+  state.recurrenceUntil.value = value;
+  emit("update:state", state);
+}
+
 function toggleRecurrenceDay(day: number) {
   if (props.disabled)
     return;
 
-  const index = props.state.recurrenceDays.value.indexOf(day);
+  const state = props.state;
+  const updatedDays = [...state.recurrenceDays.value];
+  const index = updatedDays.indexOf(day);
   if (index > -1) {
-    props.state.recurrenceDays.value.splice(index, 1);
+    updatedDays.splice(index, 1);
   }
   else {
-    props.state.recurrenceDays.value.push(day);
+    updatedDays.push(day);
   }
-  emit("update:state", props.state);
+  state.recurrenceDays.value = updatedDays;
+  emit("update:state", state);
 }
 </script>
 
@@ -103,7 +136,7 @@ function toggleRecurrenceDay(day: number) {
         <label
           class="text-sm font-medium cursor-pointer transition-colors"
           :class="state.isRecurring.value ? 'text-primary' : 'text-highlighted'"
-          @click="state.isRecurring.value = !state.isRecurring.value; emit('update:state', state)"
+          @click="updateState('isRecurring', !state.isRecurring.value)"
         >
           Repeat
           <span
@@ -116,7 +149,7 @@ function toggleRecurrenceDay(day: number) {
         :model-value="state.isRecurring.value"
         size="md"
         :disabled="disabled"
-        @update:model-value="state.isRecurring.value = $event; emit('update:state', state)"
+        @update:model-value="updateState('isRecurring', $event)"
       />
     </div>
 
@@ -135,7 +168,12 @@ function toggleRecurrenceDay(day: number) {
             class="w-full"
             :ui="{ base: 'w-full' }"
             :disabled="disabled"
-            @update:model-value="state.recurrenceType.value = $event; emit('update:state', state)"
+            @update:model-value="
+              updateState(
+                'recurrenceType',
+                $event as 'daily' | 'weekly' | 'monthly' | 'yearly',
+              )
+            "
           />
         </div>
 
@@ -148,15 +186,14 @@ function toggleRecurrenceDay(day: number) {
             class="w-full"
             :ui="{ base: 'w-full' }"
             :disabled="disabled"
-            @update:model-value="state.recurrenceInterval.value = Number($event); emit('update:state', state)"
+            @update:model-value="
+              updateState('recurrenceInterval', Number($event))
+            "
           />
         </div>
       </div>
 
-      <div
-        v-if="state.recurrenceType.value === 'weekly'"
-        class="space-y-2"
-      >
+      <div v-if="state.recurrenceType.value === 'weekly'" class="space-y-2">
         <label class="block text-xs font-medium text-muted">Days of Week</label>
         <div class="flex flex-wrap gap-2">
           <UButton
@@ -181,10 +218,7 @@ function toggleRecurrenceDay(day: number) {
         </div>
       </div>
 
-      <div
-        v-if="state.recurrenceType.value === 'monthly'"
-        class="space-y-2"
-      >
+      <div v-if="state.recurrenceType.value === 'monthly'" class="space-y-2">
         <label class="block text-xs font-medium text-muted">Repeat on</label>
         <USelect
           :model-value="state.recurrenceMonthlyType.value"
@@ -194,7 +228,9 @@ function toggleRecurrenceDay(day: number) {
           class="w-full"
           :ui="{ base: 'w-full' }"
           :disabled="disabled"
-          @update:model-value="state.recurrenceMonthlyType.value = $event; emit('update:state', state)"
+          @update:model-value="
+            updateState('recurrenceMonthlyType', $event as 'day' | 'weekday')
+          "
         />
         <div
           v-if="state.recurrenceMonthlyType.value === 'weekday'"
@@ -210,7 +246,13 @@ function toggleRecurrenceDay(day: number) {
               class="flex-1"
               :ui="{ base: 'flex-1' }"
               :disabled="disabled"
-              @update:model-value="state.recurrenceMonthlyWeekday.value.week = $event; emit('update:state', state)"
+              @update:model-value="
+                updateNestedState(
+                  state.recurrenceMonthlyWeekday,
+                  'week',
+                  $event,
+                )
+              "
             />
             <USelect
               :model-value="state.recurrenceMonthlyWeekday.value.day"
@@ -220,16 +262,15 @@ function toggleRecurrenceDay(day: number) {
               class="flex-1"
               :ui="{ base: 'flex-1' }"
               :disabled="disabled"
-              @update:model-value="state.recurrenceMonthlyWeekday.value.day = $event; emit('update:state', state)"
+              @update:model-value="
+                updateNestedState(state.recurrenceMonthlyWeekday, 'day', $event)
+              "
             />
           </div>
         </div>
       </div>
 
-      <div
-        v-if="state.recurrenceType.value === 'yearly'"
-        class="space-y-2"
-      >
+      <div v-if="state.recurrenceType.value === 'yearly'" class="space-y-2">
         <label class="block text-xs font-medium text-muted">Repeat on</label>
         <USelect
           :model-value="state.recurrenceYearlyType.value"
@@ -239,7 +280,9 @@ function toggleRecurrenceDay(day: number) {
           class="w-full"
           :ui="{ base: 'w-full' }"
           :disabled="disabled"
-          @update:model-value="state.recurrenceYearlyType.value = $event; emit('update:state', state)"
+          @update:model-value="
+            updateState('recurrenceYearlyType', $event as 'day' | 'weekday')
+          "
         />
         <div
           v-if="state.recurrenceYearlyType.value === 'weekday'"
@@ -255,7 +298,9 @@ function toggleRecurrenceDay(day: number) {
               class="flex-1"
               :ui="{ base: 'flex-1' }"
               :disabled="disabled"
-              @update:model-value="state.recurrenceYearlyWeekday.value.week = $event; emit('update:state', state)"
+              @update:model-value="
+                updateNestedState(state.recurrenceYearlyWeekday, 'week', $event)
+              "
             />
             <USelect
               :model-value="state.recurrenceYearlyWeekday.value.day"
@@ -265,7 +310,9 @@ function toggleRecurrenceDay(day: number) {
               class="flex-1"
               :ui="{ base: 'flex-1' }"
               :disabled="disabled"
-              @update:model-value="state.recurrenceYearlyWeekday.value.day = $event; emit('update:state', state)"
+              @update:model-value="
+                updateNestedState(state.recurrenceYearlyWeekday, 'day', $event)
+              "
             />
             <USelect
               :model-value="state.recurrenceYearlyWeekday.value.month"
@@ -275,7 +322,13 @@ function toggleRecurrenceDay(day: number) {
               class="flex-1"
               :ui="{ base: 'flex-1' }"
               :disabled="disabled"
-              @update:model-value="state.recurrenceYearlyWeekday.value.month = $event; emit('update:state', state)"
+              @update:model-value="
+                updateNestedState(
+                  state.recurrenceYearlyWeekday,
+                  'month',
+                  $event,
+                )
+              "
             />
           </div>
         </div>
@@ -292,7 +345,12 @@ function toggleRecurrenceDay(day: number) {
             class="flex-1"
             :ui="{ base: 'flex-1' }"
             :disabled="disabled"
-            @update:model-value="state.recurrenceEndType.value = $event; emit('update:state', state)"
+            @update:model-value="
+              updateState(
+                'recurrenceEndType',
+                $event as 'never' | 'count' | 'until',
+              )
+            "
           />
           <UInput
             v-if="state.recurrenceEndType.value === 'count'"
@@ -304,7 +362,7 @@ function toggleRecurrenceDay(day: number) {
             class="w-20"
             :ui="{ base: 'w-20' }"
             :disabled="disabled"
-            @update:model-value="state.recurrenceCount.value = Number($event); emit('update:state', state)"
+            @update:model-value="updateState('recurrenceCount', Number($event))"
           />
           <UPopover v-if="state.recurrenceEndType.value === 'until'">
             <UButton
@@ -316,7 +374,9 @@ function toggleRecurrenceDay(day: number) {
             >
               <NuxtTime
                 v-if="state.recurrenceUntil.value"
-                :datetime="state.recurrenceUntil.value.toDate(getLocalTimeZone())"
+                :datetime="
+                  state.recurrenceUntil.value.toDate(getLocalTimeZone())
+                "
                 year="numeric"
                 month="short"
                 day="numeric"
@@ -324,18 +384,10 @@ function toggleRecurrenceDay(day: number) {
               <span v-else>Select date</span>
             </UButton>
             <template #content>
-              <UCalendar
-                :model-value="state.recurrenceUntil.value as DateValue"
-                class="p-2"
+              <GlobalDatePicker
+                :model-value="recurrenceUntilModel"
                 :disabled="disabled"
-                @update:model-value="
-                  (value) => {
-                    if (value) {
-                      state.recurrenceUntil.value = value as DateValue;
-                      emit('update:state', state);
-                    }
-                  }
-                "
+                @update:model-value="updateUntilDate($event)"
               />
             </template>
           </UPopover>

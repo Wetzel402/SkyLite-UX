@@ -1,18 +1,10 @@
 <script setup lang="ts">
+import type { GoogleCalendarListItem } from "~~/server/integrations/google_calendar/types";
+
 import { consola } from "consola";
 
 import type { Integration } from "~/types/database";
 import type { CalendarConfig } from "~/types/integrations";
-
-type GoogleCalendarListItem = {
-  id: string;
-  summary: string;
-  description?: string;
-  backgroundColor: string;
-  foregroundColor: string;
-  primary?: boolean;
-  accessRole: "read" | "write";
-};
 
 const props = defineProps<{
   integration: Integration | null;
@@ -60,14 +52,15 @@ watch(
 );
 
 watch(
-  () => calendarConfigs.value.map((config) => config.user),
+  () => calendarConfigs.value.map(config => config.user),
   (userArrays) => {
     calendarConfigs.value.forEach((config, index) => {
       const userArray = userArrays[index];
       const hasUsers = Array.isArray(userArray) && userArray.length > 0;
       if (hasUsers) {
         config.useUserColors = true;
-      } else {
+      }
+      else {
         config.useUserColors = false;
       }
     });
@@ -76,7 +69,8 @@ watch(
 );
 
 async function loadCalendars() {
-  if (!props.integration?.id) return;
+  if (!props.integration?.id)
+    return;
 
   try {
     pending.value = true;
@@ -90,7 +84,7 @@ async function loadCalendars() {
     availableCalendars.value = result.calendars || [];
 
     result.calendars.forEach((cal) => {
-      const existing = calendarConfigs.value.find((c) => c.id === cal.id);
+      const existing = calendarConfigs.value.find(c => c.id === cal.id);
       if (!existing) {
         calendarConfigs.value.push({
           id: cal.id,
@@ -103,16 +97,19 @@ async function loadCalendars() {
         });
       }
     });
-  } catch (err) {
-    error.value =
-      err instanceof Error ? err.message : "Failed to load calendars";
-  } finally {
+  }
+  catch (err) {
+    error.value
+      = err instanceof Error ? err.message : "Failed to load calendars";
+  }
+  finally {
     pending.value = false;
   }
 }
 
 async function handleSave() {
-  if (!props.integration?.id) return;
+  if (!props.integration?.id)
+    return;
 
   try {
     pending.value = true;
@@ -126,8 +123,8 @@ async function handleSave() {
       };
     });
 
-    const currentSettings =
-      (props.integration.settings as Record<string, unknown>) || {};
+    const currentSettings
+      = (props.integration.settings as Record<string, unknown>) || {};
 
     await $fetch(`/api/integrations/${props.integration.id}`, {
       method: "PUT",
@@ -144,11 +141,11 @@ async function handleSave() {
     const disabledCalendars = originalCalendarConfigs.value
       .filter((original) => {
         const updated = validatedCalendarConfigs.find(
-          (c) => c.id === original.id,
+          c => c.id === original.id,
         );
         return original.enabled && updated && !updated.enabled;
       })
-      .map((c) => c.id);
+      .map(c => c.id);
 
     if (disabledCalendars.length > 0) {
       consola.debug(
@@ -160,10 +157,12 @@ async function handleSave() {
 
     emit("save");
     emit("close");
-  } catch (err) {
-    error.value =
-      err instanceof Error ? err.message : "Failed to save calendar selection";
-  } finally {
+  }
+  catch (err) {
+    error.value
+      = err instanceof Error ? err.message : "Failed to save calendar selection";
+  }
+  finally {
     pending.value = false;
   }
 }
@@ -182,7 +181,9 @@ async function handleSave() {
       <div
         class="flex items-center justify-between p-4 border-b border-default"
       >
-        <h3 class="text-base font-semibold leading-6">Select Calendars</h3>
+        <h3 class="text-base font-semibold leading-6">
+          Select Calendars
+        </h3>
         <UButton
           color="neutral"
           variant="ghost"
@@ -237,9 +238,7 @@ async function handleSave() {
 
           <template v-if="config.enabled">
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-highlighted"
-                >Assigned Users</label
-              >
+              <label class="block text-sm font-medium text-highlighted">Assigned Users</label>
               <USelect
                 v-model="config.user"
                 :items="users.map((u) => ({ label: u.name, value: u.id }))"
@@ -250,11 +249,13 @@ async function handleSave() {
             </div>
 
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-highlighted"
-                >Event Color</label
-              >
+              <label class="block text-sm font-medium text-highlighted">Event Color</label>
               <UPopover>
-                <UButton label="Choose color" color="neutral" variant="outline">
+                <UButton
+                  label="Choose color"
+                  color="neutral"
+                  variant="outline"
+                >
                   <template #leading>
                     <span
                       :style="{
@@ -281,7 +282,11 @@ async function handleSave() {
       </div>
 
       <div class="flex justify-end gap-2 p-4 border-t border-default">
-        <UButton color="neutral" variant="ghost" @click="emit('close')">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="emit('close')"
+        >
           Cancel
         </UButton>
         <UButton

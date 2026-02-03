@@ -24,7 +24,8 @@ const chip = computed(() => ({ backgroundColor: color.value }));
 
 const textColor = computed(() => {
   const hex = color.value.replace("#", "");
-  if (hex.length !== 6) return "374151";
+  if (hex.length !== 6)
+    return "374151";
 
   const r = Number.parseInt(hex.substring(0, 2), 16);
   const g = Number.parseInt(hex.substring(2, 4), 16);
@@ -41,13 +42,14 @@ watch(
       name.value = newUser.name || "";
       email.value = newUser.email || "";
       color.value = newUser.color || "#06b6d4";
-      avatar.value =
-        newUser.avatar &&
-        !newUser.avatar.startsWith("https://ui-avatars.com/api/")
+      avatar.value
+        = newUser.avatar
+          && !newUser.avatar.startsWith("https://ui-avatars.com/api/")
           ? newUser.avatar
           : "";
       error.value = null;
-    } else {
+    }
+    else {
       resetForm();
     }
   },
@@ -132,9 +134,7 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Name *</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Name *</label>
           <UInput
             v-model="name"
             placeholder="Enter user name"
@@ -144,9 +144,7 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Email (optional)</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Email (optional)</label>
           <UInput
             v-model="email"
             placeholder="Enter email address"
@@ -157,11 +155,13 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Profile Color</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Profile Color</label>
           <UPopover>
-            <UButton label="Choose color" color="neutral" variant="outline">
+            <UButton
+              label="Choose color"
+              color="neutral"
+              variant="outline"
+            >
               <template #leading>
                 <span :style="chip" class="size-3 rounded-full" />
               </template>
@@ -173,14 +173,12 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Avatar</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Avatar</label>
           <div class="flex items-center gap-4">
             <img
               :src="avatar || getDefaultAvatarUrl()"
               class="w-12 h-12 rounded-full border border-default"
-            />
+            >
             <UInput
               v-model="avatar"
               placeholder="Optional: Paste image URL"
@@ -204,10 +202,18 @@ function handleDelete() {
           Delete
         </UButton>
         <div class="flex gap-2">
-          <UButton color="neutral" variant="ghost" @click="emit('close')">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="emit('close')"
+          >
             Cancel
           </UButton>
-          <UButton color="primary" :disabled="!name.trim()" @click="handleSave">
+          <UButton
+            color="primary"
+            :disabled="!name.trim()"
+            @click="handleSave"
+          >
             Save
           </UButton>
         </div>

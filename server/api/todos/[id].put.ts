@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import prisma from "~/lib/prisma";
 
 import type { ICalEvent } from "../../integrations/iCal/types";
@@ -16,7 +18,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Fetch the current todo to check if it was previously incomplete
     const currentTodo = await prisma.todo.findUnique({
       where: { id },
     });
@@ -55,7 +56,7 @@ export default defineEventHandler(async (event) => {
             : currentTodo.dueDate,
         todoColumnId: body.todoColumnId,
         order: body.order,
-        rrule,
+        rrule: rrule ?? Prisma.JsonNull,
         recurringGroupId,
       },
       include: {
@@ -116,29 +117,31 @@ export default defineEventHandler(async (event) => {
         referenceDate,
       );
 
-      const maxOrder = await prisma.todo.aggregate({
-        where: {
-          todoColumnId: todo.todoColumnId || null,
-          completed: false,
-        },
-        _max: {
-          order: true,
-        },
-      });
+      if (nextDueDate !== null) {
+        const maxOrder = await prisma.todo.aggregate({
+          where: {
+            todoColumnId: todo.todoColumnId || null,
+            completed: false,
+          },
+          _max: {
+            order: true,
+          },
+        });
 
-      await prisma.todo.create({
-        data: {
-          title: todo.title,
-          description: todo.description,
-          priority: todo.priority,
-          dueDate: nextDueDate,
-          todoColumnId: todo.todoColumnId,
-          order: (maxOrder._max.order || 0) + 1,
-          recurringGroupId: todo.recurringGroupId,
-          rrule: todo.rrule,
-          completed: false,
-        },
-      });
+        await prisma.todo.create({
+          data: {
+            title: todo.title,
+            description: todo.description,
+            priority: todo.priority,
+            dueDate: nextDueDate,
+            todoColumnId: todo.todoColumnId,
+            order: (maxOrder._max.order || 0) + 1,
+            recurringGroupId: todo.recurringGroupId,
+            rrule: todo.rrule,
+            completed: false,
+          },
+        });
+      }
     }
 
     return todo;

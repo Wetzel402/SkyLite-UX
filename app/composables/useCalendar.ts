@@ -22,8 +22,8 @@ import {
 import { integrationRegistry } from "~/types/integrations";
 
 export function useCalendar() {
-  const { data: nativeEvents } =
-    useNuxtData<CalendarEvent[]>("calendar-events");
+  const { data: nativeEvents }
+    = useNuxtData<CalendarEvent[]>("calendar-events");
 
   const { integrations } = useIntegrations();
   const { users } = useUsers();
@@ -87,11 +87,12 @@ export function useCalendar() {
       const localB = timeB.convertToZone(timezone);
 
       return (
-        localA.year === localB.year &&
-        localA.month === localB.month &&
-        localA.day === localB.day
+        localA.year === localB.year
+        && localA.month === localB.month
+        && localA.day === localB.day
       );
-    } catch (error) {
+    }
+    catch (error) {
       consola.debug(
         "Use Calendar: ical.js comparison failed, using UTC fallback:",
         error,
@@ -145,10 +146,11 @@ export function useCalendar() {
       );
 
       return (
-        dayMidnight.getTime() >= startMidnight.getTime() &&
-        dayMidnight.getTime() <= endMidnight.getTime()
+        dayMidnight.getTime() >= startMidnight.getTime()
+        && dayMidnight.getTime() <= endMidnight.getTime()
       );
-    } catch (error) {
+    }
+    catch (error) {
       consola.debug(
         "Use Calendar: ical.js comparison failed, using UTC fallback:",
         error,
@@ -197,8 +199,8 @@ export function useCalendar() {
     endDate.setDate(endDate.getDate() + (6 - endDayOfWeek));
 
     const weeks: Date[][] = [];
-    const totalDays =
-      Math.ceil(
+    const totalDays
+      = Math.ceil(
         (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
       ) + 1;
 
@@ -257,7 +259,8 @@ export function useCalendar() {
       }
 
       return new Date(utcDate.getTime());
-    } catch (error) {
+    }
+    catch (error) {
       consola.warn(
         "Use Calendar: ical.js timezone conversion failed, using fallback:",
         error,
@@ -362,7 +365,8 @@ export function useCalendar() {
       const month = (endDate.getMonth() + 1).toString().padStart(2, "0");
       const day = endDate.getDate().toString().padStart(2, "0");
       return `${year}-${month}-${day}`;
-    } else {
+    }
+    else {
       const startLocal = getLocalTimeFromUTC(start);
       const endLocal = getLocalTimeFromUTC(end);
 
@@ -376,7 +380,8 @@ export function useCalendar() {
         const month = (startLocal.getMonth() + 1).toString().padStart(2, "0");
         const day = startLocal.getDate().toString().padStart(2, "0");
         return `${year}-${month}-${day}`;
-      } else {
+      }
+      else {
         const year = endLocal.getFullYear();
         const month = (endLocal.getMonth() + 1).toString().padStart(2, "0");
         const day = endLocal.getDate().toString().padStart(2, "0");
@@ -429,25 +434,25 @@ export function useCalendar() {
     let userColor = userColorParam;
 
     if (supportsSelectCalendars && calendars.length > 0 && event.calendarId) {
-      const calendarConfig = calendars.find((c) => c.id === event.calendarId);
+      const calendarConfig = calendars.find(c => c.id === event.calendarId);
       eventColor = eventColorParam || calendarConfig?.eventColor || "#06b6d4";
 
       if (userColor === undefined && calendarConfig?.user) {
         const userIds = calendarConfig.user;
         if (Array.isArray(userIds) && userIds.length > 0) {
           const user = users.value?.find(
-            (u) =>
-              userIds.includes(u.id) &&
-              u.color !== null &&
-              u.color !== undefined,
+            u =>
+              userIds.includes(u.id)
+              && u.color !== null
+              && u.color !== undefined,
           );
           userColor = user?.color || undefined;
         }
       }
 
       if (calendarConfig) {
-        const accessRole =
-          hasEditEvents && calendarConfig.accessRole === "write"
+        const accessRole
+          = hasEditEvents && calendarConfig.accessRole === "write"
             ? "write"
             : "read";
         return [
@@ -480,16 +485,16 @@ export function useCalendar() {
       ];
     }
 
-    eventColor =
-      eventColorParam ||
-      (integration.settings?.eventColor as string) ||
-      "#06b6d4";
+    eventColor
+      = eventColorParam
+        || (integration.settings?.eventColor as string)
+        || "#06b6d4";
 
     if (userColor === undefined) {
       const userIds = integration.settings?.user as string[] | undefined;
       if (Array.isArray(userIds) && userIds.length > 0) {
         const user = users.value?.find(
-          (u) =>
+          u =>
             userIds.includes(u.id) && u.color !== null && u.color !== undefined,
         );
         userColor = user?.color || undefined;
@@ -517,7 +522,7 @@ export function useCalendar() {
       ? [
           ...new Set(
             event.users
-              .map((u) => u.color)
+              .map(u => u.color)
               .filter((c): c is string => c !== null && c !== undefined),
           ),
         ]
@@ -561,7 +566,7 @@ export function useCalendar() {
     const calendarIntegrations = (
       (integrations.value as readonly Integration[]) || []
     ).filter(
-      (integration) => integration.type === "calendar" && integration.enabled,
+      integration => integration.type === "calendar" && integration.enabled,
     );
 
     calendarIntegrations.forEach((integration) => {
@@ -580,7 +585,8 @@ export function useCalendar() {
           );
           events.push(...processedEvents);
         }
-      } catch (error) {
+      }
+      catch (error) {
         consola.warn(
           `Use Calendar: Failed to get calendar events for integration ${integration.id}:`,
           error,
@@ -602,7 +608,8 @@ export function useCalendar() {
       await refreshNuxtData("calendar-events");
 
       consola.debug("Use Calendar: Calendar data refreshed successfully");
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("Use Calendar: Failed to refresh calendar data:", error);
     }
   };
@@ -614,7 +621,8 @@ export function useCalendar() {
         integrationId,
       ) as CalendarEvent[];
       return events && Array.isArray(events) ? events : [];
-    } catch (error) {
+    }
+    catch (error) {
       consola.warn(
         `Use Calendar: Failed to get events for integration ${integrationId}:`,
         error,
@@ -638,13 +646,14 @@ export function useCalendar() {
 
     if (useUserColors && event.users && event.users.length > 0) {
       const userColors = event.users
-        .map((user) => user.color)
-        .filter((color) => color && color !== null)
+        .map(user => user.color)
+        .filter(color => color && color !== null)
         .sort() as string[];
 
       if (userColors.length > 1) {
         return userColors;
-      } else if (userColors.length === 1) {
+      }
+      else if (userColors.length === 1) {
         const result = userColors[0] || defaultColor;
         return result;
       }
@@ -654,10 +663,10 @@ export function useCalendar() {
       return event.color;
     }
 
-    const result =
-      (typeof event.color === "string" ? event.color : null) ||
-      eventColor ||
-      defaultColor;
+    const result
+      = (typeof event.color === "string" ? event.color : null)
+        || eventColor
+        || defaultColor;
     return result;
   }
 
@@ -678,7 +687,8 @@ export function useCalendar() {
       const key = `${source.integrationId}-${source.calendarId}`;
       if (!sourceMap.has(key)) {
         sourceMap.set(key, source);
-      } else {
+      }
+      else {
         const stored = sourceMap.get(key)!;
         if (!stored.canEdit && source.canEdit) {
           sourceMap.set(key, {
@@ -687,7 +697,8 @@ export function useCalendar() {
             canEdit: true,
             eventId: source.eventId || stored.eventId,
           });
-        } else if (source.eventId && !stored.eventId) {
+        }
+        else if (source.eventId && !stored.eventId) {
           sourceMap.set(key, {
             ...stored,
             eventId: source.eventId,
@@ -707,10 +718,12 @@ export function useCalendar() {
         if (source.userColor) {
           if (Array.isArray(source.userColor)) {
             colors.push(...source.userColor);
-          } else {
+          }
+          else {
             colors.push(source.userColor);
           }
-        } else if (source.eventColor) {
+        }
+        else if (source.eventColor) {
           colors.push(source.eventColor);
         }
       });
@@ -720,7 +733,8 @@ export function useCalendar() {
 
     if (uniqueColors.length === 0) {
       return DEFAULT_LOCAL_EVENT_COLOR;
-    } else if (uniqueColors.length === 1) {
+    }
+    else if (uniqueColors.length === 1) {
       return uniqueColors[0]!;
     }
 
@@ -739,10 +753,10 @@ export function useCalendar() {
         const existingEvent = eventMap.get(key)!;
 
         const existingUserIds = new Set(
-          existingEvent.users?.map((u) => u.id) || [],
+          existingEvent.users?.map(u => u.id) || [],
         );
-        const newUsers =
-          event.users?.filter((u) => !existingUserIds.has(u.id)) || [];
+        const newUsers
+          = event.users?.filter(u => !existingUserIds.has(u.id)) || [];
         const allUsers = [...(existingEvent.users || []), ...newUsers];
         existingEvent.users = allUsers.sort((a, b) => a.id.localeCompare(b.id));
 
@@ -752,7 +766,8 @@ export function useCalendar() {
         );
 
         existingEvent.color = getCombinedEventColors(existingEvent);
-      } else {
+      }
+      else {
         const newEvent = {
           ...event,
           sourceCalendars: event.sourceCalendars,
@@ -819,10 +834,11 @@ export function useCalendar() {
   }
 
   function getAverageTextColor(colors: string[]): string {
-    const validColors = colors.filter((c) =>
+    const validColors = colors.filter(c =>
       /^#(?:[0-9A-F]{3}){1,2}$/i.test(c),
     );
-    if (validColors.length === 0) return "white";
+    if (validColors.length === 0)
+      return "white";
 
     const totalLuminance = validColors.reduce((sum, color) => {
       return sum + getLuminance(color);
@@ -847,22 +863,22 @@ export function useCalendar() {
         let colorStops: string;
 
         if (
-          spanningInfo &&
-          spanningInfo.event &&
-          spanningInfo.currentDay &&
-          !(spanningInfo.isFirstDay === true && spanningInfo.isLastDay === true)
+          spanningInfo
+          && spanningInfo.event
+          && spanningInfo.currentDay
+          && !(spanningInfo.isFirstDay === true && spanningInfo.isLastDay === true)
         ) {
           const eventStart = parseStableDate(spanningInfo.event.start);
           const eventEnd = parseStableDate(spanningInfo.event.end);
 
-          const totalDays =
-            Math.floor(
-              (eventEnd.getTime() - eventStart.getTime()) /
-                (1000 * 60 * 60 * 24),
+          const totalDays
+            = Math.floor(
+              (eventEnd.getTime() - eventStart.getTime())
+              / (1000 * 60 * 60 * 24),
             ) + 1;
           const dayDiff = Math.floor(
-            (spanningInfo.currentDay.getTime() - eventStart.getTime()) /
-              (1000 * 60 * 60 * 24),
+            (spanningInfo.currentDay.getTime() - eventStart.getTime())
+            / (1000 * 60 * 60 * 24),
           );
 
           const daysPerColor = totalDays / color.length;
@@ -900,7 +916,8 @@ export function useCalendar() {
                 end: 100,
               });
             }
-          } else {
+          }
+          else {
             color.forEach((c, colorIndex) => {
               const colorStartDay = colorIndex * daysPerColor;
               const colorEndDay = (colorIndex + 1) * daysPerColor;
@@ -929,7 +946,8 @@ export function useCalendar() {
               return `${lightenedColor} ${flippedStart}%, ${lightenedColor} ${flippedEnd}%`;
             })
             .join(", ");
-        } else {
+        }
+        else {
           const stripeWidth = 100 / color.length;
           colorStops = color
             .map((c, index) => {
@@ -944,21 +962,22 @@ export function useCalendar() {
         }
 
         const textColor = getAverageTextColor(color);
-        const shadowColor =
-          textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
+        const shadowColor
+          = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
 
         const result = {
           style: `background: linear-gradient(-45deg, ${colorStops}); color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};`,
         };
 
         return result;
-      } else if (color.length === 1) {
+      }
+      else if (color.length === 1) {
         const singleColor = color[0];
         if (singleColor && /^#(?:[0-9A-F]{3}){1,2}$/i.test(singleColor)) {
           const lightenedColor = lightenColor(singleColor, 0.4);
           const textColor = getTextColor(lightenedColor);
-          const shadowColor =
-            textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
+          const shadowColor
+            = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
           return {
             style: `background-color: ${lightenedColor}; color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};`,
           };
@@ -969,8 +988,8 @@ export function useCalendar() {
     if (typeof color === "string" && /^#(?:[0-9A-F]{3}){1,2}$/i.test(color)) {
       const lightenedColor = lightenColor(color, 0.4);
       const textColor = getTextColor(lightenedColor);
-      const shadowColor =
-        textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
+      const shadowColor
+        = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
       return {
         style: `background-color: ${lightenedColor}; color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};`,
       };
@@ -1000,15 +1019,16 @@ export function useCalendar() {
         const headerHeight = 80;
         const padding = 20;
         const elementPosition = dateElement.getBoundingClientRect().top;
-        const offsetPosition =
-          elementPosition + window.pageYOffset - headerHeight - padding;
+        const offsetPosition
+          = elementPosition + window.pageYOffset - headerHeight - padding;
 
         window.scrollTo({
           top: offsetPosition,
           behavior: "smooth",
         });
       }
-    } else if (view === "agenda") {
+    }
+    else if (view === "agenda") {
       const targetDate = format(date, "yyyy-MM-dd");
       const dateElement = document.querySelector(`[data-date="${targetDate}"]`);
 
@@ -1018,10 +1038,10 @@ export function useCalendar() {
         if (scrollableContainer) {
           const containerRect = scrollableContainer.getBoundingClientRect();
           const elementRect = dateElement.getBoundingClientRect();
-          const scrollTop =
-            scrollableContainer.scrollTop +
-            (elementRect.top - containerRect.top) -
-            20;
+          const scrollTop
+            = scrollableContainer.scrollTop
+              + (elementRect.top - containerRect.top)
+              - 20;
 
           scrollableContainer.scrollTo({
             top: scrollTop,
@@ -1070,8 +1090,8 @@ export function useCalendar() {
         const eventEnd = parseStableDate(event.end);
 
         return (
-          isSameLocalDay(day, eventStart, event.allDay) ||
-          isLocalDayInRange(day, eventStart, eventEnd, event.allDay)
+          isSameLocalDay(day, eventStart, event.allDay)
+          || isLocalDayInRange(day, eventStart, eventEnd, event.allDay)
         );
       })
       .sort((a, b) => {
@@ -1118,8 +1138,8 @@ export function useCalendar() {
 
   function isPlaceholderEvent(event: CalendarEvent): boolean {
     return (
-      event.id.startsWith("__placeholder_") ||
-      (event as PlaceholderEvent).isPlaceholder === true
+      event.id.startsWith("__placeholder_")
+      || (event as PlaceholderEvent).isPlaceholder === true
     );
   }
 

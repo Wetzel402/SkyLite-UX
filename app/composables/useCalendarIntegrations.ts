@@ -20,9 +20,9 @@ function isCalendarService(
   service: IntegrationService | null | undefined,
 ): service is CalendarIntegrationService {
   return (
-    service !== null &&
-    service !== undefined &&
-    typeof (service as CalendarIntegrationService).getEvents === "function"
+    service !== null
+    && service !== undefined
+    && typeof (service as CalendarIntegrationService).getEvents === "function"
   );
 }
 
@@ -48,10 +48,10 @@ function mapSourceCalendars(
 
   if (supportsSelectCalendars && calendars.length > 0) {
     if (event.calendarId) {
-      const calendar = calendars.find((c) => c.id === event.calendarId);
+      const calendar = calendars.find(c => c.id === event.calendarId);
       if (calendar) {
-        const accessRole =
-          hasEditEvents && calendar.accessRole === "write" ? "write" : "read";
+        const accessRole
+          = hasEditEvents && calendar.accessRole === "write" ? "write" : "read";
         return [
           {
             integrationId: integration.id,
@@ -100,8 +100,8 @@ function mapSourceCalendars(
 }
 
 export function useCalendarIntegrations() {
-  const { combineEvents, getEventUserColors, getIntegrationEvents } =
-    useCalendar();
+  const { combineEvents, getEventUserColors, getIntegrationEvents }
+    = useCalendar();
   const {
     integrations,
     loading: integrationsLoading,
@@ -112,7 +112,7 @@ export function useCalendarIntegrations() {
 
   const calendarIntegrations = computed(() =>
     (integrations.value as Integration[]).filter(
-      (integration) => integration.type === "calendar" && integration.enabled,
+      integration => integration.type === "calendar" && integration.enabled,
     ),
   );
 
@@ -133,11 +133,12 @@ export function useCalendarIntegrations() {
     calendarIntegrations.value.forEach((integration) => {
       try {
         const events = getIntegrationEvents(integration.id);
-        if (!events || !Array.isArray(events)) return;
+        if (!events || !Array.isArray(events))
+          return;
 
         const capabilities = resolveIntegrationCapabilities(integration);
-        const supportsSelectCalendars =
-          capabilities.includes("select_calendars");
+        const supportsSelectCalendars
+          = capabilities.includes("select_calendars");
         const calendars = Array.isArray(integration.settings?.calendars)
           ? (integration.settings?.calendars as CalendarConfig[])
           : [];
@@ -149,39 +150,40 @@ export function useCalendarIntegrations() {
             let useUserColors: boolean | undefined;
 
             if (
-              supportsSelectCalendars &&
-              calendars.length > 0 &&
-              event.calendarId
+              supportsSelectCalendars
+              && calendars.length > 0
+              && event.calendarId
             ) {
               const calendarConfig = calendars.find(
-                (c) => c.id === event.calendarId,
+                c => c.id === event.calendarId,
               );
               eventColor = calendarConfig?.eventColor || "#06b6d4";
               userIds = calendarConfig?.user;
               useUserColors = calendarConfig?.useUserColors;
-            } else {
-              eventColor =
-                (integration.settings?.eventColor as string) || "#06b6d4";
+            }
+            else {
+              eventColor
+                = (integration.settings?.eventColor as string) || "#06b6d4";
               userIds = integration.settings?.user as string[] | undefined;
               useUserColors = integration.settings?.useUserColors as
-                | boolean
-                | undefined;
+              | boolean
+              | undefined;
             }
 
-            const eventUsers =
-              userIds
-                ?.map((userId) =>
-                  users.value?.find((user) => user.id === userId),
+            const eventUsers
+              = userIds
+                ?.map(userId =>
+                  users.value?.find(user => user.id === userId),
                 )
                 .filter(Boolean)
-                .map((user) => ({
+                .map(user => ({
                   id: user!.id,
                   name: user!.name,
                   avatar: user!.avatar,
                   color: user!.color,
                 })) || [];
-            const userColor =
-              eventUsers.find((u) => u.color !== null && u.color !== undefined)
+            const userColor
+              = eventUsers.find(u => u.color !== null && u.color !== undefined)
                 ?.color ?? undefined;
 
             return {
@@ -204,7 +206,8 @@ export function useCalendarIntegrations() {
             };
           }),
         );
-      } catch (error) {
+      }
+      catch (error) {
         consola.warn(
           `Use Calendar Integrations: Failed to process calendar events for integration ${integration.id}:`,
           error,
@@ -224,13 +227,15 @@ export function useCalendarIntegrations() {
     integrationId: string,
   ): CalendarEvent[] => {
     const integration = calendarIntegrations.value.find(
-      (i) => i.id === integrationId,
+      i => i.id === integrationId,
     );
-    if (!integration) return [];
+    if (!integration)
+      return [];
 
     try {
       const events = getIntegrationEvents(integrationId);
-      if (!events || !Array.isArray(events)) return [];
+      if (!events || !Array.isArray(events))
+        return [];
 
       const capabilities = resolveIntegrationCapabilities(integration);
       const supportsSelectCalendars = capabilities.includes("select_calendars");
@@ -244,37 +249,38 @@ export function useCalendarIntegrations() {
         let useUserColors: boolean | undefined;
 
         if (
-          supportsSelectCalendars &&
-          calendars.length > 0 &&
-          event.calendarId
+          supportsSelectCalendars
+          && calendars.length > 0
+          && event.calendarId
         ) {
           const calendarConfig = calendars.find(
-            (c) => c.id === event.calendarId,
+            c => c.id === event.calendarId,
           );
           eventColor = calendarConfig?.eventColor || "#06b6d4";
           userIds = calendarConfig?.user;
           useUserColors = calendarConfig?.useUserColors;
-        } else {
-          eventColor =
-            (integration.settings?.eventColor as string) || "#06b6d4";
+        }
+        else {
+          eventColor
+            = (integration.settings?.eventColor as string) || "#06b6d4";
           userIds = integration.settings?.user as string[] | undefined;
           useUserColors = integration.settings?.useUserColors as
-            | boolean
-            | undefined;
+          | boolean
+          | undefined;
         }
 
-        const eventUsers =
-          userIds
-            ?.map((userId) => users.value?.find((user) => user.id === userId))
+        const eventUsers
+          = userIds
+            ?.map(userId => users.value?.find(user => user.id === userId))
             .filter(Boolean)
-            .map((user) => ({
+            .map(user => ({
               id: user!.id,
               name: user!.name,
               avatar: user!.avatar,
               color: user!.color,
             })) || [];
-        const userColor =
-          eventUsers.find((u) => u.color !== null && u.color !== undefined)
+        const userColor
+          = eventUsers.find(u => u.color !== null && u.color !== undefined)
             ?.color ?? undefined;
 
         return {
@@ -296,7 +302,8 @@ export function useCalendarIntegrations() {
           ),
         };
       });
-    } catch (error) {
+    }
+    catch (error) {
       consola.warn(
         `Use Calendar Integrations: Failed to process events for integration ${integrationId}:`,
         error,
@@ -310,12 +317,13 @@ export function useCalendarIntegrations() {
     calendarId: string,
   ): "read" | "write" | null {
     const integration = calendarIntegrations.value.find(
-      (i) => i.id === integrationId,
+      i => i.id === integrationId,
     );
-    if (!integration) return null;
+    if (!integration)
+      return null;
 
     const settings = integration.settings as { calendars?: CalendarConfig[] };
-    const calendar = settings?.calendars?.find((c) => c.id === calendarId);
+    const calendar = settings?.calendars?.find(c => c.id === calendarId);
 
     return calendar?.accessRole || null;
   }
@@ -342,7 +350,8 @@ export function useCalendarIntegrations() {
     try {
       const updatedEvent = await service.updateEvent(eventId, updates);
       return updatedEvent;
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(
         `Use Calendar Integrations: Error updating event ${eventId} in integration ${integrationId}:`,
         err,
@@ -370,7 +379,8 @@ export function useCalendarIntegrations() {
     try {
       const event = await service.getEvent(eventId, calendarId);
       return event;
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(`Error fetching event ${eventId}:`, err);
       throw err;
     }
@@ -392,7 +402,8 @@ export function useCalendarIntegrations() {
 
     try {
       await service.deleteEvent(eventId, calendarId);
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(
         `Use Calendar Integrations: Error deleting event ${eventId} in integration ${integrationId}:`,
         err,
@@ -418,7 +429,8 @@ export function useCalendarIntegrations() {
     try {
       const event = await service.addEvent(calendarId, eventData);
       return event;
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(
         `Use Calendar Integrations: Error adding event in integration ${integrationId}:`,
         err,
@@ -441,8 +453,9 @@ export function useCalendarIntegrations() {
 
     try {
       const calendars = await service.getAvailableCalendars();
-      return calendars.filter((c) => c.accessRole === "write") || [];
-    } catch (err) {
+      return calendars.filter(c => c.accessRole === "write") || [];
+    }
+    catch (err) {
       consola.error(
         `Use Calendar Integrations: Error fetching calendars for integration ${integrationId}:`,
         err,

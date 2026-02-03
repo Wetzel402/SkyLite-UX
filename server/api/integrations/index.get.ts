@@ -1,5 +1,7 @@
 import prisma from "~/lib/prisma";
 
+import { sanitizeIntegration } from "../../utils/sanitizeIntegration";
+
 export default defineEventHandler(async (_event) => {
   try {
     const integrations = await prisma.integration.findMany({

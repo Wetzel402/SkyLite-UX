@@ -209,7 +209,9 @@ function isLastDay(day: Date) {
           <div
             class="flex items-center justify-between p-2 border-b border-default flex-shrink-0"
           >
-            <div class="text-sm font-medium text-primary">Next Week</div>
+            <div class="text-sm font-medium text-primary">
+              Next Week
+            </div>
             <div
               class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold bg-primary/20 text-white"
             >
@@ -232,7 +234,9 @@ function isLastDay(day: Date) {
                 </div>
               </div>
               <div class="text-xs text-center opacity-75">
-                <div class="text-xs opacity-50 mt-2">Coming up next week</div>
+                <div class="text-xs opacity-50 mt-2">
+                  Coming up next week
+                </div>
               </div>
             </div>
           </div>

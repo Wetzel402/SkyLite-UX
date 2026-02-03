@@ -43,22 +43,27 @@ onMounted(() => {
 const viewTitle = computed(() => {
   if (view.value === "month") {
     return "month";
-  } else if (view.value === "week") {
+  }
+  else if (view.value === "week") {
     const start = startOfWeek(currentDate.value, { weekStartsOn: 0 });
     const end = endOfWeek(currentDate.value, { weekStartsOn: 0 });
     if (isSameMonth(start, end)) {
       return "week-same-month";
-    } else {
+    }
+    else {
       return "week-different-months";
     }
-  } else if (view.value === "day") {
+  }
+  else if (view.value === "day") {
     return "day";
-  } else if (view.value === "agenda") {
+  }
+  else if (view.value === "agenda") {
     const start = currentDate.value;
     const end = addDays(currentDate.value, 30 - 1);
     if (isSameMonth(start, end)) {
       return "agenda-same-month";
-    } else {
+    }
+    else {
       return "agenda-different-months";
     }
   }
@@ -123,7 +128,12 @@ function handleToday() {
         </h1>
       </div>
       <div class="text-sm text-muted">
-        <NuxtTime :datetime="now" weekday="long" month="long" day="numeric" />
+        <NuxtTime
+          :datetime="now"
+          weekday="long"
+          month="long"
+          day="numeric"
+        />
       </div>
     </div>
 
@@ -174,7 +184,12 @@ function handleToday() {
             year="numeric"
           />
         </span>
-        <NuxtTime v-else :datetime="currentDate" month="long" year="numeric" />
+        <NuxtTime
+          v-else
+          :datetime="currentDate"
+          month="long"
+          year="numeric"
+        />
       </h2>
     </div>
 
@@ -198,7 +213,11 @@ function handleToday() {
             @click="handleNext"
           />
         </div>
-        <UButton color="primary" size="xl" @click="handleToday">
+        <UButton
+          color="primary"
+          size="xl"
+          @click="handleToday"
+        >
           Today
         </UButton>
       </div>

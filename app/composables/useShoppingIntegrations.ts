@@ -7,7 +7,10 @@ import type {
   ShoppingListItem,
   UpdateShoppingListItemInput,
 } from "~/types/database";
-import type { IntegrationService } from "~/types/integrations";
+import type {
+  IntegrationService,
+  ServerShoppingIntegrationService,
+} from "~/types/integrations";
 
 import { useIntegrations } from "./useIntegrations";
 import { useSyncManager } from "./useSyncManager";
@@ -31,7 +34,7 @@ export function useShoppingIntegrations() {
     const shoppingIntegrations = (
       (integrations.value as readonly Integration[]) || []
     ).filter(
-      (integration) => integration.type === "shopping" && integration.enabled,
+      integration => integration.type === "shopping" && integration.enabled,
     );
 
     shoppingIntegrations.forEach((integration) => {
@@ -51,7 +54,8 @@ export function useShoppingIntegrations() {
           );
           lists.push(...listsWithIntegration);
         }
-      } catch (error) {
+      }
+      catch (error) {
         consola.warn(
           `Use Shopping Integrations: Failed to get shopping lists for integration ${integration.id}:`,
           error,
@@ -64,7 +68,7 @@ export function useShoppingIntegrations() {
 
   const shoppingIntegrations = computed(() => {
     return ((integrations.value as readonly Integration[]) || []).filter(
-      (integration) => integration.type === "shopping" && integration.enabled,
+      integration => integration.type === "shopping" && integration.enabled,
     );
   });
 
@@ -82,7 +86,8 @@ export function useShoppingIntegrations() {
   const shoppingSyncStatus = computed(() => {
     try {
       return getShoppingSyncData([...(integrations.value as Integration[])]);
-    } catch {
+    }
+    catch {
       return [];
     }
   });
@@ -97,14 +102,16 @@ export function useShoppingIntegrations() {
 
     try {
       await refreshNuxtData("native-shopping-lists");
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to refresh shopping lists";
       consola.error(
         "Use Shopping Integrations: Error refreshing shopping lists:",
         err,
       );
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -121,12 +128,7 @@ export function useShoppingIntegrations() {
 
     try {
       const item = await (
-        service as unknown as {
-          addItemToList?: (
-            listId: string,
-            itemData: CreateShoppingListItemInput,
-          ) => Promise<ShoppingListItem>;
-        }
+        service as unknown as ServerShoppingIntegrationService
       ).addItemToList?.(listId, {
         name: itemData.name || itemData.notes || "Unknown",
         quantity: itemData.quantity ?? 0,
@@ -142,7 +144,8 @@ export function useShoppingIntegrations() {
         throw new Error("Failed to add item to list");
       }
       return item;
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(
         `Use Shopping Integrations: Error adding item to list ${listId} in integration ${integrationId}:`,
         err,
@@ -177,7 +180,8 @@ export function useShoppingIntegrations() {
         );
       }
       return updatedItem;
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(
         `Use Shopping Integrations: Error updating item ${itemId} in integration ${integrationId}:`,
         err,
@@ -198,11 +202,10 @@ export function useShoppingIntegrations() {
 
     try {
       await (
-        service as unknown as {
-          toggleItem?: (itemId: string, checked: boolean) => Promise<void>;
-        }
+        service as unknown as ServerShoppingIntegrationService
       ).toggleItem?.(itemId, checked);
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(
         `Use Shopping Integrations: Error toggling item ${itemId} in integration ${integrationId}:`,
         err,
@@ -226,20 +229,21 @@ export function useShoppingIntegrations() {
 
       if (completedItemIds && completedItemIds.length > 0) {
         itemsToDelete = completedItemIds;
-      } else {
+      }
+      else {
         const lists = getCachedIntegrationData(
           "shopping",
           integrationId,
         ) as ShoppingList[];
-        const targetList = lists?.find((list) => list.id === listId);
+        const targetList = lists?.find(list => list.id === listId);
 
         if (!targetList || !targetList.items) {
           throw new Error(`List ${listId} not found or has no items`);
         }
 
         itemsToDelete = targetList.items
-          .filter((item) => item.checked)
-          .map((item) => item.id);
+          .filter(item => item.checked)
+          .map(item => item.id);
       }
 
       if (itemsToDelete.length === 0) {
@@ -250,11 +254,10 @@ export function useShoppingIntegrations() {
       }
 
       await (
-        service as unknown as {
-          deleteShoppingListItems?: (ids: string[]) => Promise<void>;
-        }
+        service as unknown as ServerShoppingIntegrationService
       ).deleteShoppingListItems?.(itemsToDelete);
-    } catch (err) {
+    }
+    catch (err) {
       consola.error(
         `Use Shopping Integrations: Error clearing completed items from list ${listId} in integration ${integrationId}:`,
         err,

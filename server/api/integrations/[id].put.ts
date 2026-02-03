@@ -2,7 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, readBody } from "h3";
 
-import { integrationRegistry } from "~/types/integrations";
+import { createIntegrationService, integrationRegistry } from "~/types/integrations";
+
+import { sanitizeIntegration } from "../../utils/sanitizeIntegration";
 
 const prisma = new PrismaClient();
 
@@ -90,7 +92,6 @@ export default defineEventHandler(async (event) => {
         const hasOAuth = integrationConfig.capabilities.includes("oauth");
 
         if (!hasOAuth) {
-          const { createIntegrationService } = await import("~/types/integrations");
           const tempIntegration = {
             id: "temp",
             type: updatedData.type,

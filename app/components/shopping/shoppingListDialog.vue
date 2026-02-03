@@ -85,9 +85,7 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >List Name</label
-          >
+          <label class="block text-sm font-medium text-highlighted">List Name</label>
           <UInput
             v-model="name"
             placeholder="Groceries, Hardware Store, etc."
@@ -115,7 +113,11 @@ function handleDelete() {
           </UButton>
         </div>
         <div class="flex gap-2">
-          <UButton color="neutral" variant="ghost" @click="emit('close')">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="emit('close')"
+          >
             Cancel
           </UButton>
           <UButton color="primary" @click="handleSave">

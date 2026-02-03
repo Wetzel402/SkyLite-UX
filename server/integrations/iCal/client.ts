@@ -160,7 +160,6 @@ export class ICalServerService {
         end = newEnd;
       }
 
-      // Convert to UTC and format as iCal string
       const startUTC = ical.Time.fromJSDate(start, true).toString();
       const endUTC = ical.Time.fromJSDate(end, true).toString();
 

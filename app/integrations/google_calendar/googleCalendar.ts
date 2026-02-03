@@ -117,13 +117,14 @@ export class GoogleCalendarService implements CalendarIntegrationService {
         "/api/integrations/google_calendar/calendars",
         { query: { integrationId: this.integrationId } },
       );
-      return result.calendars.map((cal) => ({
+      return result.calendars.map(cal => ({
         id: cal.id,
         name: cal.summary,
         enabled: true,
         accessRole: cal.accessRole,
       }));
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("GoogleCalendar: Failed to fetch calendars:", error);
       throw error;
     }
@@ -142,7 +143,8 @@ export class GoogleCalendarService implements CalendarIntegrationService {
       };
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       this.status = {
         isConnected: false,
         lastChecked: new Date(),
@@ -166,7 +168,8 @@ export class GoogleCalendarService implements CalendarIntegrationService {
       };
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("GoogleCalendar: Connection test error:", error);
       this.status = {
         isConnected: false,
@@ -194,19 +197,20 @@ export class GoogleCalendarService implements CalendarIntegrationService {
     let allUsers: UserWithColor[] = [];
 
     const needsUsers = calendars.some(
-      (cal) => cal.useUserColors && cal.user && cal.user.length > 0,
+      cal => cal.useUserColors && cal.user && cal.user.length > 0,
     );
 
     if (needsUsers) {
       try {
-        const users =
-          await $fetch<{ id: string; name: string; color: string | null }[]>(
+        const users
+          = await $fetch<{ id: string; name: string; color: string | null }[]>(
             "/api/users",
           );
         if (users) {
           allUsers = users;
         }
-      } catch (error) {
+      }
+      catch (error) {
         consola.warn(
           "GoogleCalendar: Failed to fetch users for Google Calendar integration:",
           error,
@@ -215,22 +219,23 @@ export class GoogleCalendarService implements CalendarIntegrationService {
     }
 
     return result.events.map((event) => {
-      const calendarConfig = calendars.find((c) => c.id === event.calendarId);
-      const eventColor =
-        calendarConfig?.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
+      const calendarConfig = calendars.find(c => c.id === event.calendarId);
+      const eventColor
+        = calendarConfig?.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
       const useUserColors = calendarConfig?.useUserColors || false;
       const userIds = calendarConfig?.user || [];
 
-      const users = allUsers.filter((u) => userIds.includes(u.id));
+      const users = allUsers.filter(u => userIds.includes(u.id));
 
       let color: string | string[] | undefined = eventColor;
       if (useUserColors && users.length > 0) {
         const userColors = users
-          .map((u) => u.color)
+          .map(u => u.color)
           .filter((color): color is string => color !== null);
         if (userColors.length > 0) {
           color = userColors.length === 1 ? userColors[0] : userColors;
-        } else {
+        }
+        else {
           color = eventColor;
         }
       }
@@ -265,7 +270,8 @@ export class GoogleCalendarService implements CalendarIntegrationService {
       );
 
       return response;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("GoogleCalendarService: Failed to update event:", error);
       throw error;
     }
@@ -293,7 +299,8 @@ export class GoogleCalendarService implements CalendarIntegrationService {
       );
 
       return event;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("GoogleCalendarService: Failed to fetch event:", error);
       throw error;
     }
@@ -312,7 +319,8 @@ export class GoogleCalendarService implements CalendarIntegrationService {
           calendarId,
         },
       });
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("GoogleCalendarService: Failed to delete event:", error);
       throw error;
     }
@@ -336,7 +344,8 @@ export class GoogleCalendarService implements CalendarIntegrationService {
       );
 
       return response;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("GoogleCalendarService: Failed to add event:", error);
       throw error;
     }

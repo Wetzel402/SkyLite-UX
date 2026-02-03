@@ -67,7 +67,8 @@ export default defineNuxtPlugin(async () => {
 
     setTimezoneRegistered(true);
     setBrowserTimezone(browserTimezone);
-  } catch (error) {
+  }
+  catch (error) {
     const apiUrl = `https://tz.add-to-calendar-technology.com/api/${browserTimezone}.ics`;
     consola.warn(
       "AppInit: Failed to register timezone, calendar will use fallback. URL:",
@@ -86,8 +87,8 @@ export default defineNuxtPlugin(async () => {
   );
 
   try {
-    const [_usersResult, _currentUserResult, integrationsResult] =
-      await Promise.all([
+    const [_usersResult, _currentUserResult, integrationsResult]
+      = await Promise.all([
         useAsyncData("users", () => $fetch<User[]>("/api/users"), {
           server: true,
           lazy: false,
@@ -155,7 +156,7 @@ export default defineNuxtPlugin(async () => {
 
     if (integrationsResult.data.value) {
       const enabledIntegrations = integrationsResult.data.value.filter(
-        (integration) => integration.enabled,
+        integration => integration.enabled,
       );
       consola.debug(
         `AppInit: Found ${enabledIntegrations.length} enabled integrations`,
@@ -192,7 +193,8 @@ export default defineNuxtPlugin(async () => {
                       service as CalendarIntegrationService
                     ).getEvents();
                     return events || [];
-                  } catch (err) {
+                  }
+                  catch (err) {
                     consola.error(
                       `AppInit: Error fetching calendar events for ${integration.name}:`,
                       err,
@@ -206,7 +208,8 @@ export default defineNuxtPlugin(async () => {
                 },
               ),
             );
-          } else if (integration.type === "shopping") {
+          }
+          else if (integration.type === "shopping") {
             integrationDataPromises.push(
               useAsyncData(
                 `shopping-lists-${integration.id}`,
@@ -216,7 +219,8 @@ export default defineNuxtPlugin(async () => {
                       service as ShoppingIntegrationService
                     ).getShoppingLists();
                     return lists || [];
-                  } catch (err) {
+                  }
+                  catch (err) {
                     consola.error(
                       `AppInit: Error fetching shopping lists for ${integration.name}:`,
                       err,
@@ -230,7 +234,8 @@ export default defineNuxtPlugin(async () => {
                 },
               ),
             );
-          } else if (integration.type === "todo") {
+          }
+          else if (integration.type === "todo") {
             integrationDataPromises.push(
               useAsyncData(
                 `todos-${integration.id}`,
@@ -240,7 +245,8 @@ export default defineNuxtPlugin(async () => {
                       service as TodoIntegrationService
                     ).getTodos();
                     return todos || [];
-                  } catch (err) {
+                  }
+                  catch (err) {
                     consola.error(
                       `AppInit: Error fetching todos for ${integration.name}:`,
                       err,
@@ -255,7 +261,8 @@ export default defineNuxtPlugin(async () => {
               ),
             );
           }
-        } catch (err) {
+        }
+        catch (err) {
           consola.error(
             `AppInit: Error processing integration ${integration.name}:`,
             err,
@@ -272,7 +279,8 @@ export default defineNuxtPlugin(async () => {
       try {
         await Promise.all(integrationDataPromises);
         consola.debug("AppInit: Integration data loaded successfully");
-      } catch (integrationError) {
+      }
+      catch (integrationError) {
         consola.error(
           "AppInit: Error loading integration data:",
           integrationError,
@@ -283,7 +291,8 @@ export default defineNuxtPlugin(async () => {
     consola.debug(
       `AppInit: All data pre-loaded successfully. Initialized ${integrationServices.size} integration services.`,
     );
-  } catch (error) {
+  }
+  catch (error) {
     consola.error("AppInit: Error pre-loading data:", error);
   }
 });

@@ -80,8 +80,8 @@ function isPast(date: Date) {
 }
 
 function isEventPast(event: CalendarEvent): boolean {
-  const endDate =
-    event.end instanceof Date ? event.end : parseStableDate(event.end);
+  const endDate
+    = event.end instanceof Date ? event.end : parseStableDate(event.end);
   return isPast(endDate);
 }
 
@@ -102,7 +102,15 @@ function handleTouchStart(e: TouchEvent) {
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" || e.key === " ") {
-    handleClick(e as unknown as MouseEvent);
+    e.preventDefault();
+    if (props.onClick) {
+      const syntheticEvent = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      });
+      props.onClick(syntheticEvent);
+    }
   }
 }
 </script>
@@ -140,7 +148,9 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
       <div class="flex items-center justify-between gap-2 mt-1 min-h-[1.25rem]">
         <div class="text-xs opacity-70">
-          <template v-if="isAllDay"> All day </template>
+          <template v-if="isAllDay">
+            All day
+          </template>
           <template v-else>
             <NuxtTime
               :datetime="displayStart"

@@ -6,7 +6,6 @@ import type {
   UpdateTodoInput,
 } from "~/types/database";
 
-// Format as YYYY-MM-DD to preserve local date regardless of timezone
 function getClientDateString(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -30,18 +29,19 @@ export function useTodos() {
       await refreshNuxtData("todos");
       consola.debug("Use Todos: Todos refreshed successfully");
       return currentTodos.value;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to fetch todos";
       consola.error("Use Todos: Error fetching todos:", err);
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
 
   const createTodo = async (todoData: CreateTodoInput) => {
     try {
-      // Include client's local date for timezone-aware recurrence calculations
       const clientDate = getClientDateString();
 
       const requestBody = {
@@ -57,7 +57,8 @@ export function useTodos() {
       await refreshNuxtData("todos");
 
       return newTodo;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to create todo";
       consola.error("Use Todos: Error creating todo:", err);
       throw err;
@@ -66,7 +67,6 @@ export function useTodos() {
 
   const updateTodo = async (id: string, updates: UpdateTodoInput) => {
     try {
-      // Include client's local date for timezone-aware recurrence calculations
       const clientDate = getClientDateString();
 
       const updatedTodo = await $fetch<TodoWithOrder>(`/api/todos/${id}`, {
@@ -80,7 +80,8 @@ export function useTodos() {
       await refreshNuxtData("todos");
 
       return updatedTodo;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to update todo";
       consola.error("Use Todos: Error updating todo:", err);
       throw err;
@@ -93,7 +94,6 @@ export function useTodos() {
 
   const deleteTodo = async (id: string, stopRecurrence = false) => {
     try {
-      // Include client's local date for timezone-aware recurrence calculations
       const clientDate = getClientDateString();
 
       const params = new URLSearchParams();
@@ -109,7 +109,8 @@ export function useTodos() {
       });
 
       await refreshNuxtData("todos");
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to delete todo";
       consola.error("Use Todos: Error deleting todo:", err);
       throw err;
@@ -122,34 +123,39 @@ export function useTodos() {
     todoColumnId: string | null,
   ) => {
     try {
-      const currentTodo = currentTodos.value.find((t) => t.id === todoId);
-      if (!currentTodo) return;
+      const currentTodo = currentTodos.value.find(t => t.id === todoId);
+      if (!currentTodo)
+        return;
 
       const sameSectionTodos = currentTodos.value
         .filter(
-          (t) =>
-            t.todoColumnId === todoColumnId &&
-            t.completed === currentTodo.completed,
+          t =>
+            t.todoColumnId === todoColumnId
+            && t.completed === currentTodo.completed,
         )
         .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-      const currentIndex = sameSectionTodos.findIndex((t) => t.id === todoId);
-      if (currentIndex === -1) return;
+      const currentIndex = sameSectionTodos.findIndex(t => t.id === todoId);
+      if (currentIndex === -1)
+        return;
 
       let targetIndex;
       if (direction === "up" && currentIndex > 0) {
         targetIndex = currentIndex - 1;
-      } else if (
-        direction === "down" &&
-        currentIndex < sameSectionTodos.length - 1
+      }
+      else if (
+        direction === "down"
+        && currentIndex < sameSectionTodos.length - 1
       ) {
         targetIndex = currentIndex + 1;
-      } else {
+      }
+      else {
         return;
       }
 
       const targetTodo = sameSectionTodos[targetIndex];
-      if (!targetTodo) return;
+      if (!targetTodo)
+        return;
 
       await $fetch("/api/todos/reorder", {
         method: "POST",
@@ -157,7 +163,8 @@ export function useTodos() {
       });
 
       await refreshNuxtData("todos");
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to reorder todo";
       consola.error("Use Todos: Error reordering todo:", err);
       throw err;
@@ -173,13 +180,15 @@ export function useTodos() {
 
       if (completedTodos && completedTodos.length > 0) {
         todosToDelete = completedTodos;
-      } else {
+      }
+      else {
         todosToDelete = currentTodos.value.filter(
-          (t) => t.todoColumnId === columnId && t.completed,
+          t => t.todoColumnId === columnId && t.completed,
         );
       }
 
-      if (todosToDelete.length === 0) return;
+      if (todosToDelete.length === 0)
+        return;
 
       await $fetch(`/api/todo-columns/${columnId}/todos/clear-completed`, {
         method: "POST",
@@ -187,7 +196,8 @@ export function useTodos() {
       });
 
       await refreshNuxtData("todos");
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to clear completed todos";
       consola.error("Use Todos: Error clearing completed todos:", err);
       throw err;

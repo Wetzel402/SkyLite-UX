@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
         end: utcEnd,
         allDay: allDay || false,
         color: color || null,
-        location,
+        location: location || null,
         ical_event: ical_event || null,
         users: {
           deleteMany: {},
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
       color: calendarEvent.color as string | string[] | undefined,
       location: calendarEvent.location,
       ical_event: calendarEvent.ical_event,
-      users: calendarEvent.users.map(ce => ce.user),
+      users: (calendarEvent.users || []).map(ce => ce.user),
     };
   }
   catch (error) {

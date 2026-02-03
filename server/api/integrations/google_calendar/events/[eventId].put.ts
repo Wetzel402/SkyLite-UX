@@ -5,6 +5,8 @@ import ical from "ical.js";
 
 import type { CalendarEvent } from "~/types/calendar";
 
+import { isGoogleApiError } from "~/types/errors";
+
 import type { ICalEvent } from "../../../../integrations/iCal/types";
 
 import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
@@ -194,7 +196,7 @@ export default defineEventHandler(async (event) => {
     };
   }
   catch (error: unknown) {
-    const err = error as { code?: number; message?: string; response?: { data?: unknown } };
+    const err = isGoogleApiError(error) ? error : { message: String(error) };
 
     consola.error("Integrations Google Calendar Event Update: Error details:", {
       code: err?.code,

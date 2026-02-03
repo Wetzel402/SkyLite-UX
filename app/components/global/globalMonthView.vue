@@ -72,7 +72,11 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
       </div>
     </div>
     <div class="grid h-full w-full grid-cols-7">
-      <div v-for="(week, weekIndex) in weeks" :key="weekIndex" class="contents">
+      <div
+        v-for="(week, weekIndex) in weeks"
+        :key="weekIndex"
+        class="contents"
+      >
         <div
           v-for="day in week"
           :key="day.toString()"
@@ -144,7 +148,11 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
                 >
                   <div class="space-y-2">
                     <div class="text-sm font-medium">
-                      <NuxtTime :datetime="day" weekday="short" day="numeric" />
+                      <NuxtTime
+                        :datetime="day"
+                        weekday="short"
+                        day="numeric"
+                      />
                     </div>
                     <div class="space-y-1">
                       <div

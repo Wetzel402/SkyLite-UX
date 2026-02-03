@@ -15,11 +15,11 @@ import { integrationRegistry } from "~/types/integrations";
 
 const { allEvents, getEventUserColors } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
-const { addCalendarEvent, updateCalendarEvent, getCalendarAccessRole } =
-  useCalendarIntegrations();
+const { addCalendarEvent, updateCalendarEvent, getCalendarAccessRole }
+  = useCalendarIntegrations();
 
 const nuxtApp = useNuxtApp();
-function updateIntegrationCache(integrationId: string, data: unknown) {
+function updateIntegrationCache(integrationId: string, data: CalendarEvent[]) {
   nuxtApp.payload.data = {
     ...nuxtApp.payload.data,
     [`calendar-events-${integrationId}`]: data,
@@ -28,10 +28,10 @@ function updateIntegrationCache(integrationId: string, data: unknown) {
 
 function getWritableSourceTargets(event: CalendarEvent): IntegrationTarget[] {
   const writableSources = event.sourceCalendars?.filter(
-    (source) => source.canEdit,
+    source => source.canEdit,
   );
   if (writableSources && writableSources.length > 0) {
-    return writableSources.map((source) => ({
+    return writableSources.map(source => ({
       integrationId: source.integrationId,
       calendarId: source.calendarId,
     }));
@@ -54,27 +54,27 @@ function separateLocalAndIntegrationCalendars(event: {
   localCalendar: { eventId: string } | null;
   integrationTargets: IntegrationTarget[];
 } {
-  const writableSources =
-    (event.sourceCalendars as SourceCalendar[] | undefined)?.filter(
-      (source) => source.canEdit,
+  const writableSources
+    = (event.sourceCalendars as SourceCalendar[] | undefined)?.filter(
+      source => source.canEdit,
     ) || [];
 
-  const localCalendar =
-    writableSources.find(
-      (source) =>
-        source.calendarId === "local" ||
-        !source.integrationId ||
-        source.integrationId === "",
+  const localCalendar
+    = writableSources.find(
+      source =>
+        source.calendarId === "local"
+        || !source.integrationId
+        || source.integrationId === "",
     ) || null;
 
   const integrationTargets = writableSources
     .filter(
-      (source) =>
-        source.calendarId !== "local" &&
-        source.integrationId &&
-        source.integrationId !== "",
+      source =>
+        source.calendarId !== "local"
+        && source.integrationId
+        && source.integrationId !== "",
     )
-    .map((source) => ({
+    .map(source => ({
       integrationId: source.integrationId!,
       calendarId: source.calendarId,
     }));
@@ -135,7 +135,7 @@ async function createIntegrationEvent(
     );
 
     if (cachedEvents.value && Array.isArray(cachedEvents.value)) {
-      const idx = cachedEvents.value.findIndex((e) => e.id === tempId);
+      const idx = cachedEvents.value.findIndex(e => e.id === tempId);
       if (idx !== -1) {
         cachedEvents.value[idx] = created as CalendarEvent;
       }
@@ -144,7 +144,7 @@ async function createIntegrationEvent(
       const existing = Array.isArray(nuxtApp.payload.data[cacheKey])
         ? (nuxtApp.payload.data[cacheKey] as CalendarEvent[])
         : [];
-      const idx = existing.findIndex((e) => e.id === tempId);
+      const idx = existing.findIndex(e => e.id === tempId);
       if (idx !== -1) {
         const updated = [...existing];
         updated[idx] = created as CalendarEvent;
@@ -153,7 +153,8 @@ async function createIntegrationEvent(
     }
 
     await refreshNuxtData(cacheKey);
-  } catch (error) {
+  }
+  catch (error) {
     if (cachedEvents.value && previousEvents.length > 0) {
       cachedEvents.value.splice(
         0,
@@ -215,7 +216,8 @@ async function updateIntegrationEvent(
       calendarId: target.calendarId,
     } as CalendarEvent);
     await refreshNuxtData(cacheKey);
-  } catch (error) {
+  }
+  catch (error) {
     if (cachedEvents.value && previousEvents.length > 0) {
       cachedEvents.value.splice(
         0,
@@ -270,7 +272,8 @@ async function handleEventAdd(event: CalendarEvent) {
         }
 
         showSuccess("Event Created", "Local event created successfully");
-      } catch (error) {
+      }
+      catch (error) {
         if (cachedEvents.value && previousEvents.length > 0) {
           cachedEvents.value.splice(
             0,
@@ -280,7 +283,8 @@ async function handleEventAdd(event: CalendarEvent) {
         }
         throw error;
       }
-    } else {
+    }
+    else {
       const targets = getWritableSourceTargets(event);
       if (targets.length === 0) {
         showError(
@@ -302,7 +306,8 @@ async function handleEventAdd(event: CalendarEvent) {
       }
       showSuccess("Event Created", "Calendar event created successfully");
     }
-  } catch {
+  }
+  catch {
     showError(
       "Failed to Create Event",
       "Failed to create the event. Please try again.",
@@ -312,12 +317,12 @@ async function handleEventAdd(event: CalendarEvent) {
 
 async function handleEventUpdate(event: CalendarEvent) {
   try {
-    const writableSources =
-      event.sourceCalendars?.filter((source) => source.canEdit) || [];
+    const writableSources
+      = event.sourceCalendars?.filter(source => source.canEdit) || [];
 
     if (writableSources.length > 0) {
-      const { localCalendar, integrationTargets } =
-        separateLocalAndIntegrationCalendars(event);
+      const { localCalendar, integrationTargets }
+        = separateLocalAndIntegrationCalendars(event);
 
       const updatePromises: Promise<void>[] = [];
       const errors: Error[] = [];
@@ -355,15 +360,16 @@ async function handleEventUpdate(event: CalendarEvent) {
               ical_event: event.ical_event,
               users: event.users,
             });
-          } catch (error) {
+          }
+          catch (error) {
             if (cachedEvents.value && previousEvents.length > 0) {
               const eventIndex = previousEvents.findIndex(
                 (e: CalendarEvent) => e.id === localCalendar.eventId,
               );
               if (
-                eventIndex !== -1 &&
-                cachedEvents.value &&
-                Array.isArray(cachedEvents.value)
+                eventIndex !== -1
+                && cachedEvents.value
+                && Array.isArray(cachedEvents.value)
               ) {
                 cachedEvents.value[eventIndex] = previousEvents[eventIndex]!;
               }
@@ -379,15 +385,16 @@ async function handleEventUpdate(event: CalendarEvent) {
         const integrationUpdatePromise = (async () => {
           try {
             const sourceCalendar = event.sourceCalendars?.find(
-              (sc) =>
-                sc.integrationId === target.integrationId &&
-                sc.calendarId === target.calendarId,
+              sc =>
+                sc.integrationId === target.integrationId
+                && sc.calendarId === target.calendarId,
             );
-            const eventId =
-              sourceCalendar?.eventId ||
-              (event.id.includes("-") ? event.id.split("-")[0] : event.id);
+            const eventId
+              = sourceCalendar?.eventId
+                || (event.id.includes("-") ? event.id.split("-")[0] : event.id);
             await updateIntegrationEvent(event, target, eventId as string);
-          } catch (error) {
+          }
+          catch (error) {
             errors.push(error as Error);
             throw error;
           }
@@ -396,7 +403,7 @@ async function handleEventUpdate(event: CalendarEvent) {
       }
 
       const results = await Promise.allSettled(updatePromises);
-      const failed = results.filter((r) => r.status === "rejected");
+      const failed = results.filter(r => r.status === "rejected");
 
       if (failed.length > 0) {
         const errorMessages = failed
@@ -411,7 +418,8 @@ async function handleEventUpdate(event: CalendarEvent) {
           "Partial Update Failure",
           `Some calendars failed to update: ${errorMessages.join(", ")}`,
         );
-      } else {
+      }
+      else {
         const updatedCount = localCalendar
           ? integrationTargets.length + 1
           : integrationTargets.length;
@@ -420,7 +428,8 @@ async function handleEventUpdate(event: CalendarEvent) {
           `Calendar event updated successfully in ${updatedCount} calendar${updatedCount > 1 ? "s" : ""}`,
         );
       }
-    } else if (!event.integrationId) {
+    }
+    else if (!event.integrationId) {
       const { data: cachedEvents } = useNuxtData("calendar-events");
       const previousEvents = cachedEvents.value ? [...cachedEvents.value] : [];
 
@@ -452,7 +461,8 @@ async function handleEventUpdate(event: CalendarEvent) {
         });
 
         showSuccess("Event Updated", "Local event updated successfully");
-      } catch (error) {
+      }
+      catch (error) {
         if (cachedEvents.value && previousEvents.length > 0) {
           cachedEvents.value.splice(
             0,
@@ -462,7 +472,8 @@ async function handleEventUpdate(event: CalendarEvent) {
         }
         throw error;
       }
-    } else {
+    }
+    else {
       const targets = getWritableSourceTargets(event);
       if (targets.length === 0) {
         showError(
@@ -474,19 +485,20 @@ async function handleEventUpdate(event: CalendarEvent) {
 
       for (const target of targets) {
         const sourceCalendar = event.sourceCalendars?.find(
-          (sc) =>
-            sc.integrationId === target.integrationId &&
-            sc.calendarId === target.calendarId,
+          sc =>
+            sc.integrationId === target.integrationId
+            && sc.calendarId === target.calendarId,
         );
-        const eventId =
-          sourceCalendar?.eventId ||
-          (event.id.includes("-") ? event.id.split("-")[0] : event.id);
+        const eventId
+          = sourceCalendar?.eventId
+            || (event.id.includes("-") ? event.id.split("-")[0] : event.id);
         await updateIntegrationEvent(event, target, eventId as string);
       }
 
       showSuccess("Event Updated", "Calendar event updated successfully");
     }
-  } catch {
+  }
+  catch {
     showError(
       "Failed to Update Event",
       "Failed to update the event. Please try again.",
@@ -496,23 +508,23 @@ async function handleEventUpdate(event: CalendarEvent) {
 
 async function handleEventDelete(eventId: string) {
   try {
-    const event = allEvents.value.find((e) => e.id === eventId);
+    const event = allEvents.value.find(e => e.id === eventId);
 
     if (!event) {
       showError("Event Not Found", "The event could not be found.");
       return;
     }
 
-    const writableSources =
-      event.sourceCalendars?.filter((source) => source.canEdit) || [];
+    const writableSources
+      = event.sourceCalendars?.filter(source => source.canEdit) || [];
 
     if (writableSources.length > 0) {
-      const { localCalendar, integrationTargets } =
-        separateLocalAndIntegrationCalendars({
+      const { localCalendar, integrationTargets }
+        = separateLocalAndIntegrationCalendars({
           id: event.id,
           sourceCalendars: event.sourceCalendars as
-            | SourceCalendar[]
-            | undefined,
+          | SourceCalendar[]
+          | undefined,
         } as { id: string; sourceCalendars?: SourceCalendar[] });
 
       const deletePromises: Promise<void>[] = [];
@@ -534,7 +546,8 @@ async function handleEventDelete(eventId: string) {
 
             const { deleteEvent } = useCalendarEvents();
             await deleteEvent(localCalendar.eventId);
-          } catch (error) {
+          }
+          catch (error) {
             if (cachedEvents.value && previousEvents.length > 0) {
               cachedEvents.value.splice(
                 0,
@@ -558,14 +571,14 @@ async function handleEventDelete(eventId: string) {
             : [];
 
           const sourceCalendar = event.sourceCalendars?.find(
-            (sc) =>
-              sc.integrationId === target.integrationId &&
-              sc.calendarId === target.calendarId,
+            sc =>
+              sc.integrationId === target.integrationId
+              && sc.calendarId === target.calendarId,
           );
-          const baseEventId =
-            sourceCalendar?.eventId ||
-            (event.id.includes("-") ? event.id.split("-")[0] : event.id) ||
-            event.id;
+          const baseEventId
+            = sourceCalendar?.eventId
+              || (event.id.includes("-") ? event.id.split("-")[0] : event.id)
+              || event.id;
 
           try {
             if (cachedEvents.value && Array.isArray(cachedEvents.value)) {
@@ -590,12 +603,14 @@ async function handleEventDelete(eventId: string) {
                 baseEventId,
                 target.calendarId,
               );
-            } else {
+            }
+            else {
               await deleteCalendarEvent(target.integrationId, baseEventId);
             }
 
             await refreshNuxtData(cacheKey);
-          } catch (error) {
+          }
+          catch (error) {
             if (cachedEvents.value && previousEvents.length > 0) {
               cachedEvents.value.splice(
                 0,
@@ -612,7 +627,7 @@ async function handleEventDelete(eventId: string) {
       }
 
       const results = await Promise.allSettled(deletePromises);
-      const failed = results.filter((r) => r.status === "rejected");
+      const failed = results.filter(r => r.status === "rejected");
 
       if (failed.length > 0) {
         const errorMessages = failed
@@ -627,7 +642,8 @@ async function handleEventDelete(eventId: string) {
           "Partial Delete Failure",
           `Some calendars failed to delete: ${errorMessages.join(", ")}`,
         );
-      } else {
+      }
+      else {
         const deletedCount = localCalendar
           ? integrationTargets.length + 1
           : integrationTargets.length;
@@ -636,7 +652,8 @@ async function handleEventDelete(eventId: string) {
           `Calendar event deleted successfully from ${deletedCount} calendar${deletedCount > 1 ? "s" : ""}`,
         );
       }
-    } else if (!event.integrationId) {
+    }
+    else if (!event.integrationId) {
       const { data: cachedEvents } = useNuxtData("calendar-events");
       const previousEvents = cachedEvents.value ? [...cachedEvents.value] : [];
 
@@ -652,7 +669,8 @@ async function handleEventDelete(eventId: string) {
         const { deleteEvent } = useCalendarEvents();
         await deleteEvent(eventId);
         showSuccess("Event Deleted", "Local event deleted successfully");
-      } catch (error) {
+      }
+      catch (error) {
         if (cachedEvents.value && previousEvents.length > 0) {
           cachedEvents.value.splice(
             0,
@@ -662,7 +680,8 @@ async function handleEventDelete(eventId: string) {
         }
         throw error;
       }
-    } else {
+    }
+    else {
       const cacheKey = `calendar-events-${event.integrationId}`;
       const { data: cachedEvents } = useNuxtData(cacheKey);
       const previousEvents = cachedEvents.value ? [...cachedEvents.value] : [];
@@ -697,7 +716,8 @@ async function handleEventDelete(eventId: string) {
 
         await refreshNuxtData(cacheKey);
         showSuccess("Event Deleted", "Calendar event deleted successfully");
-      } catch (error) {
+      }
+      catch (error) {
         if (cachedEvents.value && previousEvents.length > 0) {
           cachedEvents.value.splice(
             0,
@@ -709,7 +729,8 @@ async function handleEventDelete(eventId: string) {
         throw error;
       }
     }
-  } catch {
+  }
+  catch {
     showError(
       "Failed to Delete Event",
       "Failed to delete the event. Please try again.",
@@ -729,31 +750,34 @@ function getEventIntegrationCapabilities(
     event.sourceCalendars.forEach((source) => {
       const integration = (
         (integrations.value as readonly Integration[]) || []
-      ).find((i) => i.id === source.integrationId);
-      if (!integration) return;
+      ).find(i => i.id === source.integrationId);
+      if (!integration)
+        return;
 
       const config = integrationRegistry.get(
         `${integration.type}:${integration.service}`,
       );
-      if (!config) return;
+      if (!config)
+        return;
 
       let capabilities = [...config.capabilities];
       serviceNames.add(integration.service);
 
       if (!source.canEdit) {
         capabilities = capabilities.filter(
-          (cap) =>
+          cap =>
             !["edit_events", "add_events", "delete_events"].includes(cap),
         );
       }
 
-      capabilities.forEach((capability) => capabilitySet.add(capability));
+      capabilities.forEach(capability => capabilitySet.add(capability));
     });
 
-    if (capabilitySet.size === 0) return undefined;
+    if (capabilitySet.size === 0)
+      return undefined;
 
-    const serviceName =
-      serviceNames.size === 1 ? Array.from(serviceNames)[0] : undefined;
+    const serviceName
+      = serviceNames.size === 1 ? Array.from(serviceNames)[0] : undefined;
 
     return {
       capabilities: Array.from(capabilitySet),
@@ -762,7 +786,8 @@ function getEventIntegrationCapabilities(
   }
 
   const targets = getWritableSourceTargets(event);
-  if (targets.length === 0) return undefined;
+  if (targets.length === 0)
+    return undefined;
 
   const capabilitySet = new Set<string>();
   const serviceNames = new Set<string>();
@@ -770,13 +795,15 @@ function getEventIntegrationCapabilities(
   targets.forEach((target) => {
     const integration = (
       (integrations.value as readonly Integration[]) || []
-    ).find((i) => i.id === target.integrationId);
-    if (!integration) return;
+    ).find(i => i.id === target.integrationId);
+    if (!integration)
+      return;
 
     const config = integrationRegistry.get(
       `${integration.type}:${integration.service}`,
     );
-    if (!config) return;
+    if (!config)
+      return;
 
     let capabilities = [...config.capabilities];
     serviceNames.add(integration.service);
@@ -789,19 +816,20 @@ function getEventIntegrationCapabilities(
 
       if (calendarRole === "read") {
         capabilities = capabilities.filter(
-          (cap) =>
+          cap =>
             !["edit_events", "add_events", "delete_events"].includes(cap),
         );
       }
     }
 
-    capabilities.forEach((capability) => capabilitySet.add(capability));
+    capabilities.forEach(capability => capabilitySet.add(capability));
   });
 
-  if (capabilitySet.size === 0) return undefined;
+  if (capabilitySet.size === 0)
+    return undefined;
 
-  const serviceName =
-    serviceNames.size === 1 ? Array.from(serviceNames)[0] : undefined;
+  const serviceName
+    = serviceNames.size === 1 ? Array.from(serviceNames)[0] : undefined;
 
   return {
     capabilities: Array.from(capabilitySet),

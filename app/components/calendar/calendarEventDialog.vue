@@ -10,14 +10,18 @@ import { consola } from "consola";
 import { isBefore } from "date-fns";
 import ical from "ical.js";
 
-import type { RecurrenceState } from "~/composables/useRecurrence";
 import type { CalendarEvent, SourceCalendar } from "~/types/calendar";
 import type { Integration } from "~/types/database";
 import type { CalendarConfig } from "~/types/integrations";
+import type { RecurrenceState } from "~/types/recurrence";
 
 import { useCalendar } from "~/composables/useCalendar";
 import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
-import { useRecurrence } from "~/composables/useRecurrence";
+import {
+  getDefaultDateToday,
+  getDefaultRecurrenceUntil,
+  useRecurrence,
+} from "~/composables/useRecurrence";
 import { useTimePicker } from "~/composables/useTimePicker";
 import { useUsers } from "~/composables/useUsers";
 import { DEFAULT_LOCAL_EVENT_COLOR, getBrowserTimezone } from "~/types/global";
@@ -52,6 +56,7 @@ const {
   addMinutes,
   subtractMinutes,
   isTimeAfter,
+  isSameTime,
   getCurrentTime12Hour,
 } = useTimePicker();
 const {
@@ -68,8 +73,8 @@ const DefaultEndHour = 10;
 
 const title = ref("");
 const description = ref("");
-const startDate = ref<DateValue>(new CalendarDate(2022, 2, 6));
-const endDate = ref<DateValue>(new CalendarDate(2022, 2, 6));
+const startDate = ref<DateValue>(getDefaultDateToday());
+const endDate = ref<DateValue>(getDefaultDateToday());
 
 const allDay = ref(false);
 const location = ref("");
@@ -178,7 +183,7 @@ const recurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("weekly");
 const recurrenceInterval = ref(1);
 const recurrenceEndType = ref<"never" | "count" | "until">("never");
 const recurrenceCount = ref(10);
-const recurrenceUntil = ref<DateValue>(new CalendarDate(2025, 12, 31));
+const recurrenceUntil = ref<DateValue>(getDefaultDateToday());
 const recurrenceDays = ref<number[]>([]);
 const recurrenceMonthlyType = ref<"day" | "weekday">("day");
 const recurrenceMonthlyWeekday = ref<{ week: number; day: number }>({
@@ -319,9 +324,7 @@ function getCalendarUserIds(
     : [];
 }
 
-function getUsersFromIds(
-  userIds: string[],
-): Array<{
+function getUsersFromIds(userIds: string[]): Array<{
   id: string;
   name: string;
   avatar?: string | null;
@@ -399,9 +402,7 @@ function getCalendarUsers(calendar: SourceCalendar) {
   return user || null;
 }
 
-async function getCalendarEventUsers(
-  calendar: SourceCalendar,
-): Promise<
+async function getCalendarEventUsers(calendar: SourceCalendar): Promise<
   Array<{
     id: string;
     name: string;
@@ -575,9 +576,7 @@ async function loadCalendarEventUsers() {
   }
 }
 
-function processIntegrationForPicker(
-  integration: Integration,
-): {
+function processIntegrationForPicker(integration: Integration): {
   id: string;
   name: string;
   calendars: CalendarConfig[];
@@ -740,22 +739,52 @@ watch(selectedCalendarId, () => {
   }
 });
 
+function isDateSameOrAfter(a: DateValue, b: DateValue) {
+  if (a.year !== b.year)
+    return a.year > b.year;
+  if (a.month !== b.month)
+    return a.month > b.month;
+  return a.day >= b.day;
+}
+
+function isDateSameOrBefore(a: DateValue, b: DateValue) {
+  if (a.year !== b.year)
+    return a.year < b.year;
+  if (a.month !== b.month)
+    return a.month < b.month;
+  return a.day <= b.day;
+}
+
+function isSameCalendarDay(a: DateValue, b: DateValue) {
+  return a.year === b.year && a.month === b.month && a.day === b.day;
+}
+
 watch(startDate, (newStartDate) => {
   if (newStartDate && endDate.value) {
-    const startTime = newStartDate.toDate(getLocalTimeZone());
-    const endTime = endDate.value.toDate(getLocalTimeZone());
-
+    const endVal = endDate.value as DateValue;
+    const startVal = newStartDate as DateValue;
     if (
-      startTime.getTime() === endTime.getTime()
-      && isStartTimeAfterEndTime()
+      isDateSameOrAfter(startVal, endVal)
+      && !isSameCalendarDay(endVal, startVal)
     ) {
-      endDate.value = newStartDate;
+      endDate.value = new CalendarDate(
+        newStartDate.year,
+        newStartDate.month,
+        newStartDate.day,
+      );
     }
 
     if (isRecurring.value && recurrenceEndType.value === "until") {
-      const untilDate = recurrenceUntil.value.toDate(getLocalTimeZone());
-      if (isBefore(untilDate, startTime)) {
-        recurrenceUntil.value = newStartDate;
+      const untilVal = recurrenceUntil.value;
+      const startAfterUntil
+        = newStartDate.year > untilVal.year
+          || (newStartDate.year === untilVal.year && newStartDate.month > untilVal.month)
+          || (newStartDate.year === untilVal.year && newStartDate.month === untilVal.month && newStartDate.day > untilVal.day);
+      if (startAfterUntil) {
+        recurrenceUntil.value = getDefaultRecurrenceUntil(
+          newStartDate as DateValue,
+          recurrenceType.value,
+        );
       }
     }
   }
@@ -763,14 +792,17 @@ watch(startDate, (newStartDate) => {
 
 watch(endDate, (newEndDate) => {
   if (newEndDate && startDate.value) {
-    const startTime = startDate.value.toDate(getLocalTimeZone());
-    const endTime = newEndDate.toDate(getLocalTimeZone());
-
+    const startVal = startDate.value as DateValue;
+    const endVal = newEndDate as DateValue;
     if (
-      startTime.getTime() === endTime.getTime()
-      && isStartTimeAfterEndTime()
+      isDateSameOrBefore(endVal, startVal)
+      && !isSameCalendarDay(startVal, endVal)
     ) {
-      startDate.value = newEndDate;
+      startDate.value = new CalendarDate(
+        newEndDate.year,
+        newEndDate.month,
+        newEndDate.day,
+      );
     }
   }
 });
@@ -790,14 +822,42 @@ watch(recurrenceUntil, () => {
     && isRecurring.value
     && recurrenceEndType.value === "until"
   ) {
-    isUpdatingUntil = true;
-    const untilDate = recurrenceUntil.value.toDate(getLocalTimeZone());
-    const startLocalDate = startDate.value.toDate(getLocalTimeZone());
-
-    if (isBefore(untilDate, startLocalDate)) {
-      recurrenceUntil.value = startDate.value;
+    const untilVal = recurrenceUntil.value;
+    const startVal = startDate.value;
+    const untilBeforeStart
+      = untilVal.year < startVal.year
+        || (untilVal.year === startVal.year && untilVal.month < startVal.month)
+        || (untilVal.year === startVal.year && untilVal.month === startVal.month && untilVal.day < startVal.day);
+    if (untilBeforeStart && !isSameCalendarDay(startVal as DateValue, untilVal as DateValue)) {
+      isUpdatingUntil = true;
+      startDate.value = new CalendarDate(
+        untilVal.year,
+        untilVal.month,
+        untilVal.day,
+      );
+      isUpdatingUntil = false;
     }
-    isUpdatingUntil = false;
+  }
+});
+
+const prevRecurrenceEndType = ref<"never" | "count" | "until">("never");
+const prevRecurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("weekly");
+watch([recurrenceEndType, recurrenceType], () => {
+  if (recurrenceEndType.value === "until") {
+    const justSwitchedToUntil = prevRecurrenceEndType.value !== "until";
+    const typeChangedWhileUntil = prevRecurrenceType.value !== recurrenceType.value;
+    if (justSwitchedToUntil || typeChangedWhileUntil) {
+      recurrenceUntil.value = getDefaultRecurrenceUntil(
+        startDate.value as DateValue,
+        recurrenceType.value,
+      );
+    }
+    prevRecurrenceEndType.value = recurrenceEndType.value;
+    prevRecurrenceType.value = recurrenceType.value;
+  }
+  else {
+    prevRecurrenceEndType.value = recurrenceEndType.value;
+    prevRecurrenceType.value = recurrenceType.value;
   }
 });
 
@@ -947,6 +1007,8 @@ watch(
 
       if (newEvent.ical_event) {
         parseICalEvent(newEvent.ical_event);
+        prevRecurrenceEndType.value = recurrenceEndType.value;
+        prevRecurrenceType.value = recurrenceType.value;
       }
       else {
         resetRecurrenceFields();
@@ -963,14 +1025,9 @@ function resetForm() {
   title.value = "";
   description.value = "";
 
-  const now = new Date();
-
-  const todayString = now.toISOString().split("T")[0];
-  if (todayString) {
-    const todayDate = parseDate(todayString);
-    startDate.value = todayDate;
-    endDate.value = todayDate;
-  }
+  const todayDate = getDefaultDateToday();
+  startDate.value = todayDate;
+  endDate.value = todayDate;
 
   const currentTime = getCurrentTime12Hour();
   startHour.value = currentTime.hour;
@@ -997,12 +1054,14 @@ function resetForm() {
   recurrenceInterval.value = 1;
   recurrenceEndType.value = "never";
   recurrenceCount.value = 10;
-  recurrenceUntil.value = new CalendarDate(2025, 12, 31);
+  recurrenceUntil.value = getDefaultDateToday();
   recurrenceDays.value = [];
   recurrenceMonthlyType.value = "day";
   recurrenceMonthlyWeekday.value = { week: 1, day: 1 };
   recurrenceYearlyType.value = "day";
   recurrenceYearlyWeekday.value = { week: 1, day: 1, month: 0 };
+  prevRecurrenceEndType.value = recurrenceEndType.value;
+  prevRecurrenceType.value = recurrenceType.value;
 }
 
 function updateEndTime() {
@@ -1020,9 +1079,20 @@ function updateEndTime() {
       startAmPm.value,
       30,
     );
-    endHour.value = endTime.hour;
-    endMinute.value = endTime.minute;
-    endAmPm.value = endTime.amPm;
+    if (
+      !isSameTime(
+        endHour.value,
+        endMinute.value,
+        endAmPm.value,
+        endTime.hour,
+        endTime.minute,
+        endTime.amPm,
+      )
+    ) {
+      endHour.value = endTime.hour;
+      endMinute.value = endTime.minute;
+      endAmPm.value = endTime.amPm;
+    }
   }
 }
 
@@ -1041,9 +1111,20 @@ function updateStartTime() {
       endAmPm.value,
       30,
     );
-    startHour.value = startTime.hour;
-    startMinute.value = startTime.minute;
-    startAmPm.value = startTime.amPm;
+    if (
+      !isSameTime(
+        startHour.value,
+        startMinute.value,
+        startAmPm.value,
+        startTime.hour,
+        startTime.minute,
+        startTime.amPm,
+      )
+    ) {
+      startHour.value = startTime.hour;
+      startMinute.value = startTime.minute;
+      startAmPm.value = startTime.amPm;
+    }
   }
 }
 
@@ -1239,6 +1320,18 @@ function validateEventData(): string | null {
 
   if (!startDate.value || !endDate.value) {
     return "Invalid date selection";
+  }
+
+  if (isRecurring.value && recurrenceEndType.value === "until" && recurrenceUntil.value) {
+    const startVal = startDate.value;
+    const untilVal = recurrenceUntil.value;
+    const untilBeforeStart
+      = untilVal.year < startVal.year
+        || (untilVal.year === startVal.year && untilVal.month < startVal.month)
+        || (untilVal.year === startVal.year && untilVal.month === startVal.month && untilVal.day < startVal.day);
+    if (untilBeforeStart) {
+      return "Recurrence end date must be on or after start date";
+    }
   }
 
   return null;
@@ -1745,9 +1838,8 @@ function handleDelete() {
                 <span v-else>Select a date</span>
               </UButton>
               <template #content>
-                <UCalendar
-                  :model-value="startDate as DateValue"
-                  class="p-2"
+                <GlobalDatePicker
+                  :model-value="(startDate as DateValue)"
                   :disabled="isReadOnly"
                   @update:model-value="
                     (value) => {
@@ -1812,9 +1904,8 @@ function handleDelete() {
                 <span v-else>Select a date</span>
               </UButton>
               <template #content>
-                <UCalendar
-                  :model-value="endDate as DateValue"
-                  class="p-2"
+                <GlobalDatePicker
+                  :model-value="(endDate as DateValue)"
                   :disabled="isReadOnly"
                   @update:model-value="
                     (value) => {

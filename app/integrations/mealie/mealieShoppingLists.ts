@@ -46,12 +46,14 @@ export class MealieService implements IntegrationService {
       const { parseStableDate, getStableDate } = useStableDate();
       this.parseStableDate = parseStableDate;
       this.status.lastChecked = getStableDate();
-    } else {
+    }
+    else {
       this.parseStableDate = (
         dateInput: string | Date | undefined,
         fallback?: Date,
       ) => {
-        if (!dateInput) return fallback || new Date();
+        if (!dateInput)
+          return fallback || new Date();
         return new Date(dateInput);
       };
       this.status.lastChecked = new Date();
@@ -62,7 +64,8 @@ export class MealieService implements IntegrationService {
     if (import.meta.client) {
       const { getStableDate } = useStableDate();
       return getStableDate();
-    } else {
+    }
+    else {
       return new Date();
     }
   }
@@ -81,7 +84,8 @@ export class MealieService implements IntegrationService {
       };
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       this.status = {
         isConnected: false,
         lastChecked: this.getCurrentDate(),
@@ -102,7 +106,7 @@ export class MealieService implements IntegrationService {
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${this.apiKey}`,
+            "Authorization": `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
           },
         },
@@ -132,7 +136,8 @@ export class MealieService implements IntegrationService {
       };
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("Mealie Shopping Lists: Connection test error:", error);
       this.status = {
         isConnected: false,
@@ -184,14 +189,14 @@ export class MealieService implements IntegrationService {
             updatedAt: this.parseStableDate(fullList.updatedAt),
             items:
               fullList.listItems?.map(
-                (mealieItem) =>
+                mealieItem =>
                   ({
                     id: mealieItem.id,
                     name:
-                      mealieItem.food?.name ||
-                      mealieItem.note ||
-                      mealieItem.display ||
-                      "Unknown",
+                      mealieItem.food?.name
+                      || mealieItem.note
+                      || mealieItem.display
+                      || "Unknown",
                     checked: mealieItem.checked,
                     order: mealieItem.position,
                     notes: mealieItem.note,
@@ -206,7 +211,8 @@ export class MealieService implements IntegrationService {
               items: fullList.listItems?.length || 0,
             },
           });
-        } catch (listError) {
+        }
+        catch (listError) {
           consola.error(
             `Mealie Shopping Lists: Error fetching list ${mealieList.id}:`,
             listError,
@@ -215,7 +221,8 @@ export class MealieService implements IntegrationService {
       }
 
       return shoppingLists;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error(
         "Mealie Shopping Lists: Error fetching shopping lists:",
         error,
@@ -234,14 +241,14 @@ export class MealieService implements IntegrationService {
       createdAt: this.parseStableDate(mealieList.createdAt),
       updatedAt: this.parseStableDate(mealieList.updatedAt),
       items: mealieList.listItems.map(
-        (mealieItem) =>
+        mealieItem =>
           ({
             id: mealieItem.id,
             name:
-              mealieItem.food?.name ||
-              mealieItem.note ||
-              mealieItem.display ||
-              "Unknown",
+              mealieItem.food?.name
+              || mealieItem.note
+              || mealieItem.display
+              || "Unknown",
             checked: mealieItem.checked,
             order: mealieItem.position,
             notes: mealieItem.note,
@@ -286,8 +293,8 @@ export class MealieService implements IntegrationService {
       recipeReferences: [],
     };
 
-    const apiResponse =
-      await this.serverService.createShoppingListItem(mealieItem);
+    const apiResponse
+      = await this.serverService.createShoppingListItem(mealieItem);
     const createdItem = apiResponse.createdItems?.[0];
 
     if (!createdItem) {
@@ -297,10 +304,10 @@ export class MealieService implements IntegrationService {
     return {
       id: createdItem.id || "",
       name:
-        createdItem.food?.name ||
-        createdItem.note ||
-        createdItem.display ||
-        "Unknown",
+        createdItem.food?.name
+        || createdItem.note
+        || createdItem.display
+        || "Unknown",
       checked: createdItem.checked,
       order: createdItem.position,
       notes: createdItem.note,
@@ -321,7 +328,7 @@ export class MealieService implements IntegrationService {
       let targetItem: ShoppingListItem | null = null;
 
       for (const list of lists) {
-        const item = list.items?.find((i) => i.id === itemId);
+        const item = list.items?.find(i => i.id === itemId);
         if (item) {
           targetItem = item;
           break;
@@ -368,10 +375,10 @@ export class MealieService implements IntegrationService {
       return {
         id: updatedItem.id || "",
         name:
-          updatedItem.food?.name ||
-          updatedItem.note ||
-          updatedItem.display ||
-          "Unknown",
+          updatedItem.food?.name
+          || updatedItem.note
+          || updatedItem.display
+          || "Unknown",
         checked: updatedItem.checked,
         order: updatedItem.position,
         notes: updatedItem.note,
@@ -381,7 +388,8 @@ export class MealieService implements IntegrationService {
         food: updatedItem.food?.name || null,
         integrationData: updatedItem as unknown as JsonObject,
       };
-    } catch (error) {
+    }
+    catch (error) {
       consola.error(
         `Mealie Shopping Lists: Error updating item ${itemId}:`,
         error,
@@ -401,7 +409,7 @@ export class MealieService implements IntegrationService {
       let targetItem: ShoppingListItem | null = null;
 
       for (const list of lists) {
-        const item = list.items?.find((i) => i.id === itemId);
+        const item = list.items?.find(i => i.id === itemId);
         if (item) {
           targetItem = item;
           break;
@@ -430,10 +438,10 @@ export class MealieService implements IntegrationService {
       return {
         id: updatedItem.id || "",
         name:
-          updatedItem.food?.name ||
-          updatedItem.note ||
-          updatedItem.display ||
-          "Unknown",
+          updatedItem.food?.name
+          || updatedItem.note
+          || updatedItem.display
+          || "Unknown",
         checked: updatedItem.checked,
         order: updatedItem.position,
         notes: updatedItem.isFood ? updatedItem.note : null,
@@ -443,7 +451,8 @@ export class MealieService implements IntegrationService {
         food: updatedItem.food?.name || null,
         integrationData: updatedItem as unknown as JsonObject,
       };
-    } catch (error) {
+    }
+    catch (error) {
       consola.error(
         `Mealie Shopping Lists: Error toggling item ${itemId}:`,
         error,
@@ -472,22 +481,23 @@ export function getMealieFieldsForItem(
   allFields: { key: string }[],
 ): { key: string }[] {
   if (
-    !item ||
-    !item.integrationData ||
-    item.integrationData.isFood === null ||
-    item.integrationData.isFood === undefined
+    !item
+    || !item.integrationData
+    || item.integrationData.isFood === null
+    || item.integrationData.isFood === undefined
   ) {
-    return allFields.filter((field) =>
+    return allFields.filter(field =>
       ["notes", "quantity"].includes(field.key),
     );
   }
 
   if (item.integrationData.isFood) {
-    return allFields.filter((field) =>
+    return allFields.filter(field =>
       ["notes", "quantity", "unit", "food"].includes(field.key),
     );
-  } else {
-    return allFields.filter((field) =>
+  }
+  else {
+    return allFields.filter(field =>
       ["notes", "quantity"].includes(field.key),
     );
   }

@@ -91,9 +91,7 @@ function handleDelete() {
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Column Name</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Column Name</label>
           <UInput
             v-model="columnName"
             placeholder="Enter column name"
@@ -115,7 +113,11 @@ function handleDelete() {
           Delete
         </UButton>
         <div class="flex gap-2" :class="{ 'ml-auto': !column?.id }">
-          <UButton color="neutral" variant="ghost" @click="emit('close')">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="emit('close')"
+          >
             Cancel
           </UButton>
           <UButton color="primary" @click="handleSave">

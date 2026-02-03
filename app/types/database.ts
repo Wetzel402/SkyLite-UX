@@ -168,7 +168,9 @@ export type TodoListItem = BaseListItem & {
   todoColumnId: string;
   shoppingListId: string;
   recurringGroupId?: string | null;
-  rrule?: import("../../server/integrations/iCal/types").ICalEvent["rrule"] | null;
+  rrule?:
+    | import("../../server/integrations/iCal/types").ICalEvent["rrule"]
+    | null;
 };
 
 export type TodoWithOrder = TodoWithUser & { order: number };

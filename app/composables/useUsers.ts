@@ -18,11 +18,13 @@ export function useUsers() {
     try {
       await refreshNuxtData("users");
       return currentUsers.value;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to fetch users";
       consola.error("Use Users: Error fetching users:", err);
       throw err;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
@@ -39,7 +41,8 @@ export function useUsers() {
       await refreshNuxtData("todo-columns");
 
       return newUser;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to create user";
       consola.error("Use Users: Error creating user:", err);
       throw err;
@@ -57,7 +60,8 @@ export function useUsers() {
       await refreshNuxtData("todo-columns");
 
       return updatedUser;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to update user";
       consola.error("Use Users: Error updating user:", err);
       throw err;
@@ -70,7 +74,8 @@ export function useUsers() {
         server: false,
         lazy: false,
       });
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to select user";
       consola.error("Use Users: Error selecting user:", err);
       throw err;
@@ -83,7 +88,8 @@ export function useUsers() {
         server: false,
         lazy: false,
       });
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to load current user";
       consola.error("Use Users: Error loading current user:", err);
       throw err;
@@ -96,7 +102,8 @@ export function useUsers() {
         server: false,
         lazy: false,
       });
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to clear current user";
       consola.error("Use Users: Error clearing current user:", err);
       throw err;
@@ -117,7 +124,8 @@ export function useUsers() {
       await refreshNuxtData("todo-columns");
 
       return true;
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to delete user";
       consola.error("Use Users: Error deleting user:", err);
       throw err;
@@ -129,26 +137,30 @@ export function useUsers() {
       const sortedUsers = [...currentUsers.value].sort(
         (a, b) => (a.todoOrder || 0) - (b.todoOrder || 0),
       );
-      const currentIndex = sortedUsers.findIndex((user) => user.id === userId);
+      const currentIndex = sortedUsers.findIndex(user => user.id === userId);
 
-      if (currentIndex === -1) return;
+      if (currentIndex === -1)
+        return;
 
       let targetIndex;
       if (direction === "up" && currentIndex > 0) {
         targetIndex = currentIndex - 1;
-      } else if (
-        direction === "down" &&
-        currentIndex < sortedUsers.length - 1
+      }
+      else if (
+        direction === "down"
+        && currentIndex < sortedUsers.length - 1
       ) {
         targetIndex = currentIndex + 1;
-      } else {
+      }
+      else {
         return;
       }
 
       const currentUser = sortedUsers[currentIndex];
       const targetUser = sortedUsers[targetIndex];
 
-      if (!currentUser || !targetUser) return;
+      if (!currentUser || !targetUser)
+        return;
 
       const currentOrder = currentUser.todoOrder || 0;
       const targetOrder = targetUser.todoOrder || 0;
@@ -165,7 +177,7 @@ export function useUsers() {
 
       const newOrder = updatedUsers
         .sort((a, b) => (a.todoOrder || 0) - (b.todoOrder || 0))
-        .map((user) => user.id);
+        .map(user => user.id);
 
       await $fetch("/api/users/reorder", {
         method: "POST",
@@ -174,7 +186,8 @@ export function useUsers() {
 
       await refreshNuxtData("users");
       await refreshNuxtData("todo-columns");
-    } catch (err) {
+    }
+    catch (err) {
       error.value = "Failed to reorder user";
       consola.error("Use Users: Error reordering user:", err);
       throw err;

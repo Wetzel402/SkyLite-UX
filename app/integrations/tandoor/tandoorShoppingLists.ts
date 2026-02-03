@@ -38,9 +38,11 @@ export class TandoorService implements IntegrationService {
       const { parseStableDate, getStableDate } = useStableDate();
       this.parseStableDate = parseStableDate;
       this.status.lastChecked = getStableDate();
-    } else {
+    }
+    else {
       this.parseStableDate = (dateInput?: string | Date, fallback?: Date) => {
-        if (!dateInput) return fallback || new Date();
+        if (!dateInput)
+          return fallback || new Date();
         return new Date(dateInput);
       };
       this.status.lastChecked = new Date();
@@ -51,7 +53,8 @@ export class TandoorService implements IntegrationService {
     if (import.meta.client) {
       const { getStableDate } = useStableDate();
       return getStableDate();
-    } else {
+    }
+    else {
       return new Date();
     }
   }
@@ -72,7 +75,8 @@ export class TandoorService implements IntegrationService {
       };
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       this.status = {
         isConnected: false,
         lastChecked: this.getCurrentDate(),
@@ -90,7 +94,7 @@ export class TandoorService implements IntegrationService {
     try {
       const url = `${this.baseUrl}/api/shopping-list-entry/`;
       const headers = {
-        Authorization: `Bearer ${this.apiKey}`,
+        "Authorization": `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
       };
       const response = await fetch(url, {
@@ -110,7 +114,8 @@ export class TandoorService implements IntegrationService {
         lastChecked: this.getCurrentDate(),
       };
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       this.status = {
         isConnected: false,
         lastChecked: this.getCurrentDate(),
@@ -170,7 +175,8 @@ export class TandoorService implements IntegrationService {
           },
         },
       ];
-    } catch (error) {
+    }
+    catch (error) {
       consola.error(
         "Tandoor Shopping Lists: Error fetching shopping lists:",
         error,
@@ -181,7 +187,7 @@ export class TandoorService implements IntegrationService {
 
   async getShoppingList(id: string): Promise<ShoppingList> {
     const lists = await this.getShoppingLists();
-    const list = lists.find((l) => l.id === id);
+    const list = lists.find(l => l.id === id);
 
     if (!list) {
       throw new Error(`Shopping list with id ${id} not found`);
@@ -270,7 +276,8 @@ export class TandoorService implements IntegrationService {
         food: null,
         integrationData: updatedEntry as unknown as JsonObject,
       };
-    } catch (error) {
+    }
+    catch (error) {
       consola.error(
         `Tandoor Shopping Lists: Error updating item ${itemId}:`,
         error,
@@ -307,7 +314,8 @@ export class TandoorService implements IntegrationService {
         food: null,
         integrationData: updatedEntry as unknown as JsonObject,
       };
-    } catch (error) {
+    }
+    catch (error) {
       consola.error(
         `Tandoor Shopping Lists: Error toggling item ${itemId}:`,
         error,
@@ -332,7 +340,7 @@ export function getTandoorFieldsForItem(
   allFields: { key: string }[],
 ): { key: string }[] {
   if (!item || item.unit === null || item.unit === undefined) {
-    return allFields.filter((field) => field.key !== "unit");
+    return allFields.filter(field => field.key !== "unit");
   }
   return allFields;
 }

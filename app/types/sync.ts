@@ -4,10 +4,10 @@ import type {
   TodoWithUser,
 } from "~/types/database";
 
-export type SyncData =
-  | CalendarEvent[]
-  | ShoppingListWithItemsAndCount[]
-  | TodoWithUser[];
+export type SyncData
+  = | CalendarEvent[]
+    | ShoppingListWithItemsAndCount[]
+    | TodoWithUser[];
 
 export type SyncEvent = {
   type:
@@ -36,11 +36,11 @@ export type IntegrationSyncData = {
   };
 };
 
-export type SyncConnectionStatus =
-  | "connecting"
-  | "connected"
-  | "disconnected"
-  | "error";
+export type SyncConnectionStatus
+  = | "connecting"
+    | "connected"
+    | "disconnected"
+    | "error";
 
 export type EventSourceStatus = "CONNECTING" | "OPEN" | "CLOSED";
 

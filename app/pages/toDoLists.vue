@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Prisma } from "@prisma/client";
+
 import { consola } from "consola";
 
 import type {
@@ -17,6 +19,8 @@ import TodoItemDialog from "~/components/todos/todoItemDialog.vue";
 import { useStableDate } from "~/composables/useStableDate";
 import { useTodoColumns } from "~/composables/useTodoColumns";
 import { useTodos } from "~/composables/useTodos";
+
+import type { ICalEvent } from "../../server/integrations/iCal/types";
 
 const { parseStableDate } = useStableDate();
 
@@ -90,7 +94,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
       description: todo.description ?? "",
       todoColumnId: todo.todoColumnId || "",
       recurringGroupId: todo.recurringGroupId,
-      rrule: todo.rrule,
+      rrule: (todo.rrule as ICalEvent["rrule"] | null) ?? undefined,
     })),
     _count: column._count ? { items: column._count.todos } : undefined,
   }));
@@ -120,7 +124,7 @@ function openEditTodo(item: BaseListItem) {
     shoppingListId: todo.todoColumnId || "",
     notes: todo.description,
     recurringGroupId: todo.recurringGroupId,
-    rrule: todo.rrule,
+    rrule: (todo.rrule as ICalEvent["rrule"] | null) ?? undefined,
   };
   todoItemDialog.value = true;
 }
@@ -190,7 +194,8 @@ async function handleTodoSave(todoData: TodoListItem) {
         completed: todoData.checked,
         order: todoData.order,
         todoColumnId: todoData.todoColumnId,
-        rrule: todoData.rrule,
+        recurringGroupId: todoData.recurringGroupId ?? null,
+        rrule: (todoData.rrule ?? null) as Prisma.JsonValue,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -209,7 +214,8 @@ async function handleTodoSave(todoData: TodoListItem) {
           completed: todoData.checked,
           order: todoData.order,
           todoColumnId: todoData.todoColumnId,
-          rrule: todoData.rrule,
+          recurringGroupId: todoData.recurringGroupId ?? null,
+          rrule: (todoData.rrule ?? null) as Prisma.JsonValue,
         });
         consola.debug("Todo Lists: Todo created successfully");
 

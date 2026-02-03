@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import type { DateValue } from "@internationalized/date";
 
-import { CalendarDate, getLocalTimeZone, parseDate } from "@internationalized/date";
+import {
+  CalendarDate,
+  getLocalTimeZone,
+  parseDate,
+} from "@internationalized/date";
 
 import type { Priority, TodoColumnBasic, TodoListItem } from "~/types/database";
+import type { RecurrenceState } from "~/types/recurrence";
 
-import { useRecurrence } from "~/composables/useRecurrence";
+import {
+  getDefaultDateToday,
+  getDefaultRecurrenceUntil,
+  useRecurrence,
+} from "~/composables/useRecurrence";
 import { useStableDate } from "~/composables/useStableDate";
 
 import type { ICalEvent } from "../../../server/integrations/iCal/types";
@@ -23,12 +32,17 @@ const emit = defineEmits<{
 }>();
 
 const { parseStableDate } = useStableDate();
-const { parseRecurrenceFromICal, generateRecurrenceRule, resetRecurrenceFields } = useRecurrence();
+const {
+  parseRecurrenceFromICal,
+  generateRecurrenceRule,
+  resetRecurrenceFields,
+} = useRecurrence();
 
 const todoTitle = ref("");
 const todoDescription = ref("");
 const todoPriority = ref<Priority>("MEDIUM");
 const todoDueDate = ref<DateValue | null>(null);
+const todoDueDateForPicker = computed(() => todoDueDate.value as DateValue | null);
 const todoColumnId = ref<string | undefined>(undefined);
 const todoError = ref<string | null>(null);
 
@@ -37,7 +51,7 @@ const recurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("daily");
 const recurrenceInterval = ref(1);
 const recurrenceEndType = ref<"never" | "count" | "until">("never");
 const recurrenceCount = ref(10);
-const recurrenceUntil = ref<DateValue>(new CalendarDate(2025, 12, 31));
+const recurrenceUntil = ref<DateValue>(getDefaultDateToday());
 const recurrenceDays = ref<number[]>([]);
 const recurrenceMonthlyType = ref<"day" | "weekday">("day");
 const recurrenceMonthlyWeekday = ref<{ week: number; day: number }>({
@@ -51,19 +65,93 @@ const recurrenceYearlyWeekday = ref<{
   month: number;
 }>({ week: 1, day: 1, month: 0 });
 
-const recurrenceState = {
+const recurrenceState: RecurrenceState = {
   isRecurring,
   recurrenceType,
   recurrenceInterval,
   recurrenceEndType,
   recurrenceCount,
-  recurrenceUntil,
+  recurrenceUntil: recurrenceUntil as Ref<DateValue>,
   recurrenceDays,
   recurrenceMonthlyType,
   recurrenceMonthlyWeekday,
   recurrenceYearlyType,
   recurrenceYearlyWeekday,
 };
+
+const prevTodoRecurrenceEndType = ref<"never" | "count" | "until">("never");
+const prevTodoRecurrenceType = ref<"daily" | "weekly" | "monthly" | "yearly">("daily");
+
+watch([recurrenceEndType, recurrenceType], () => {
+  if (recurrenceEndType.value === "until") {
+    const justSwitchedToUntil = prevTodoRecurrenceEndType.value !== "until";
+    const typeChangedWhileUntil = prevTodoRecurrenceType.value !== recurrenceType.value;
+    if (justSwitchedToUntil || typeChangedWhileUntil) {
+      const refDate = todoDueDate.value ?? getDefaultDateToday();
+      recurrenceUntil.value = getDefaultRecurrenceUntil(
+        refDate as DateValue,
+        recurrenceType.value,
+      );
+    }
+    prevTodoRecurrenceEndType.value = recurrenceEndType.value;
+    prevTodoRecurrenceType.value = recurrenceType.value;
+  }
+  else {
+    prevTodoRecurrenceEndType.value = recurrenceEndType.value;
+    prevTodoRecurrenceType.value = recurrenceType.value;
+  }
+});
+
+let isUpdatingTodoUntil = false;
+watch(todoDueDate, (newDue) => {
+  if (
+    !isUpdatingTodoUntil
+    && isRecurring.value
+    && recurrenceEndType.value === "until"
+    && newDue
+    && recurrenceUntil.value
+  ) {
+    const dueVal = newDue;
+    const untilVal = recurrenceUntil.value;
+    const dueAfterUntil
+      = dueVal.year > untilVal.year
+        || (dueVal.year === untilVal.year && dueVal.month > untilVal.month)
+        || (dueVal.year === untilVal.year && dueVal.month === untilVal.month && dueVal.day > untilVal.day);
+    if (dueAfterUntil) {
+      recurrenceUntil.value = getDefaultRecurrenceUntil(
+        newDue as DateValue,
+        recurrenceType.value,
+      );
+    }
+  }
+});
+
+watch(recurrenceUntil, () => {
+  if (
+    !isUpdatingTodoUntil
+    && isRecurring.value
+    && recurrenceEndType.value === "until"
+    && recurrenceUntil.value
+  ) {
+    const dueVal = todoDueDate.value;
+    if (!dueVal)
+      return;
+    const untilVal = recurrenceUntil.value;
+    const untilBeforeDue
+      = untilVal.year < dueVal.year
+        || (untilVal.year === dueVal.year && untilVal.month < dueVal.month)
+        || (untilVal.year === dueVal.year && untilVal.month === dueVal.month && untilVal.day < dueVal.day);
+    if (untilBeforeDue) {
+      isUpdatingTodoUntil = true;
+      todoDueDate.value = new CalendarDate(
+        untilVal.year,
+        untilVal.month,
+        untilVal.day,
+      );
+      isUpdatingTodoUntil = false;
+    }
+  }
+});
 
 const priorityOptions = [
   { label: "Low", value: "LOW" },
@@ -109,6 +197,8 @@ watch(
             rrule,
           };
           parseRecurrenceFromICal(icalEvent, recurrenceState);
+          prevTodoRecurrenceEndType.value = recurrenceEndType.value;
+          prevTodoRecurrenceType.value = recurrenceType.value;
         }
       }
     }
@@ -126,6 +216,8 @@ function resetForm() {
   todoColumnId.value = undefined;
   todoError.value = null;
   resetRecurrenceFields(recurrenceState);
+  prevTodoRecurrenceEndType.value = recurrenceEndType.value;
+  prevTodoRecurrenceType.value = recurrenceType.value;
   showDeleteConfirm.value = false;
 }
 
@@ -151,6 +243,24 @@ function handleSave() {
     ) {
       todoError.value = "Please select at least one day of the week";
       return;
+    }
+    if (recurrenceEndType.value === "until") {
+      if (!todoDueDate.value) {
+        todoError.value = "Due date is required when using an end date for recurrence";
+        return;
+      }
+      if (recurrenceUntil.value) {
+        const dueVal = todoDueDate.value;
+        const untilVal = recurrenceUntil.value;
+        const untilOnOrBeforeDue
+          = untilVal.year < dueVal.year
+            || (untilVal.year === dueVal.year && untilVal.month < dueVal.month)
+            || (untilVal.year === dueVal.year && untilVal.month === dueVal.month && untilVal.day <= dueVal.day);
+        if (untilOnOrBeforeDue) {
+          todoError.value = "Recurrence end date must be after due date";
+          return;
+        }
+      }
     }
   }
 
@@ -184,14 +294,13 @@ function handleSave() {
     rrule,
   };
 
-  emit("save", todoData as unknown as TodoListItem);
+  emit("save", todoData as TodoListItem);
   resetForm();
   emit("close");
 }
 
 function handleDelete() {
   if (props.todo?.id) {
-    // If it's a recurring todo, show confirmation with options
     if (props.todo.recurringGroupId) {
       showDeleteConfirm.value = true;
     }
@@ -319,10 +428,9 @@ function confirmDeleteAndStop() {
                     </template>
                     Clear due date
                   </UButton>
-                  <UCalendar
-                    :model-value="todoDueDate as unknown as DateValue"
-                    class="p-2"
-                    @update:model-value="todoDueDate = $event as CalendarDate"
+                  <GlobalDatePicker
+                    :model-value="todoDueDateForPicker"
+                    @update:model-value="todoDueDate = $event"
                   />
                 </div>
               </template>

@@ -16,7 +16,8 @@ export function useGlobalLoading() {
 
   const setLoadingState = (loading: boolean, message?: string) => {
     globalState.isLoading.value = loading;
-    if (message) globalState.loadingMessage.value = message;
+    if (message)
+      globalState.loadingMessage.value = message;
   };
 
   return {

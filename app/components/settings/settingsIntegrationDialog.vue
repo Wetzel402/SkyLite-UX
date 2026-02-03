@@ -38,8 +38,8 @@ const settingsData = ref<Record<string, string | string[] | boolean>>({});
 
 const isTestingConnection = computed(() => {
   return (
-    props.connectionTestResult?.isLoading ||
-    (isSaving.value && !props.connectionTestResult)
+    props.connectionTestResult?.isLoading
+    || (isSaving.value && !props.connectionTestResult)
   );
 });
 
@@ -51,19 +51,21 @@ const integrationNeedsReauth = computed(() => {
 });
 
 const currentIntegrationConfig = computed(() => {
-  if (!type.value || !service.value) return null;
+  if (!type.value || !service.value)
+    return null;
   return integrationRegistry.get(`${type.value}:${service.value}`);
 });
 
 const settingsFields = computed((): IntegrationSettingsField[] => {
   const config = currentIntegrationConfig.value;
-  if (!config) return [];
+  if (!config)
+    return [];
 
   const hasCalendarSelect = config.capabilities.includes("select_calendars");
 
   if (hasCalendarSelect) {
     return config.settingsFields.filter(
-      (field) => !["user", "eventColor", "useUserColors"].includes(field.key),
+      field => !["user", "eventColor", "useUserColors"].includes(field.key),
     );
   }
 
@@ -76,14 +78,15 @@ const availableTypes = computed(() => {
     types.add(config.type);
   });
 
-  return Array.from(types).map((type) => ({
+  return Array.from(types).map(type => ({
     label: type.charAt(0).toUpperCase() + type.slice(1),
     value: type,
   }));
 });
 
 const availableServices = computed(() => {
-  if (!type.value) return [];
+  if (!type.value)
+    return [];
 
   const services = new Set<string>();
   integrationRegistry.forEach((config) => {
@@ -92,7 +95,7 @@ const availableServices = computed(() => {
     }
   });
 
-  return Array.from(services).map((service) => ({
+  return Array.from(services).map(service => ({
     label: service.charAt(0).toUpperCase() + service.slice(1),
     value: service,
   }));
@@ -118,15 +121,19 @@ function initializeSettingsData() {
   settingsFields.value.forEach((field: IntegrationSettingsField) => {
     if (field.type === "color") {
       initialData[field.key] = field.placeholder || "#06b6d4";
-    } else if (field.type === "boolean") {
+    }
+    else if (field.type === "boolean") {
       if (field.key === "useUserColors") {
         initialData[field.key] = false;
-      } else {
+      }
+      else {
         initialData[field.key] = false;
       }
-    } else if (field.key === "user") {
+    }
+    else if (field.key === "user") {
       initialData[field.key] = [];
-    } else {
+    }
+    else {
       initialData[field.key] = "";
     }
   });
@@ -143,7 +150,8 @@ watch(
           type.value = firstType.value;
         }
       }
-    } else {
+    }
+    else {
       resetForm();
     }
   },
@@ -190,8 +198,8 @@ watch(
             .eventColor as string;
         }
         if (
-          newIntegration.settings &&
-          typeof newIntegration.settings.useUserColors === "boolean"
+          newIntegration.settings
+          && typeof newIntegration.settings.useUserColors === "boolean"
         ) {
           settingsData.value.useUserColors = newIntegration.settings
             .useUserColors as boolean;
@@ -205,7 +213,8 @@ watch(
             .clientSecret as string;
         }
       });
-    } else {
+    }
+    else {
       resetForm();
     }
   },
@@ -218,7 +227,8 @@ watch(
     const hasUsers = Array.isArray(userSelection) && userSelection.length > 0;
     if (hasUsers) {
       settingsData.value.useUserColors = true;
-    } else {
+    }
+    else {
       settingsData.value.useUserColors = false;
     }
   },
@@ -244,7 +254,7 @@ function generateUniqueName(
   const baseName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);
 
   const existingNames = existingIntegrations.map(
-    (integration) => integration.name,
+    integration => integration.name,
   );
   if (!existingNames.includes(baseName)) {
     return baseName;
@@ -286,10 +296,10 @@ async function handleSave() {
   if (!props.integration?.id) {
     const missingFields = settingsFields.value
       .filter(
-        (field) =>
+        field =>
           field.required && !settingsData.value[field.key]?.toString().trim(),
       )
-      .map((field) => field.label);
+      .map(field => field.label);
 
     if (missingFields.length > 0) {
       error.value = `Missing required fields: ${missingFields.join(", ")}`;
@@ -301,9 +311,9 @@ async function handleSave() {
   error.value = null;
 
   try {
-    const integrationName =
-      name.value.trim() ||
-      generateUniqueName(service.value, props.existingIntegrations);
+    const integrationName
+      = name.value.trim()
+        || generateUniqueName(service.value, props.existingIntegrations);
 
     const userSelection = settingsData.value.user || [];
     const hasUsers = Array.isArray(userSelection) && userSelection.length > 0;
@@ -325,11 +335,11 @@ async function handleSave() {
         useUserColors,
         clientId: settingsData.value.clientId || "",
         clientSecret: settingsData.value.clientSecret || "",
-        ...(props.integration?.id &&
-        currentIntegrationConfig.value?.capabilities.includes(
-          "select_calendars",
-        ) &&
-        !settingsData.value.clientSecret
+        ...(props.integration?.id
+          && currentIntegrationConfig.value?.capabilities.includes(
+            "select_calendars",
+          )
+          && !settingsData.value.clientSecret
           ? {
               calendars:
                 ((props.integration.settings as { calendars?: unknown })
@@ -355,11 +365,12 @@ async function handleSave() {
     }
 
     if (!props.integration?.id) {
-      integrationData.apiKey =
-        settingsData.value.apiKey?.toString().trim() || "";
-      integrationData.baseUrl =
-        settingsData.value.baseUrl?.toString().trim() || "";
-    } else {
+      integrationData.apiKey
+        = settingsData.value.apiKey?.toString().trim() || "";
+      integrationData.baseUrl
+        = settingsData.value.baseUrl?.toString().trim() || "";
+    }
+    else {
       const apiKeyValue = settingsData.value.apiKey?.toString().trim();
       const baseUrlValue = settingsData.value.baseUrl?.toString().trim();
 
@@ -372,10 +383,12 @@ async function handleSave() {
     }
 
     emit("save", integrationData);
-  } catch (err) {
-    error.value =
-      err instanceof Error ? err.message : "Failed to save integration";
-  } finally {
+  }
+  catch (err) {
+    error.value
+      = err instanceof Error ? err.message : "Failed to save integration";
+  }
+  finally {
     isSaving.value = false;
   }
 }
@@ -440,8 +453,8 @@ function handleDelete() {
           >
             <UIcon name="i-lucide-check-circle" class="h-4 w-4" />
             {{
-              props.connectionTestResult.message ||
-              "Connection test successful! Integration saved."
+              props.connectionTestResult.message
+                || "Connection test successful! Integration saved."
             }}
           </div>
           <div
@@ -450,8 +463,8 @@ function handleDelete() {
           >
             <UIcon name="i-lucide-x-circle" class="h-4 w-4" />
             {{
-              props.connectionTestResult.error ||
-              "Connection test failed. Check your API key and base URL."
+              props.connectionTestResult.error
+                || "Connection test failed. Check your API key and base URL."
             }}
           </div>
         </div>
@@ -466,7 +479,9 @@ function handleDelete() {
               class="h-4 w-4 mt-0.5 flex-shrink-0"
             />
             <div>
-              <p class="font-medium">Re-authorization Required</p>
+              <p class="font-medium">
+                Re-authorization Required
+              </p>
               <p class="text-xs mt-1">
                 Your {{ integration.name || service }} access has expired or
                 been revoked. Click Save to re-authorize.
@@ -482,7 +497,9 @@ function handleDelete() {
           <div class="flex items-start gap-2">
             <UIcon name="i-lucide-info" class="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div>
-              <p class="font-medium">Editing existing integration</p>
+              <p class="font-medium">
+                Editing existing integration
+              </p>
               <p class="text-xs mt-1">
                 For security reasons, API keys, client secrets, etc. are not
                 displayed. Leave these fields empty to keep current values, or
@@ -494,16 +511,16 @@ function handleDelete() {
 
         <template v-if="!integration?.id">
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-highlighted"
-              >Integration Type *</label
-            >
-            <USelect v-model="type" :items="availableTypes" class="w-full" />
+            <label class="block text-sm font-medium text-highlighted">Integration Type *</label>
+            <USelect
+              v-model="type"
+              :items="availableTypes"
+              class="w-full"
+            />
           </div>
 
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-highlighted"
-              >Service *</label
-            >
+            <label class="block text-sm font-medium text-highlighted">Service *</label>
             <USelect
               v-model="service"
               :items="availableServices"
@@ -513,9 +530,7 @@ function handleDelete() {
         </template>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-highlighted"
-            >Integration Name</label
-          >
+          <label class="block text-sm font-medium text-highlighted">Integration Name</label>
           <UInput
             v-model="name"
             placeholder="Jane's Integration"
@@ -544,7 +559,11 @@ function handleDelete() {
                 {{ field.description }}
               </p>
               <UPopover class="mt-2">
-                <UButton label="Choose color" color="neutral" variant="outline">
+                <UButton
+                  label="Choose color"
+                  color="neutral"
+                  variant="outline"
+                >
                   <template #leading>
                     <span
                       :style="{
@@ -614,8 +633,8 @@ function handleDelete() {
 
         <UButton
           v-if="
-            integration?.id &&
-            currentIntegrationConfig?.capabilities.includes('select_calendars')
+            integration?.id
+              && currentIntegrationConfig?.capabilities.includes('select_calendars')
           "
           color="primary"
           variant="outline"
@@ -648,7 +667,11 @@ function handleDelete() {
           Delete
         </UButton>
         <div class="flex gap-2" :class="{ 'ml-auto': !integration?.id }">
-          <UButton color="neutral" variant="ghost" @click="emit('close')">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="emit('close')"
+          >
             Cancel
           </UButton>
           <UButton

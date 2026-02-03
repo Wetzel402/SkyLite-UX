@@ -55,8 +55,8 @@ export class ICalService implements CalendarIntegrationService {
         integrationId: this.integrationId,
       };
       if (
-        this.integrationId === "temp" ||
-        this.integrationId.startsWith("temp-")
+        this.integrationId === "temp"
+        || this.integrationId.startsWith("temp-")
       ) {
         query.baseUrl = this.baseUrl;
       }
@@ -70,7 +70,8 @@ export class ICalService implements CalendarIntegrationService {
       };
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       this.status = {
         isConnected: false,
         lastChecked: new Date(),
@@ -90,8 +91,8 @@ export class ICalService implements CalendarIntegrationService {
         integrationId: this.integrationId,
       };
       if (
-        this.integrationId === "temp" ||
-        this.integrationId.startsWith("temp-")
+        this.integrationId === "temp"
+        || this.integrationId.startsWith("temp-")
       ) {
         query.baseUrl = this.baseUrl;
       }
@@ -105,7 +106,8 @@ export class ICalService implements CalendarIntegrationService {
       };
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       consola.error("iCalendar: iCal connection test error:", error);
       this.status = {
         isConnected: false,
@@ -124,8 +126,8 @@ export class ICalService implements CalendarIntegrationService {
   async getEvents(): Promise<CalendarEvent[]> {
     const query: Record<string, string> = { integrationId: this.integrationId };
     if (
-      this.integrationId === "temp" ||
-      this.integrationId.startsWith("temp-")
+      this.integrationId === "temp"
+      || this.integrationId.startsWith("temp-")
     ) {
       query.baseUrl = this.baseUrl;
     }
@@ -137,8 +139,8 @@ export class ICalService implements CalendarIntegrationService {
     let users: UserWithColor[] = [];
     if (this.useUserColors && this.user && this.user.length > 0) {
       try {
-        const allUsers =
-          await $fetch<{ id: string; name: string; color: string | null }[]>(
+        const allUsers
+          = await $fetch<{ id: string; name: string; color: string | null }[]>(
             "/api/users",
           );
         if (allUsers) {
@@ -146,7 +148,8 @@ export class ICalService implements CalendarIntegrationService {
             this.user?.includes(user.id),
           );
         }
-      } catch (error) {
+      }
+      catch (error) {
         consola.warn(
           "iCalendar: Failed to fetch users for iCal integration:",
           error,
@@ -162,28 +165,30 @@ export class ICalService implements CalendarIntegrationService {
       // All-day events typically have:
       // 1. DATE value type for DTSTART (no time component)
       // 2. DATETIME with time 00:00:00 for both DTSTART and DTEND
-      const isDateOnly =
-        !event.dtstart.includes("T") && !event.dtstart.includes("Z");
-      const isMidnightToMidnight =
-        event.dtstart.includes("T00:00:00") &&
-        event.dtend.includes("T00:00:00") &&
-        new Date(event.dtend).getTime() - new Date(event.dtstart).getTime() ===
-          24 * 60 * 60 * 1000;
+      const isDateOnly
+        = !event.dtstart.includes("T") && !event.dtstart.includes("Z");
+      const isMidnightToMidnight
+        = event.dtstart.includes("T00:00:00")
+          && event.dtend.includes("T00:00:00")
+          && new Date(event.dtend).getTime() - new Date(event.dtstart).getTime()
+          === 24 * 60 * 60 * 1000;
 
       const isAllDay = isDateOnly || isMidnightToMidnight;
 
-      let color: string | string[] | undefined =
-        this.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
+      let color: string | string[] | undefined
+        = this.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
       if (this.useUserColors && users.length > 0) {
         const userColors = users
           .map((user: UserWithColor) => user.color)
           .filter((color): color is string => color !== null);
         if (userColors.length > 0) {
           color = userColors.length === 1 ? userColors[0] : userColors;
-        } else {
+        }
+        else {
           color = this.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
         }
-      } else {
+      }
+      else {
         color = this.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
       }
 

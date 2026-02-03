@@ -95,6 +95,17 @@ export function useTimePicker() {
     return minutes1 > minutes2;
   }
 
+  function isSameTime(
+    hour1: number,
+    minute1: number,
+    amPm1: string,
+    hour2: number,
+    minute2: number,
+    amPm2: string,
+  ): boolean {
+    return getTimeInMinutes(hour1, minute1, amPm1) === getTimeInMinutes(hour2, minute2, amPm2);
+  }
+
   function roundToNearest5Minutes(minutes: number): number {
     return Math.round(minutes / 5) * 5;
   }
@@ -127,6 +138,7 @@ export function useTimePicker() {
     subtractMinutes,
     getTimeInMinutes,
     isTimeAfter,
+    isSameTime,
     roundToNearest5Minutes,
     getCurrentTime12Hour,
   };

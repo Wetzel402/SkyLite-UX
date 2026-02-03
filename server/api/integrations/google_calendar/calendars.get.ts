@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, getQuery } from "h3";
 
+import { isGoogleApiError } from "~/types/errors";
+
 import { GoogleCalendarServerService } from "../../../integrations/google_calendar/client";
 
 const prisma = new PrismaClient();
@@ -97,7 +99,7 @@ export default defineEventHandler(async (event) => {
     return { calendars };
   }
   catch (error: unknown) {
-    const err = error as { code?: number; message?: string; response?: { data?: unknown } };
+    const err = isGoogleApiError(error) ? error : { message: String(error) };
 
     consola.error("Integrations Google Calendar Calendars: Error details:", {
       code: err?.code,

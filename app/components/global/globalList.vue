@@ -34,7 +34,7 @@ const _emit = defineEmits<{
 const sortedLists = computed(() => {
   return [...props.lists]
     .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map((list) => ({
+    .map(list => ({
       ...list,
       sortedItems: list.items
         ? [...list.items].sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -49,7 +49,8 @@ const sortedLists = computed(() => {
 });
 
 function getProgressPercentage(list: AnyListWithIntegration) {
-  if (!list.items || list.items.length === 0) return 0;
+  if (!list.items || list.items.length === 0)
+    return 0;
   const checkedItems = list.items.filter(
     (item: BaseListItem) => item.checked,
   ).length;
@@ -57,18 +58,22 @@ function getProgressPercentage(list: AnyListWithIntegration) {
 }
 
 function getProgressColor(percentage: number) {
-  if (percentage === 100) return "bg-green-500";
-  if (percentage >= 75) return "bg-blue-500";
-  if (percentage >= 50) return "bg-yellow-500";
-  if (percentage >= 25) return "bg-orange-500";
+  if (percentage === 100)
+    return "bg-green-500";
+  if (percentage >= 75)
+    return "bg-blue-500";
+  if (percentage >= 50)
+    return "bg-yellow-500";
+  if (percentage >= 25)
+    return "bg-orange-500";
   return "bg-red-500";
 }
 
 const showItemEdit = computed(() => {
   if (typeof props.showEditItem === "function") {
     return (item: BaseListItem) => {
-      const list = props.lists.find((l) =>
-        l.items?.some((i) => i.id === item.id),
+      const list = props.lists.find(l =>
+        l.items?.some(i => i.id === item.id),
       );
       return list
         ? (props.showEditItem as (list: AnyListWithIntegration) => boolean)(
@@ -84,8 +89,8 @@ function hasIntegrationProperties(
   list: AnyListWithIntegration,
 ): list is AnyListWithIntegration & { source: "integration" | "native" } {
   return (
-    "source" in list &&
-    (list.source === "integration" || list.source === "native")
+    "source" in list
+    && (list.source === "integration" || list.source === "native")
   );
 }
 </script>
@@ -100,7 +105,9 @@ function hasIntegrationProperties(
               name="i-lucide-loader-2"
               class="h-8 w-8 animate-spin text-primary-500"
             />
-            <p class="mt-2 text-sm text-muted">Loading lists...</p>
+            <p class="mt-2 text-sm text-muted">
+              Loading lists...
+            </p>
           </div>
         </div>
         <div
@@ -118,7 +125,11 @@ function hasIntegrationProperties(
             <p v-if="emptyStateDescription" class="mt-1 text-sm text-muted">
               {{ emptyStateDescription }}
             </p>
-            <UButton class="mt-4" color="primary" @click="_emit('create')">
+            <UButton
+              class="mt-4"
+              color="primary"
+              @click="_emit('create')"
+            >
               Create List
             </UButton>
           </div>
@@ -138,10 +149,10 @@ function hasIntegrationProperties(
                     <div class="flex items-center gap-2 flex-1 min-w-0">
                       <div
                         v-if="
-                          showIntegrationIcons &&
-                          hasIntegrationProperties(list) &&
-                          list.source === 'integration' &&
-                          list.integrationIcon
+                          showIntegrationIcons
+                            && hasIntegrationProperties(list)
+                            && list.source === 'integration'
+                            && list.integrationIcon
                         "
                         class="w-5 h-5 rounded-sm flex items-center justify-center flex-shrink-0"
                       >
@@ -156,13 +167,13 @@ function hasIntegrationProperties(
                               if (target) target.style.display = 'none';
                             }
                           "
-                        />
+                        >
                       </div>
                       <div
                         v-else-if="
-                          showIntegrationIcons &&
-                          hasIntegrationProperties(list) &&
-                          list.source === 'native'
+                          showIntegrationIcons
+                            && hasIntegrationProperties(list)
+                            && list.source === 'native'
                         "
                         class="w-5 h-5 rounded-sm flex items-center justify-center flex-shrink-0"
                       >
@@ -177,7 +188,7 @@ function hasIntegrationProperties(
                               if (target) target.style.display = 'none';
                             }
                           "
-                        />
+                        >
                       </div>
                       <h2
                         class="text-lg font-semibold text-highlighted truncate"
@@ -315,7 +326,9 @@ function hasIntegrationProperties(
                       name="i-lucide-list"
                       class="h-12 w-12 mb-3 opacity-30"
                     />
-                    <p class="text-sm font-medium mb-1">No items yet</p>
+                    <p class="text-sm font-medium mb-1">
+                      No items yet
+                    </p>
                     <p class="text-xs mb-4">
                       Add your first item to get started
                     </p>
@@ -331,8 +344,8 @@ function hasIntegrationProperties(
                         :show-quantity="showQuantity"
                         :show-notes="showNotes"
                         :show-reorder="
-                          (list as AnyListWithIntegration).source ===
-                          'integration'
+                          (list as AnyListWithIntegration).source
+                            === 'integration'
                             ? false
                             : showReorder
                         "
@@ -384,8 +397,8 @@ function hasIntegrationProperties(
                         :show-quantity="showQuantity"
                         :show-notes="showNotes"
                         :show-reorder="
-                          (list as AnyListWithIntegration).source ===
-                          'integration'
+                          (list as AnyListWithIntegration).source
+                            === 'integration'
                             ? false
                             : showReorder
                         "

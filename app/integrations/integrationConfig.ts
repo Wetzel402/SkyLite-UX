@@ -1,3 +1,4 @@
+import type { ShoppingListItem, TodoListItem } from "~/types/database";
 import type {
   GoogleCalendarSettings,
   ICalSettings,
@@ -129,7 +130,7 @@ export const integrationConfigs: IntegrationConfig[] = [
         key: "apiKey",
         label: "API Key",
         type: "password" as const,
-        placeholder: 'Scope needs to be "read write"',
+        placeholder: "Scope needs to be \"read write\"",
         required: true,
         description: "Your Tandoor API key for authentication",
       },
@@ -268,33 +269,34 @@ const fieldFilters = {
   tandoor: getTandoorFieldsForItem,
 };
 export function getIntegrationFields(integrationType: string): DialogField[] {
-  const config = integrationConfigs.find((c) => c.service === integrationType);
+  const config = integrationConfigs.find(c => c.service === integrationType);
   return config?.dialogFields || [];
 }
 
 export function getFieldsForItem(
-  item: unknown,
+  item: ShoppingListItem | TodoListItem | null | undefined,
   integrationType: string | undefined,
   allFields: { key: string }[],
 ): { key: string }[] {
   if (
-    !integrationType ||
-    !fieldFilters[integrationType as keyof typeof fieldFilters]
+    !integrationType
+    || !fieldFilters[integrationType as keyof typeof fieldFilters]
   ) {
     return allFields;
   }
 
-  const filterFunction =
-    fieldFilters[integrationType as keyof typeof fieldFilters];
+  const filterFunction
+    = fieldFilters[integrationType as keyof typeof fieldFilters];
 
   if (integrationType === "mealie") {
     return (filterFunction as typeof getMealieFieldsForItem)(
-      item as { integrationData?: { isFood?: boolean } } | null | undefined,
+      item as ShoppingListItem | null | undefined,
       allFields,
     );
-  } else if (integrationType === "tandoor") {
+  }
+  else if (integrationType === "tandoor") {
     return (filterFunction as typeof getTandoorFieldsForItem)(
-      item as { unit?: unknown } | null | undefined,
+      item as ShoppingListItem | null | undefined,
       allFields,
     );
   }
@@ -302,7 +304,7 @@ export function getFieldsForItem(
   return allFields;
 }
 export function getServiceFactories() {
-  return integrationConfigs.map((config) => ({
+  return integrationConfigs.map(config => ({
     key: `${config.type}:${config.service}`,
     factory:
       serviceFactoryMap[

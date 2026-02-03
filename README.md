@@ -19,10 +19,13 @@
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/docs/installation/using-vite)
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/docs)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/)
+[![Static Badge](https://img.shields.io/badge/Cursor-black?style=for-the-badge&logo=cursor)](https://cursor.com/home)
 
 # About The Project
 
 Skylite UX was conceived as an open source, self-hosted alternative to commercial family managers. Most commercial offerings require expensive hardware and include subscriptions. Our goal was to create an offering that allows you to bring your own hardware, avoid subscriptions, and subscription-associated feature creep while playing nicely with other self-hosted offerings.
+
+Built with AI-assisted development tools. See our [contributing guide](https://wetzel402.github.io/SkyLite-UX/contributing/) for how we use and review AI-generated code.
 
 ## Features
 

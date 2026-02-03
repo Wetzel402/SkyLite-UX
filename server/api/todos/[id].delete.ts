@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import prisma from "~/lib/prisma";
 
 import type { ICalEvent } from "../../integrations/iCal/types";
@@ -18,7 +20,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Get the todo before deleting to check if it's recurring
     const todo = await prisma.todo.findUnique({
       where: { id },
     });
@@ -65,29 +66,31 @@ export default defineEventHandler(async (event) => {
       );
 
       await prisma.$transaction(async (tx) => {
-        const maxOrder = await tx.todo.aggregate({
-          where: {
-            todoColumnId: todo.todoColumnId || null,
-            completed: false,
-          },
-          _max: {
-            order: true,
-          },
-        });
         await tx.todo.delete({ where: { id } });
-        await tx.todo.create({
-          data: {
-            title: todo.title,
-            description: todo.description,
-            priority: todo.priority,
-            dueDate: nextDueDate,
-            todoColumnId: todo.todoColumnId,
-            order: (maxOrder._max.order || 0) + 1,
-            recurringGroupId: todo.recurringGroupId,
-            rrule: todo.rrule,
-            completed: false,
-          },
-        });
+        if (nextDueDate !== null) {
+          const maxOrder = await tx.todo.aggregate({
+            where: {
+              todoColumnId: todo.todoColumnId || null,
+              completed: false,
+            },
+            _max: {
+              order: true,
+            },
+          });
+          await tx.todo.create({
+            data: {
+              title: todo.title,
+              description: todo.description,
+              priority: todo.priority,
+              dueDate: nextDueDate,
+              todoColumnId: todo.todoColumnId,
+              order: (maxOrder._max.order || 0) + 1,
+              recurringGroupId: todo.recurringGroupId,
+              rrule: todo.rrule ?? Prisma.JsonNull,
+              completed: false,
+            },
+          });
+        }
       });
     }
     else {

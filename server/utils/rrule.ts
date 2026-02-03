@@ -3,47 +3,6 @@ import ical from "ical.js";
 
 import type { ICalEvent } from "../integrations/iCal/types";
 
-type RecurrencePattern
-  = | { type: "daily"; interval: number }
-    | { type: "weekly"; interval: number; daysOfWeek?: number[] }
-    | { type: "monthly"; interval: number; dayOfMonth: number };
-
-export function convertRecurrencePatternToRRule(
-  pattern: RecurrencePattern,
-): ICalEvent["rrule"] {
-  const dayNames = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-
-  if (pattern.type === "daily") {
-    return {
-      freq: "DAILY",
-      interval: pattern.interval,
-    };
-  }
-
-  if (pattern.type === "weekly") {
-    const rrule: ICalEvent["rrule"] = {
-      freq: "WEEKLY",
-      interval: pattern.interval,
-    };
-
-    if (pattern.daysOfWeek && pattern.daysOfWeek.length > 0) {
-      rrule.byday = pattern.daysOfWeek.map(day => dayNames[day] || "SU");
-    }
-
-    return rrule;
-  }
-
-  if (pattern.type === "monthly") {
-    return {
-      freq: "MONTHLY",
-      interval: pattern.interval,
-      bymonthday: [pattern.dayOfMonth],
-    };
-  }
-
-  throw new Error(`Unknown recurrence pattern type: ${(pattern as RecurrencePattern).type}`);
-}
-
 export function parseRRuleString(rruleString: string): ICalEvent["rrule"] | undefined {
   if (!rruleString) {
     return undefined;
@@ -100,6 +59,18 @@ export function parseRRuleString(rruleString: string): ICalEvent["rrule"] | unde
   }
 
   return rruleObj;
+}
+
+function parseUntilToDate(until: string | undefined): Date | null {
+  if (!until) {
+    return null;
+  }
+  try {
+    return ical.Time.fromString(until, undefined).toJSDate();
+  }
+  catch {
+    return null;
+  }
 }
 
 export function expandRecurringEvents<T extends {
@@ -208,6 +179,14 @@ function calculateFastPathApproximate(
     throw new Error("Invalid rrule: freq is required");
   }
 
+  const untilDate = parseUntilToDate(rrule.until ?? undefined);
+  const capAtUntil = (d: Date): Date => {
+    if (untilDate && d > untilDate) {
+      return untilDate;
+    }
+    return d;
+  };
+
   const today = referenceDate ? new Date(referenceDate) : new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -224,9 +203,9 @@ function calculateFastPathApproximate(
       const comparePoint = new Date(
         Math.max(baseDate.getTime(), today.getTime()),
       );
-      return advancePastDate(baseDate, comparePoint, interval);
+      return capAtUntil(advancePastDate(baseDate, comparePoint, interval));
     }
-    return advancePastDate(today, today, interval);
+    return capAtUntil(advancePastDate(today, today, interval));
   }
 
   if (freq === "WEEKLY") {
@@ -331,7 +310,7 @@ function calculateFastPathApproximate(
     }
     nextDate = currentDate;
 
-    return nextDate;
+    return capAtUntil(nextDate);
   }
 
   if (freq === "YEARLY") {
@@ -341,10 +320,10 @@ function calculateFastPathApproximate(
       nextDate = new Date(nextDate);
       nextDate.setFullYear(nextDate.getFullYear() + interval);
     }
-    return nextDate;
+    return capAtUntil(nextDate);
   }
 
-  return today;
+  return capAtUntil(today);
 }
 
 export function calculateNextDueDate(
@@ -352,7 +331,7 @@ export function calculateNextDueDate(
   originalDTSTART: Date,
   previousDueDate: Date | null = null,
   referenceDate: Date | null = null,
-): Date {
+): Date | null {
   if (!rrule || !rrule.freq) {
     throw new Error("Invalid rrule: freq is required");
   }
@@ -419,13 +398,26 @@ export function calculateNextDueDate(
       });
     }
 
-    if (lastValidDate) {
+    if (lastValidDate && lastValidDate > comparePoint) {
       lastValidDate.setHours(23, 59, 59, 999);
       return lastValidDate;
     }
 
-    fastPathApproximate.setHours(23, 59, 59, 999);
-    return fastPathApproximate;
+    if (iterations >= maxIterations) {
+      const untilDate = parseUntilToDate(rrule.until ?? undefined);
+      if (untilDate && fastPathApproximate > untilDate) {
+        return null;
+      }
+      fastPathApproximate.setHours(0, 0, 0, 0);
+      comparePoint.setHours(0, 0, 0, 0);
+      if (fastPathApproximate < comparePoint) {
+        return null;
+      }
+      fastPathApproximate.setHours(23, 59, 59, 999);
+      return fastPathApproximate;
+    }
+
+    return null;
   }
   catch (error) {
     consola.warn("calculateNextDueDate: RecurExpansion failed, using fast path", {
@@ -433,6 +425,15 @@ export function calculateNextDueDate(
       rrule,
       originalDTSTART: originalDTSTART.toISOString(),
     });
+    const untilDate = parseUntilToDate(rrule.until ?? undefined);
+    if (untilDate && fastPathApproximate > untilDate) {
+      return null;
+    }
+    fastPathApproximate.setHours(0, 0, 0, 0);
+    comparePoint.setHours(0, 0, 0, 0);
+    if (fastPathApproximate < comparePoint) {
+      return null;
+    }
     fastPathApproximate.setHours(23, 59, 59, 999);
     return fastPathApproximate;
   }

@@ -1,19 +1,19 @@
-import { describe, expect, vi, it } from "vitest";
-import prisma from "~/lib/__mocks__/prisma";
+import { createMockH3Event } from "~~/test/nuxt/mocks/h3Event";
 import { useH3TestUtils } from "~~/test/nuxt/setup";
-import { createMockH3Event } from "~~/test/nuxt/mocks/h3-event";
+import { describe, expect, it, vi } from "vitest";
+
+import prisma from "~/lib/__mocks__/prisma";
+import handler from "~~/server/api/todos/index.get";
 
 const { defineEventHandler } = useH3TestUtils();
 
 vi.mock("~/lib/prisma");
 
-describe("GET /api/todos", async () => {
-  const handler = await import("~~/server/api/todos/index.get");
+describe("gET /api/todos", () => {
 
   it("is registered as an event handler", () =>
     expect(defineEventHandler).toHaveBeenCalled());
 
-  // Test data factories
   const createBaseTodo = (overrides = {}) => ({
     id: "todo-1",
     title: "Test Todo",
@@ -24,7 +24,7 @@ describe("GET /api/todos", async () => {
     order: 1,
     completed: false,
     recurringGroupId: null,
-    recurrencePattern: null,
+    rrule: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     todoColumn: {
@@ -94,7 +94,7 @@ describe("GET /api/todos", async () => {
 
       const event = createMockH3Event({ query });
 
-      const response = await handler.default(event);
+      const response = await handler(event);
 
       expect(prisma.todo.findMany).toHaveBeenCalledWith({
         where: expectedWhere,

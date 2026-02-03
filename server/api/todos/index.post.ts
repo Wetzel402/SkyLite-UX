@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import prisma from "~/lib/prisma";
 
 import type { ICalEvent } from "../../integrations/iCal/types";
@@ -57,7 +59,7 @@ export default defineEventHandler(async (event) => {
         todoColumnId: body.todoColumnId,
         order: (maxOrder._max.order || 0) + 1,
         recurringGroupId,
-        rrule,
+        rrule: rrule ?? Prisma.JsonNull,
       },
       include: {
         todoColumn: {

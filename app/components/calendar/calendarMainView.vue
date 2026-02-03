@@ -38,8 +38,7 @@ const { getStableDate, stableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
 const { calendarIntegrations } = useCalendarIntegrations();
 const currentDate = useState<Date>("calendar-current-date", () =>
-  getStableDate(),
-);
+  getStableDate());
 const view = ref<CalendarView>(props.initialView || "week");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
@@ -47,10 +46,10 @@ const selectedEvent = ref<CalendarEvent | null>(null);
 onMounted(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (
-      isEventDialogOpen.value ||
-      e.target instanceof HTMLInputElement ||
-      e.target instanceof HTMLTextAreaElement ||
-      (e.target instanceof HTMLElement && e.target.isContentEditable)
+      isEventDialogOpen.value
+      || e.target instanceof HTMLInputElement
+      || e.target instanceof HTMLTextAreaElement
+      || (e.target instanceof HTMLElement && e.target.isContentEditable)
     ) {
       return;
     }
@@ -80,11 +79,14 @@ onMounted(() => {
 function handlePrevious() {
   if (view.value === "month") {
     currentDate.value = subMonths(currentDate.value, 1);
-  } else if (view.value === "week") {
+  }
+  else if (view.value === "week") {
     currentDate.value = subWeeks(currentDate.value, 1);
-  } else if (view.value === "day") {
+  }
+  else if (view.value === "day") {
     currentDate.value = addDays(currentDate.value, -1);
-  } else if (view.value === "agenda") {
+  }
+  else if (view.value === "agenda") {
     currentDate.value = addDays(currentDate.value, -30);
   }
 }
@@ -92,11 +94,14 @@ function handlePrevious() {
 function handleNext() {
   if (view.value === "month") {
     currentDate.value = addMonths(currentDate.value, 1);
-  } else if (view.value === "week") {
+  }
+  else if (view.value === "week") {
     currentDate.value = addWeeks(currentDate.value, 1);
-  } else if (view.value === "day") {
+  }
+  else if (view.value === "day") {
     currentDate.value = addDays(currentDate.value, 1);
-  } else if (view.value === "agenda") {
+  }
+  else if (view.value === "agenda") {
     currentDate.value = addDays(currentDate.value, 30);
   }
 }
@@ -161,7 +166,8 @@ function handleEventCreate(date: Date) {
 function handleEventSave(event: CalendarEvent) {
   if (event.id) {
     _emit("eventUpdate", event);
-  } else {
+  }
+  else {
     _emit("eventAdd", event);
   }
   isEventDialogOpen.value = false;
@@ -183,7 +189,8 @@ const isCurrentMonth = computed(() => {
 });
 
 const filteredEvents = computed(() => {
-  if (!props.events) return [];
+  if (!props.events)
+    return [];
 
   const now = currentDate.value;
   let start: Date;

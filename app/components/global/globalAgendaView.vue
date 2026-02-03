@@ -54,7 +54,9 @@ watch(
         class="flex min-h-[70svh] flex-col items-center justify-center py-16 text-center"
       >
         <UIcon name="i-lucide-calendar-off" class="size-8" />
-        <h2 class="text-lg font-medium text-highlighted">No events found</h2>
+        <h2 class="text-lg font-medium text-highlighted">
+          No events found
+        </h2>
         <p class="text-muted">
           There are no events scheduled for this time period.
         </p>
@@ -85,7 +87,11 @@ watch(
                 'text-muted': !isToday(day),
               }"
             >
-              <NuxtTime :datetime="day" month="short" weekday="long" />
+              <NuxtTime
+                :datetime="day"
+                month="short"
+                weekday="long"
+              />
             </span>
           </span>
           <div class="mt-6 space-y-2">
