@@ -23,6 +23,7 @@ export type ICalEvent = {
     interval?: number;
     byday?: string[];
     bymonth?: number[];
+    bymonthday?: number[];
     count?: number;
     until?: string;
   };

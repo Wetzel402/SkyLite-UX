@@ -3,7 +3,10 @@ export function useStableDate() {
 
   const getStableDate = () => stableDate.value;
 
-  const parseStableDate = (dateInput: string | Date | undefined, fallback?: Date): Date => {
+  const parseStableDate = (
+    dateInput: string | Date | undefined,
+    fallback?: Date,
+  ): Date => {
     if (!dateInput) {
       return fallback || stableDate.value;
     }
@@ -11,7 +14,11 @@ export function useStableDate() {
       return dateInput;
     }
 
-    if (typeof dateInput === "string" && dateInput.includes("T") && dateInput.endsWith("Z")) {
+    if (
+      typeof dateInput === "string"
+      && dateInput.includes("T")
+      && dateInput.endsWith("Z")
+    ) {
       return new Date(dateInput);
     }
 

@@ -6,7 +6,8 @@ import { integrationServices } from "~/plugins/02.appInit";
 import { createIntegrationService } from "~/types/integrations";
 
 export function useIntegrations() {
-  const { data: cachedIntegrations } = useNuxtData<Integration[]>("integrations");
+  const { data: cachedIntegrations }
+    = useNuxtData<Integration[]>("integrations");
 
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -32,7 +33,9 @@ export function useIntegrations() {
   const fetchIntegrations = async () => {
     try {
       await refreshNuxtData("integrations");
-      consola.debug("Use Integrations: Integrations data refreshed successfully");
+      consola.debug(
+        "Use Integrations: Integrations data refreshed successfully",
+      );
     }
     catch (err) {
       consola.error("Use Integrations: Error refreshing integrations:", err);
@@ -66,28 +69,44 @@ export function useIntegrations() {
             method: "POST",
             body: response,
           });
-          consola.debug("Use Integrations: Integration registered with sync manager:", response.name);
+          consola.debug(
+            "Use Integrations: Integration registered with sync manager:",
+            response.name,
+          );
 
           const { triggerImmediateSync } = useSyncManager();
           await triggerImmediateSync(response.type, response.id);
-          consola.debug("Use Integrations: Immediate sync triggered for new integration:", response.name);
+          consola.debug(
+            "Use Integrations: Immediate sync triggered for new integration:",
+            response.name,
+          );
         }
         catch (syncError) {
-          consola.warn("Use Integrations: Failed to register integration with sync manager:", syncError);
+          consola.warn(
+            "Use Integrations: Failed to register integration with sync manager:",
+            syncError,
+          );
         }
       }
 
-      consola.debug("Use Integrations: Integration created successfully:", response.name);
+      consola.debug(
+        "Use Integrations: Integration created successfully:",
+        response.name,
+      );
       return response;
     }
     catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to create integration";
+      const errorMessage
+        = err instanceof Error ? err.message : "Failed to create integration";
       consola.error("Use Integrations: Error creating integration:", err);
       throw new Error(errorMessage);
     }
   };
 
-  const updateIntegration = async (id: string, updates: Partial<Integration>) => {
+  const updateIntegration = async (
+    id: string,
+    updates: Partial<Integration>,
+  ) => {
     try {
       const response = await $fetch<Integration>(`/api/integrations/${id}`, {
         method: "PUT",
@@ -108,21 +127,31 @@ export function useIntegrations() {
             method: "POST",
             body: response,
           });
-          consola.debug("Use Integrations: Integration re-registered with sync manager:", response.name);
+          consola.debug(
+            "Use Integrations: Integration re-registered with sync manager:",
+            response.name,
+          );
         }
         catch (syncError) {
-          consola.warn("Use Integrations: Failed to re-register integration with sync manager:", syncError);
+          consola.warn(
+            "Use Integrations: Failed to re-register integration with sync manager:",
+            syncError,
+          );
         }
       }
       else {
         integrationServices.delete(response.id);
       }
 
-      consola.debug("Use Integrations: Integration updated successfully:", response.name);
+      consola.debug(
+        "Use Integrations: Integration updated successfully:",
+        response.name,
+      );
       return response;
     }
     catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update integration";
+      const errorMessage
+        = err instanceof Error ? err.message : "Failed to update integration";
       consola.error("Use Integrations: Error updating integration:", err);
       throw new Error(errorMessage);
     }
@@ -141,7 +170,8 @@ export function useIntegrations() {
       consola.debug("Use Integrations: Integration deleted successfully:", id);
     }
     catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete integration";
+      const errorMessage
+        = err instanceof Error ? err.message : "Failed to delete integration";
       consola.error("Use Integrations: Error deleting integration:", err);
       throw new Error(errorMessage);
     }
@@ -150,19 +180,27 @@ export function useIntegrations() {
   const getEnabledIntegrations = computed(() => {
     if (!initialized.value)
       return [];
-    return integrations.value.filter((integration: Integration) => integration.enabled);
+    return integrations.value.filter(
+      (integration: Integration) => integration.enabled,
+    );
   });
 
   const getIntegrationsByType = (type: string) => {
     if (!initialized.value)
       return [];
-    return integrations.value.filter((integration: Integration) => integration.type === type && integration.enabled);
+    return integrations.value.filter(
+      (integration: Integration) =>
+        integration.type === type && integration.enabled,
+    );
   };
 
   const getIntegrationByType = (type: string) => {
     if (!initialized.value)
       return undefined;
-    return integrations.value.find((integration: Integration) => integration.type === type && integration.enabled);
+    return integrations.value.find(
+      (integration: Integration) =>
+        integration.type === type && integration.enabled,
+    );
   };
 
   const getService = (integrationId: string) => {
@@ -177,12 +215,16 @@ export function useIntegrations() {
         if (service) {
           integrationServices.set(integration.id, service);
           await service.initialize();
-          consola.debug(`Use Integrations: Reinitialized integration service: ${integration.name}`);
+          consola.debug(
+            `Use Integrations: Reinitialized integration service: ${integration.name}`,
+          );
         }
       }
       else {
         integrationServices.delete(integration.id);
-        consola.debug(`Use Integrations: Removed integration service: ${integration.name}`);
+        consola.debug(
+          `Use Integrations: Removed integration service: ${integration.name}`,
+        );
       }
     }
   };

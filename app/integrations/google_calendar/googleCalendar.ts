@@ -2,7 +2,12 @@ import consola from "consola";
 
 import type { CalendarEvent } from "~/types/calendar";
 import type { Integration } from "~/types/database";
-import type { CalendarConfig, CalendarIntegrationService, IntegrationStatus, UserWithColor } from "~/types/integrations";
+import type {
+  CalendarConfig,
+  CalendarIntegrationService,
+  IntegrationStatus,
+  UserWithColor,
+} from "~/types/integrations";
 
 import { DEFAULT_LOCAL_EVENT_COLOR } from "~/types/global";
 import { integrationRegistry } from "~/types/integrations";
@@ -23,11 +28,7 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
   private gisLoaded = false;
 
-  constructor(
-    integrationId: string,
-    clientId: string,
-    clientSecret: string,
-  ) {
+  constructor(integrationId: string, clientId: string, clientSecret: string) {
     this.integrationId = integrationId;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
@@ -185,33 +186,42 @@ export class GoogleCalendarService implements CalendarIntegrationService {
   }
 
   async getEvents(): Promise<CalendarEvent[]> {
-    const result = await $fetch<{ events: CalendarEvent[]; calendars: CalendarConfig[] }>(
-      "/api/integrations/google_calendar/events",
-      { query: { integrationId: this.integrationId } },
-    );
+    const result = await $fetch<{
+      events: CalendarEvent[];
+      calendars: CalendarConfig[];
+    }>("/api/integrations/google_calendar/events", {
+      query: { integrationId: this.integrationId },
+    });
 
     const calendars = result.calendars || [];
     let allUsers: UserWithColor[] = [];
 
-    const needsUsers = calendars.some(cal =>
-      cal.useUserColors && cal.user && cal.user.length > 0,
+    const needsUsers = calendars.some(
+      cal => cal.useUserColors && cal.user && cal.user.length > 0,
     );
 
     if (needsUsers) {
       try {
-        const users = await $fetch<{ id: string; name: string; color: string | null }[]>("/api/users");
+        const users
+          = await $fetch<{ id: string; name: string; color: string | null }[]>(
+            "/api/users",
+          );
         if (users) {
           allUsers = users;
         }
       }
       catch (error) {
-        consola.warn("GoogleCalendar: Failed to fetch users for Google Calendar integration:", error);
+        consola.warn(
+          "GoogleCalendar: Failed to fetch users for Google Calendar integration:",
+          error,
+        );
       }
     }
 
     return result.events.map((event) => {
       const calendarConfig = calendars.find(c => c.id === event.calendarId);
-      const eventColor = calendarConfig?.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
+      const eventColor
+        = calendarConfig?.eventColor || DEFAULT_LOCAL_EVENT_COLOR;
       const useUserColors = calendarConfig?.useUserColors || false;
       const userIds = calendarConfig?.user || [];
 
@@ -219,7 +229,9 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
       let color: string | string[] | undefined = eventColor;
       if (useUserColors && users.length > 0) {
-        const userColors = users.map(u => u.color).filter((color): color is string => color !== null);
+        const userColors = users
+          .map(u => u.color)
+          .filter((color): color is string => color !== null);
         if (userColors.length > 0) {
           color = userColors.length === 1 ? userColors[0] : userColors;
         }
@@ -236,18 +248,26 @@ export class GoogleCalendarService implements CalendarIntegrationService {
     });
   }
 
-  async updateEvent(eventId: string, eventData: Partial<CalendarEvent>): Promise<CalendarEvent> {
+  async updateEvent(
+    eventId: string,
+    eventData: Partial<CalendarEvent>,
+  ): Promise<CalendarEvent> {
     try {
-      const baseEventId = eventId.includes("-") ? eventId.split("-")[0] : eventId;
+      const baseEventId = eventId.includes("-")
+        ? eventId.split("-")[0]
+        : eventId;
 
-      const response = await $fetch<CalendarEvent>(`/api/integrations/google_calendar/events/${baseEventId}`, {
-        method: "PUT",
-        body: {
-          integrationId: this.integrationId,
-          calendarId: eventData.calendarId,
-          ...eventData,
+      const response = await $fetch<CalendarEvent>(
+        `/api/integrations/google_calendar/events/${baseEventId}`,
+        {
+          method: "PUT",
+          body: {
+            integrationId: this.integrationId,
+            calendarId: eventData.calendarId,
+            ...eventData,
+          },
         },
-      });
+      );
 
       return response;
     }
@@ -259,7 +279,9 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
   async getEvent(eventId: string, calendarId?: string): Promise<CalendarEvent> {
     try {
-      const baseEventId = eventId.includes("-") ? eventId.split("-")[0] : eventId;
+      const baseEventId = eventId.includes("-")
+        ? eventId.split("-")[0]
+        : eventId;
 
       if (!calendarId) {
         consola.error("GoogleCalendarService: calendarId is required");
@@ -286,7 +308,9 @@ export class GoogleCalendarService implements CalendarIntegrationService {
 
   async deleteEvent(eventId: string, calendarId?: string): Promise<void> {
     try {
-      const baseEventId = eventId.includes("-") ? eventId.split("-")[0] : eventId;
+      const baseEventId = eventId.includes("-")
+        ? eventId.split("-")[0]
+        : eventId;
 
       await $fetch(`/api/integrations/google_calendar/events/${baseEventId}`, {
         method: "DELETE",
@@ -302,16 +326,22 @@ export class GoogleCalendarService implements CalendarIntegrationService {
     }
   }
 
-  async addEvent(calendarId: string, eventData: Partial<CalendarEvent>): Promise<CalendarEvent> {
+  async addEvent(
+    calendarId: string,
+    eventData: Partial<CalendarEvent>,
+  ): Promise<CalendarEvent> {
     try {
-      const response = await $fetch<CalendarEvent>(`/api/integrations/google_calendar/events`, {
-        method: "POST",
-        query: {
-          integrationId: this.integrationId,
-          calendarId,
+      const response = await $fetch<CalendarEvent>(
+        `/api/integrations/google_calendar/events`,
+        {
+          method: "POST",
+          query: {
+            integrationId: this.integrationId,
+            calendarId,
+          },
+          body: eventData,
         },
-        body: eventData,
-      });
+      );
 
       return response;
     }
@@ -327,11 +357,7 @@ export function createGoogleCalendarService(
   clientId: string,
   clientSecret: string,
 ): GoogleCalendarService {
-  return new GoogleCalendarService(
-    integrationId,
-    clientId,
-    clientSecret,
-  );
+  return new GoogleCalendarService(integrationId, clientId, clientSecret);
 }
 
 export async function handleGoogleCalendarSave(
@@ -357,7 +383,10 @@ export async function handleGoogleCalendarSave(
   );
 
   const authData = isExisting
-    ? { ...integrationData, integrationId: (integrationData as { id?: string }).id }
+    ? {
+        ...integrationData,
+        integrationId: (integrationData as { id?: string }).id,
+      }
     : integrationData;
 
   await tempService.authenticate(authData);

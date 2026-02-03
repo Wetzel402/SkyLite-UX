@@ -1,31 +1,45 @@
 import type { DateValue } from "@internationalized/date";
-import type { Ref } from "vue";
 
-import { CalendarDate, getLocalTimeZone } from "@internationalized/date";
+import { CalendarDate, getLocalTimeZone, today } from "@internationalized/date";
 import { consola } from "consola";
 import ical from "ical.js";
 
+import type { ParseRecurrenceICalInput, RecurrenceState } from "~/types/recurrence";
+
+import { getBrowserTimezone } from "~/types/global";
+
 import type { ICalEvent } from "../../server/integrations/iCal/types";
 
-export type RecurrenceState = {
-  isRecurring: Ref<boolean>;
-  recurrenceType: Ref<"daily" | "weekly" | "monthly" | "yearly">;
-  recurrenceInterval: Ref<number>;
-  recurrenceEndType: Ref<"never" | "count" | "until">;
-  recurrenceCount: Ref<number>;
-  recurrenceUntil: Ref<DateValue>;
-  recurrenceDays: Ref<number[]>;
-  recurrenceMonthlyType: Ref<"day" | "weekday">;
-  recurrenceMonthlyWeekday: Ref<{ week: number; day: number }>;
-  recurrenceYearlyType: Ref<"day" | "weekday">;
-  recurrenceYearlyWeekday: Ref<{ week: number; day: number; month: number }>;
-};
+function getAppTimezone() {
+  return getBrowserTimezone() ?? getLocalTimeZone();
+}
+
+export function getDefaultDateToday(): CalendarDate {
+  return today(getAppTimezone());
+}
+
+export function getDefaultRecurrenceUntil(
+  startDate: DateValue,
+  recurrenceType: "daily" | "weekly" | "monthly" | "yearly",
+): CalendarDate {
+  const base = new CalendarDate(startDate.year, startDate.month, startDate.day);
+  switch (recurrenceType) {
+    case "daily":
+      return base.add({ days: 6 });
+    case "weekly":
+      return base.add({ weeks: 3 });
+    case "monthly":
+      return base.add({ months: 5 });
+    case "yearly":
+      return base.add({ years: 2 });
+  }
+}
 
 export function useRecurrence() {
   const dayNames = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
   function parseRecurrenceFromICal(
-    icalData: ICalEvent | null,
+    icalData: ParseRecurrenceICalInput | null,
     state: RecurrenceState,
   ): void {
     if (!icalData || icalData.type !== "VEVENT") {
@@ -40,17 +54,25 @@ export function useRecurrence() {
 
         const freq = rrule.freq?.toLowerCase();
         if (freq && ["daily", "weekly", "monthly", "yearly"].includes(freq)) {
-          state.recurrenceType.value = freq as "daily" | "weekly" | "monthly" | "yearly";
+          state.recurrenceType.value = freq as
+          | "daily"
+          | "weekly"
+          | "monthly"
+          | "yearly";
         }
 
         state.recurrenceInterval.value = rrule.interval || 1;
 
         if (state.recurrenceType.value === "weekly" && rrule.byday) {
-          state.recurrenceDays.value = rrule.byday.map((day: string) => dayNames.indexOf(day)).filter((day: number) => day !== -1);
+          state.recurrenceDays.value = rrule.byday
+            .map((day: string) => dayNames.indexOf(day))
+            .filter((day: number) => day !== -1);
         }
 
         if (state.recurrenceType.value === "monthly" && rrule.byday) {
-          const bydayStr = Array.isArray(rrule.byday) ? rrule.byday[0] : rrule.byday;
+          const bydayStr = Array.isArray(rrule.byday)
+            ? rrule.byday[0]
+            : rrule.byday;
           if (bydayStr) {
             const weekMatch = bydayStr.match(/^(-?\d+)([A-Z]{2})$/);
             if (weekMatch) {
@@ -66,8 +88,14 @@ export function useRecurrence() {
           }
         }
 
-        if (state.recurrenceType.value === "yearly" && rrule.byday && rrule.bymonth) {
-          const bydayStr = Array.isArray(rrule.byday) ? rrule.byday[0] : rrule.byday;
+        if (
+          state.recurrenceType.value === "yearly"
+          && rrule.byday
+          && rrule.bymonth
+        ) {
+          const bydayStr = Array.isArray(rrule.byday)
+            ? rrule.byday[0]
+            : rrule.byday;
           if (bydayStr) {
             const weekMatch = bydayStr.match(/^(-?\d+)([A-Z]{2})$/);
             if (weekMatch) {
@@ -77,8 +105,14 @@ export function useRecurrence() {
 
               if (dayIndex !== -1) {
                 state.recurrenceYearlyType.value = "weekday";
-                const month = Array.isArray(rrule.bymonth) ? (rrule.bymonth[0] || 1) - 1 : (rrule.bymonth || 1) - 1;
-                state.recurrenceYearlyWeekday.value = { week, day: dayIndex, month };
+                const month = Array.isArray(rrule.bymonth)
+                  ? (rrule.bymonth[0] || 1) - 1
+                  : (rrule.bymonth || 1) - 1;
+                state.recurrenceYearlyWeekday.value = {
+                  week,
+                  day: dayIndex,
+                  month,
+                };
               }
             }
           }
@@ -124,22 +158,33 @@ export function useRecurrence() {
 
     const rruleObj: ICalEvent["rrule"] = {
       freq: state.recurrenceType.value.toUpperCase(),
-      ...(state.recurrenceInterval.value > 1 && { interval: state.recurrenceInterval.value }),
+      ...(state.recurrenceInterval.value > 1 && {
+        interval: state.recurrenceInterval.value,
+      }),
     };
 
-    if (state.recurrenceType.value === "weekly" && state.recurrenceDays.value.length > 0) {
+    if (
+      state.recurrenceType.value === "weekly"
+      && state.recurrenceDays.value.length > 0
+    ) {
       rruleObj.byday = state.recurrenceDays.value
         .map(day => dayNames[day] || "SU")
         .filter((day): day is string => Boolean(day));
     }
 
-    if (state.recurrenceType.value === "monthly" && state.recurrenceMonthlyType.value === "weekday") {
+    if (
+      state.recurrenceType.value === "monthly"
+      && state.recurrenceMonthlyType.value === "weekday"
+    ) {
       const week = state.recurrenceMonthlyWeekday.value.week;
       const day = dayNames[state.recurrenceMonthlyWeekday.value.day];
       rruleObj.byday = [`${week}${day}`];
     }
 
-    if (state.recurrenceType.value === "yearly" && state.recurrenceYearlyType.value === "weekday") {
+    if (
+      state.recurrenceType.value === "yearly"
+      && state.recurrenceYearlyType.value === "weekday"
+    ) {
       const week = state.recurrenceYearlyWeekday.value.week;
       const day = dayNames[state.recurrenceYearlyWeekday.value.day];
       const month = state.recurrenceYearlyWeekday.value.month + 1;
@@ -150,7 +195,10 @@ export function useRecurrence() {
     if (state.recurrenceEndType.value === "count") {
       rruleObj.count = state.recurrenceCount.value;
     }
-    else if (state.recurrenceEndType.value === "until" && state.recurrenceUntil.value) {
+    else if (
+      state.recurrenceEndType.value === "until"
+      && state.recurrenceUntil.value
+    ) {
       const untilDate = state.recurrenceUntil.value.toDate(getLocalTimeZone());
       if (untilDate) {
         const endOfDay = new Date(untilDate);
@@ -169,7 +217,7 @@ export function useRecurrence() {
     state.recurrenceInterval.value = 1;
     state.recurrenceEndType.value = "never";
     state.recurrenceCount.value = 10;
-    state.recurrenceUntil.value = new CalendarDate(2025, 12, 31);
+    state.recurrenceUntil.value = getDefaultDateToday();
     state.recurrenceDays.value = [];
     state.recurrenceMonthlyType.value = "day";
     state.recurrenceMonthlyWeekday.value = { week: 1, day: 1 };
@@ -194,9 +242,8 @@ export function useRecurrence() {
 
     const firstDay = sortedDays[0] ?? startDay;
     if (startDay !== firstDay) {
-      const daysToAdd = firstDay >= startDay
-        ? firstDay - startDay
-        : 7 - startDay + firstDay;
+      const daysToAdd
+        = firstDay >= startDay ? firstDay - startDay : 7 - startDay + firstDay;
 
       return new Date(start.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
     }

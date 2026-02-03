@@ -4,17 +4,26 @@ import { consola } from "consola";
 import { format } from "date-fns";
 import ical from "ical.js";
 
-import type { CalendarEvent, PlaceholderEvent, SourceCalendar } from "~/types/calendar";
+import type {
+  CalendarEvent,
+  PlaceholderEvent,
+  SourceCalendar,
+} from "~/types/calendar";
 import type { Integration } from "~/types/database";
 import type { CalendarConfig } from "~/types/integrations";
 
 import { useStableDate } from "~/composables/useStableDate";
 import { useSyncManager } from "~/composables/useSyncManager";
-import { DEFAULT_LOCAL_EVENT_COLOR, getBrowserTimezone, isTimezoneRegistered } from "~/types/global";
+import {
+  DEFAULT_LOCAL_EVENT_COLOR,
+  getBrowserTimezone,
+  isTimezoneRegistered,
+} from "~/types/global";
 import { integrationRegistry } from "~/types/integrations";
 
 export function useCalendar() {
-  const { data: nativeEvents } = useNuxtData<CalendarEvent[]>("calendar-events");
+  const { data: nativeEvents }
+    = useNuxtData<CalendarEvent[]>("calendar-events");
 
   const { integrations } = useIntegrations();
   const { users } = useUsers();
@@ -54,7 +63,11 @@ export function useCalendar() {
     return ical.Time.fromJSDate(date, isUTC);
   }
 
-  function isSameLocalDay(a: Date, b: Date, isAllDay: boolean = false): boolean {
+  function isSameLocalDay(
+    a: Date,
+    b: Date,
+    isAllDay: boolean = false,
+  ): boolean {
     if (isAllDay) {
       return isSameUtcDay(a, b);
     }
@@ -73,17 +86,27 @@ export function useCalendar() {
       const localA = timeA.convertToZone(timezone);
       const localB = timeB.convertToZone(timezone);
 
-      return localA.year === localB.year
+      return (
+        localA.year === localB.year
         && localA.month === localB.month
-        && localA.day === localB.day;
+        && localA.day === localB.day
+      );
     }
     catch (error) {
-      consola.debug("Use Calendar: ical.js comparison failed, using UTC fallback:", error);
+      consola.debug(
+        "Use Calendar: ical.js comparison failed, using UTC fallback:",
+        error,
+      );
       return isSameUtcDay(a, b);
     }
   }
 
-  function isLocalDayInRange(day: Date, start: Date, end: Date, isAllDay: boolean = false): boolean {
+  function isLocalDayInRange(
+    day: Date,
+    start: Date,
+    end: Date,
+    isAllDay: boolean = false,
+  ): boolean {
     if (isAllDay) {
       return day.getTime() >= start.getTime() && day.getTime() < end.getTime();
     }
@@ -93,7 +116,9 @@ export function useCalendar() {
       const timezone = ical.TimezoneService.get(browserTimezone);
 
       if (!timezone) {
-        return day.getTime() >= start.getTime() && day.getTime() < end.getTime();
+        return (
+          day.getTime() >= start.getTime() && day.getTime() < end.getTime()
+        );
       }
 
       const timeDay = createICalTime(day, true);
@@ -104,15 +129,32 @@ export function useCalendar() {
       const localStart = timeStart.convertToZone(timezone);
       const localEnd = timeEnd.convertToZone(timezone);
 
-      const dayMidnight = new Date(localDay.year, localDay.month - 1, localDay.day);
-      const startMidnight = new Date(localStart.year, localStart.month - 1, localStart.day);
-      const endMidnight = new Date(localEnd.year, localEnd.month - 1, localEnd.day);
+      const dayMidnight = new Date(
+        localDay.year,
+        localDay.month - 1,
+        localDay.day,
+      );
+      const startMidnight = new Date(
+        localStart.year,
+        localStart.month - 1,
+        localStart.day,
+      );
+      const endMidnight = new Date(
+        localEnd.year,
+        localEnd.month - 1,
+        localEnd.day,
+      );
 
-      return dayMidnight.getTime() >= startMidnight.getTime()
-        && dayMidnight.getTime() <= endMidnight.getTime();
+      return (
+        dayMidnight.getTime() >= startMidnight.getTime()
+        && dayMidnight.getTime() <= endMidnight.getTime()
+      );
     }
     catch (error) {
-      consola.debug("Use Calendar: ical.js comparison failed, using UTC fallback:", error);
+      consola.debug(
+        "Use Calendar: ical.js comparison failed, using UTC fallback:",
+        error,
+      );
       return day.getTime() >= start.getTime() && day.getTime() <= end.getTime();
     }
   }
@@ -137,8 +179,16 @@ export function useCalendar() {
 
   function getLocalMonthWeeks(date: Date): Date[][] {
     const localDate = getLocalTimeFromUTC(date);
-    const firstDayOfMonth = new Date(localDate.getFullYear(), localDate.getMonth(), 1);
-    const lastDayOfMonth = new Date(localDate.getFullYear(), localDate.getMonth() + 1, 0);
+    const firstDayOfMonth = new Date(
+      localDate.getFullYear(),
+      localDate.getMonth(),
+      1,
+    );
+    const lastDayOfMonth = new Date(
+      localDate.getFullYear(),
+      localDate.getMonth() + 1,
+      0,
+    );
 
     const startDate = parseStableDate(new Date(firstDayOfMonth.getTime()));
     const dayOfWeek = startDate.getDay();
@@ -149,7 +199,10 @@ export function useCalendar() {
     endDate.setDate(endDate.getDate() + (6 - endDayOfWeek));
 
     const weeks: Date[][] = [];
-    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const totalDays
+      = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1;
 
     for (let dayIndex = 0; dayIndex < totalDays; dayIndex += 7) {
       const week: Date[] = [];
@@ -193,7 +246,14 @@ export function useCalendar() {
 
         const localTime = utcTime.convertToZone(timezone);
 
-        const result = new Date(localTime.year, localTime.month - 1, localTime.day, localTime.hour, localTime.minute, localTime.second);
+        const result = new Date(
+          localTime.year,
+          localTime.month - 1,
+          localTime.day,
+          localTime.hour,
+          localTime.minute,
+          localTime.second,
+        );
 
         return result;
       }
@@ -201,29 +261,44 @@ export function useCalendar() {
       return new Date(utcDate.getTime());
     }
     catch (error) {
-      consola.warn("Use Calendar: ical.js timezone conversion failed, using fallback:", error);
+      consola.warn(
+        "Use Calendar: ical.js timezone conversion failed, using fallback:",
+        error,
+      );
       return new Date(utcDate.getTime());
     }
   }
 
-  function getLocalTimeString(utcDate: Date, options?: Intl.DateTimeFormatOptions): string {
+  function getLocalTimeString(
+    utcDate: Date,
+    options?: Intl.DateTimeFormatOptions,
+  ): string {
     const localDate = getLocalTimeFromUTC(utcDate);
     const defaultOptions: Intl.DateTimeFormatOptions = {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     };
-    return localDate.toLocaleTimeString("en-US", { ...defaultOptions, ...options });
+    return localDate.toLocaleTimeString("en-US", {
+      ...defaultOptions,
+      ...options,
+    });
   }
 
-  function getLocalDateString(utcDate: Date, options?: Intl.DateTimeFormatOptions): string {
+  function getLocalDateString(
+    utcDate: Date,
+    options?: Intl.DateTimeFormatOptions,
+  ): string {
     const localDate = getLocalTimeFromUTC(utcDate);
     const defaultOptions: Intl.DateTimeFormatOptions = {
       year: "numeric",
       month: "short",
       day: "numeric",
     };
-    return localDate.toLocaleDateString("en-US", { ...defaultOptions, ...options });
+    return localDate.toLocaleDateString("en-US", {
+      ...defaultOptions,
+      ...options,
+    });
   }
 
   function getEventDisplayTime(event: CalendarEvent): {
@@ -315,7 +390,11 @@ export function useCalendar() {
     }
   }
 
-  function createLocalDateTime(dateValue: DateValue, timeString: string, timezone: string): Date {
+  function createLocalDateTime(
+    dateValue: DateValue,
+    timeString: string,
+    timezone: string,
+  ): Date {
     const [hours = 0, minutes = 0] = timeString.split(":").map(Number);
     const localDate = dateValue.toDate(timezone);
     localDate.setHours(hours, minutes, 0, 0);
@@ -341,12 +420,14 @@ export function useCalendar() {
     eventColorParam?: string,
     userColorParam?: string,
   ): SourceCalendar[] {
-    const config = integrationRegistry.get(`${integration.type}:${integration.service}`);
+    const config = integrationRegistry.get(
+      `${integration.type}:${integration.service}`,
+    );
     const capabilities = config?.capabilities || [];
     const hasEditEvents = capabilities.includes("edit_events");
     const supportsSelectCalendars = capabilities.includes("select_calendars");
     const calendars = Array.isArray(integration.settings?.calendars)
-      ? integration.settings?.calendars as CalendarConfig[]
+      ? (integration.settings?.calendars as CalendarConfig[])
       : [];
 
     let eventColor: string;
@@ -359,117 +440,157 @@ export function useCalendar() {
       if (userColor === undefined && calendarConfig?.user) {
         const userIds = calendarConfig.user;
         if (Array.isArray(userIds) && userIds.length > 0) {
-          const user = users.value?.find(u => userIds.includes(u.id) && u.color !== null && u.color !== undefined);
+          const user = users.value?.find(
+            u =>
+              userIds.includes(u.id)
+              && u.color !== null
+              && u.color !== undefined,
+          );
           userColor = user?.color || undefined;
         }
       }
 
       if (calendarConfig) {
-        const accessRole = hasEditEvents && calendarConfig.accessRole === "write" ? "write" : "read";
-        return [{
+        const accessRole
+          = hasEditEvents && calendarConfig.accessRole === "write"
+            ? "write"
+            : "read";
+        return [
+          {
+            integrationId: integration.id,
+            integrationName: integration.name || integration.service,
+            calendarId: calendarConfig.id,
+            calendarName: calendarConfig.name,
+            accessRole,
+            canEdit: accessRole === "write",
+            eventColor,
+            userColor,
+            eventId: event.id,
+          },
+        ];
+      }
+
+      return [
+        {
           integrationId: integration.id,
           integrationName: integration.name || integration.service,
-          calendarId: calendarConfig.id,
-          calendarName: calendarConfig.name,
-          accessRole,
-          canEdit: accessRole === "write",
+          calendarId: event.calendarId || integration.id,
+          calendarName: event.calendarId,
+          accessRole: "read",
+          canEdit: false,
           eventColor,
           userColor,
           eventId: event.id,
-        }];
-      }
-
-      return [{
-        integrationId: integration.id,
-        integrationName: integration.name || integration.service,
-        calendarId: event.calendarId || integration.id,
-        calendarName: event.calendarId,
-        accessRole: "read",
-        canEdit: false,
-        eventColor,
-        userColor,
-        eventId: event.id,
-      }];
+        },
+      ];
     }
 
-    eventColor = eventColorParam || integration.settings?.eventColor as string || "#06b6d4";
+    eventColor
+      = eventColorParam
+        || (integration.settings?.eventColor as string)
+        || "#06b6d4";
 
     if (userColor === undefined) {
       const userIds = integration.settings?.user as string[] | undefined;
       if (Array.isArray(userIds) && userIds.length > 0) {
-        const user = users.value?.find(u => userIds.includes(u.id) && u.color !== null && u.color !== undefined);
+        const user = users.value?.find(
+          u =>
+            userIds.includes(u.id) && u.color !== null && u.color !== undefined,
+        );
         userColor = user?.color || undefined;
       }
     }
 
     const accessRole = hasEditEvents ? "write" : "read";
-    return [{
-      integrationId: integration.id,
-      integrationName: integration.name || integration.service,
-      calendarId: event.calendarId || integration.id,
-      calendarName: event.calendarId,
-      accessRole,
-      canEdit: hasEditEvents,
-      eventColor,
-      userColor,
-      eventId: event.id,
-    }];
+    return [
+      {
+        integrationId: integration.id,
+        integrationName: integration.name || integration.service,
+        calendarId: event.calendarId || integration.id,
+        calendarName: event.calendarId,
+        accessRole,
+        canEdit: hasEditEvents,
+        eventColor,
+        userColor,
+        eventId: event.id,
+      },
+    ];
   }
 
   function mapLocalEventSourceCalendar(event: CalendarEvent): SourceCalendar[] {
     const userColors = event.users
-      ? [...new Set(event.users.map(u => u.color).filter((c): c is string => c !== null && c !== undefined))]
+      ? [
+          ...new Set(
+            event.users
+              .map(u => u.color)
+              .filter((c): c is string => c !== null && c !== undefined),
+          ),
+        ]
       : [];
 
-    return [{
-      integrationId: "",
-      integrationName: "Local Calendar",
-      calendarId: "local",
-      calendarName: "Local Calendar",
-      accessRole: "write",
-      canEdit: true,
-      eventId: event.id,
-      eventColor: DEFAULT_LOCAL_EVENT_COLOR,
-      userColor: userColors.length > 0 ? userColors : undefined,
-    }];
+    return [
+      {
+        integrationId: "",
+        integrationName: "Local Calendar",
+        calendarId: "local",
+        calendarName: "Local Calendar",
+        accessRole: "write",
+        canEdit: true,
+        eventId: event.id,
+        eventColor: DEFAULT_LOCAL_EVENT_COLOR,
+        userColor: userColors.length > 0 ? userColors : undefined,
+      },
+    ];
   }
 
   const allEvents = computed(() => {
     const events: CalendarEvent[] = [];
 
     if (nativeEvents.value) {
-      const processedLocalEvents = nativeEvents.value.map((event: CalendarEvent) => {
-        const sourceCalendars = mapLocalEventSourceCalendar(event);
+      const processedLocalEvents = nativeEvents.value.map(
+        (event: CalendarEvent) => {
+          const sourceCalendars = mapLocalEventSourceCalendar(event);
 
-        const processedEvent: CalendarEvent = {
-          ...event,
-          sourceCalendars,
-          color: getCombinedEventColors({ ...event, sourceCalendars }),
-        };
+          const processedEvent: CalendarEvent = {
+            ...event,
+            sourceCalendars,
+            color: getCombinedEventColors({ ...event, sourceCalendars }),
+          };
 
-        return processedEvent;
-      });
+          return processedEvent;
+        },
+      );
       events.push(...processedLocalEvents);
     }
 
-    const calendarIntegrations = (integrations.value as readonly Integration[] || []).filter(integration =>
-      integration.type === "calendar" && integration.enabled,
+    const calendarIntegrations = (
+      (integrations.value as readonly Integration[]) || []
+    ).filter(
+      integration => integration.type === "calendar" && integration.enabled,
     );
 
     calendarIntegrations.forEach((integration) => {
       try {
-        const integrationEvents = getCachedIntegrationData("calendar", integration.id) as CalendarEvent[];
+        const integrationEvents = getCachedIntegrationData(
+          "calendar",
+          integration.id,
+        ) as CalendarEvent[];
 
         if (integrationEvents && Array.isArray(integrationEvents)) {
-          const processedEvents = integrationEvents.map((event: CalendarEvent) => ({
-            ...event,
-            sourceCalendars: mapSourceCalendars(integration, event),
-          }));
+          const processedEvents = integrationEvents.map(
+            (event: CalendarEvent) => ({
+              ...event,
+              sourceCalendars: mapSourceCalendars(integration, event),
+            }),
+          );
           events.push(...processedEvents);
         }
       }
       catch (error) {
-        consola.warn(`Use Calendar: Failed to get calendar events for integration ${integration.id}:`, error);
+        consola.warn(
+          `Use Calendar: Failed to get calendar events for integration ${integration.id}:`,
+          error,
+        );
       }
     });
 
@@ -495,11 +616,17 @@ export function useCalendar() {
 
   const getIntegrationEvents = (integrationId: string): CalendarEvent[] => {
     try {
-      const events = getCachedIntegrationData("calendar", integrationId) as CalendarEvent[];
+      const events = getCachedIntegrationData(
+        "calendar",
+        integrationId,
+      ) as CalendarEvent[];
       return events && Array.isArray(events) ? events : [];
     }
     catch (error) {
-      consola.warn(`Use Calendar: Failed to get events for integration ${integrationId}:`, error);
+      consola.warn(
+        `Use Calendar: Failed to get events for integration ${integrationId}:`,
+        error,
+      );
       return [];
     }
   };
@@ -510,7 +637,10 @@ export function useCalendar() {
       eventColor: string;
       useUserColors?: boolean;
       defaultColor: string;
-    } = { eventColor: DEFAULT_LOCAL_EVENT_COLOR, defaultColor: DEFAULT_LOCAL_EVENT_COLOR },
+    } = {
+      eventColor: DEFAULT_LOCAL_EVENT_COLOR,
+      defaultColor: DEFAULT_LOCAL_EVENT_COLOR,
+    },
   ): string | string[] {
     const { eventColor, useUserColors = true, defaultColor } = options;
 
@@ -533,7 +663,10 @@ export function useCalendar() {
       return event.color;
     }
 
-    const result = (typeof event.color === "string" ? event.color : null) || eventColor || defaultColor;
+    const result
+      = (typeof event.color === "string" ? event.color : null)
+        || eventColor
+        || defaultColor;
     return result;
   }
 
@@ -619,12 +752,18 @@ export function useCalendar() {
       if (eventMap.has(key)) {
         const existingEvent = eventMap.get(key)!;
 
-        const existingUserIds = new Set(existingEvent.users?.map(u => u.id) || []);
-        const newUsers = event.users?.filter(u => !existingUserIds.has(u.id)) || [];
+        const existingUserIds = new Set(
+          existingEvent.users?.map(u => u.id) || [],
+        );
+        const newUsers
+          = event.users?.filter(u => !existingUserIds.has(u.id)) || [];
         const allUsers = [...(existingEvent.users || []), ...newUsers];
         existingEvent.users = allUsers.sort((a, b) => a.id.localeCompare(b.id));
 
-        existingEvent.sourceCalendars = mergeSourceCalendars(existingEvent.sourceCalendars, event.sourceCalendars);
+        existingEvent.sourceCalendars = mergeSourceCalendars(
+          existingEvent.sourceCalendars,
+          event.sourceCalendars,
+        );
 
         existingEvent.color = getCombinedEventColors(existingEvent);
       }
@@ -695,7 +834,9 @@ export function useCalendar() {
   }
 
   function getAverageTextColor(colors: string[]): string {
-    const validColors = colors.filter(c => /^#(?:[0-9A-F]{3}){1,2}$/i.test(c));
+    const validColors = colors.filter(c =>
+      /^#(?:[0-9A-F]{3}){1,2}$/i.test(c),
+    );
     if (validColors.length === 0)
       return "white";
 
@@ -721,17 +862,32 @@ export function useCalendar() {
       if (color.length > 1) {
         let colorStops: string;
 
-        if (spanningInfo && spanningInfo.event && spanningInfo.currentDay
-          && !(spanningInfo.isFirstDay === true && spanningInfo.isLastDay === true)) {
+        if (
+          spanningInfo
+          && spanningInfo.event
+          && spanningInfo.currentDay
+          && !(spanningInfo.isFirstDay === true && spanningInfo.isLastDay === true)
+        ) {
           const eventStart = parseStableDate(spanningInfo.event.start);
           const eventEnd = parseStableDate(spanningInfo.event.end);
 
-          const totalDays = Math.floor((eventEnd.getTime() - eventStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          const dayDiff = Math.floor((spanningInfo.currentDay.getTime() - eventStart.getTime()) / (1000 * 60 * 60 * 24));
+          const totalDays
+            = Math.floor(
+              (eventEnd.getTime() - eventStart.getTime())
+              / (1000 * 60 * 60 * 24),
+            ) + 1;
+          const dayDiff = Math.floor(
+            (spanningInfo.currentDay.getTime() - eventStart.getTime())
+            / (1000 * 60 * 60 * 24),
+          );
 
           const daysPerColor = totalDays / color.length;
 
-          const visibleColors: Array<{ color: string; start: number; end: number }> = [];
+          const visibleColors: Array<{
+            color: string;
+            start: number;
+            end: number;
+          }> = [];
 
           if (totalDays === color.length) {
             const currentColor = color[dayDiff];
@@ -780,25 +936,34 @@ export function useCalendar() {
           }
 
           const reversedColors = visibleColors.reverse();
-          colorStops = reversedColors.map(({ color: c, start, end }) => {
-            const lightenedColor = /^#(?:[0-9A-F]{3}){1,2}$/i.test(c) ? lightenColor(c, 0.4) : c;
-            const flippedStart = 100 - end;
-            const flippedEnd = 100 - start;
-            return `${lightenedColor} ${flippedStart}%, ${lightenedColor} ${flippedEnd}%`;
-          }).join(", ");
+          colorStops = reversedColors
+            .map(({ color: c, start, end }) => {
+              const lightenedColor = /^#(?:[0-9A-F]{3}){1,2}$/i.test(c)
+                ? lightenColor(c, 0.4)
+                : c;
+              const flippedStart = 100 - end;
+              const flippedEnd = 100 - start;
+              return `${lightenedColor} ${flippedStart}%, ${lightenedColor} ${flippedEnd}%`;
+            })
+            .join(", ");
         }
         else {
           const stripeWidth = 100 / color.length;
-          colorStops = color.map((c, index) => {
-            const start = index * stripeWidth;
-            const end = (index + 1) * stripeWidth;
-            const lightenedColor = /^#(?:[0-9A-F]{3}){1,2}$/i.test(c) ? lightenColor(c, 0.4) : c;
-            return `${lightenedColor} ${start}%, ${lightenedColor} ${end}%`;
-          }).join(", ");
+          colorStops = color
+            .map((c, index) => {
+              const start = index * stripeWidth;
+              const end = (index + 1) * stripeWidth;
+              const lightenedColor = /^#(?:[0-9A-F]{3}){1,2}$/i.test(c)
+                ? lightenColor(c, 0.4)
+                : c;
+              return `${lightenedColor} ${start}%, ${lightenedColor} ${end}%`;
+            })
+            .join(", ");
         }
 
         const textColor = getAverageTextColor(color);
-        const shadowColor = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
+        const shadowColor
+          = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
 
         const result = {
           style: `background: linear-gradient(-45deg, ${colorStops}); color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};`,
@@ -811,8 +976,11 @@ export function useCalendar() {
         if (singleColor && /^#(?:[0-9A-F]{3}){1,2}$/i.test(singleColor)) {
           const lightenedColor = lightenColor(singleColor, 0.4);
           const textColor = getTextColor(lightenedColor);
-          const shadowColor = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
-          return { style: `background-color: ${lightenedColor}; color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};` };
+          const shadowColor
+            = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
+          return {
+            style: `background-color: ${lightenedColor}; color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};`,
+          };
         }
       }
     }
@@ -820,8 +988,11 @@ export function useCalendar() {
     if (typeof color === "string" && /^#(?:[0-9A-F]{3}){1,2}$/i.test(color)) {
       const lightenedColor = lightenColor(color, 0.4);
       const textColor = getTextColor(lightenedColor);
-      const shadowColor = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
-      return { style: `background-color: ${lightenedColor}; color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};` };
+      const shadowColor
+        = textColor === "black" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
+      return {
+        style: `background-color: ${lightenedColor}; color: ${textColor}; text-shadow: 0 1px 2px ${shadowColor};`,
+      };
     }
 
     return "bg-secondary/20 hover:bg-secondary/30 text-elevated shadow-elevated/8 backdrop-blur-[2px]";
@@ -841,12 +1012,15 @@ export function useCalendar() {
 
   function scrollToDate(date: Date, view: "month" | "week" | "day" | "agenda") {
     if (view === "month") {
-      const dateElement = document.querySelector(`[data-date="${format(date, "yyyy-MM-dd")}"]`);
+      const dateElement = document.querySelector(
+        `[data-date="${format(date, "yyyy-MM-dd")}"]`,
+      );
       if (dateElement) {
         const headerHeight = 80;
         const padding = 20;
         const elementPosition = dateElement.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerHeight - padding;
+        const offsetPosition
+          = elementPosition + window.pageYOffset - headerHeight - padding;
 
         window.scrollTo({
           top: offsetPosition,
@@ -864,7 +1038,10 @@ export function useCalendar() {
         if (scrollableContainer) {
           const containerRect = scrollableContainer.getBoundingClientRect();
           const elementRect = dateElement.getBoundingClientRect();
-          const scrollTop = scrollableContainer.scrollTop + (elementRect.top - containerRect.top) - 20;
+          const scrollTop
+            = scrollableContainer.scrollTop
+              + (elementRect.top - containerRect.top)
+              - 20;
 
           scrollableContainer.scrollTo({
             top: scrollTop,
@@ -875,7 +1052,10 @@ export function useCalendar() {
     }
   }
 
-  function computedEventHeight(view: "month" | "week" | "day", customHeight?: number) {
+  function computedEventHeight(
+    view: "month" | "week" | "day",
+    customHeight?: number,
+  ) {
     const defaultHeights = {
       month: 40,
       week: 64,
@@ -889,7 +1069,10 @@ export function useCalendar() {
     return isSameUtcDay(date, selectedDate);
   }
 
-  function handleDateSelect(date: Date, emit: (event: "dateSelect", date: Date) => void) {
+  function handleDateSelect(
+    date: Date,
+    emit: (event: "dateSelect", date: Date) => void,
+  ) {
     emit("dateSelect", date);
   }
 
@@ -897,7 +1080,10 @@ export function useCalendar() {
     return getLocalMonthWeeks(currentDate);
   }
 
-  function getAgendaEventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
+  function getAgendaEventsForDay(
+    events: CalendarEvent[],
+    day: Date,
+  ): CalendarEvent[] {
     return events
       .filter((event) => {
         const eventStart = parseStableDate(event.start);
@@ -915,13 +1101,21 @@ export function useCalendar() {
       });
   }
 
-  function getAllEventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
+  function getAllEventsForDay(
+    events: CalendarEvent[],
+    day: Date,
+  ): CalendarEvent[] {
     const result = events.filter((event) => {
       const eventStart = parseStableDate(event.start);
       const eventEnd = parseStableDate(event.end);
 
       const isSameStart = isSameLocalDay(day, eventStart, event.allDay);
-      const isInRange = isLocalDayInRange(day, eventStart, eventEnd, event.allDay);
+      const isInRange = isLocalDayInRange(
+        day,
+        eventStart,
+        eventEnd,
+        event.allDay,
+      );
 
       return isSameStart || isInRange;
     });
@@ -943,7 +1137,10 @@ export function useCalendar() {
   }
 
   function isPlaceholderEvent(event: CalendarEvent): boolean {
-    return event.id.startsWith("__placeholder_") || (event as PlaceholderEvent).isPlaceholder === true;
+    return (
+      event.id.startsWith("__placeholder_")
+      || (event as PlaceholderEvent).isPlaceholder === true
+    );
   }
 
   function createPlaceholderEvent(position: number): PlaceholderEvent {
@@ -960,7 +1157,9 @@ export function useCalendar() {
 
   function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
     return [...events].sort((a, b) => {
-      return parseStableDate(a.start).getTime() - parseStableDate(b.start).getTime();
+      return (
+        parseStableDate(a.start).getTime() - parseStableDate(b.start).getTime()
+      );
     });
   }
 

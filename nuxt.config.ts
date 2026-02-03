@@ -17,7 +17,12 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ["@nuxt/ui", "@nuxt/eslint", "@nuxtjs/html-validator"],
+  modules: [
+    "@nuxt/ui",
+    "@nuxt/eslint",
+    "@nuxtjs/html-validator",
+    "@nuxt/test-utils/module",
+  ],
 
   components: {
     dirs: [
@@ -26,7 +31,11 @@ export default defineNuxtConfig({
         pathPrefix: false,
         // work around to fix global components not being in their own chunk
         // /app/app/components/global/globalAppLoading.vue is dynamically imported by /app/app/components/global/globalAppLoading.vue?nuxt_component=async&nuxt_component_name=GlobalAppLoading&nuxt_component_export=default but also statically imported by /app/app/app.vue?vue&type=script&setup=true&lang.ts, dynamic import will not move module into another chunk.
-        ignore: ["**/global/globalAppLoading.vue", "**/global/globalSideBar.vue", "**/global/globalDock.vue"],
+        ignore: [
+          "**/global/globalAppLoading.vue",
+          "**/global/globalSideBar.vue",
+          "**/global/globalDock.vue",
+        ],
       },
     ],
   },
@@ -44,10 +53,7 @@ export default defineNuxtConfig({
     logLevel: "warning",
     failOnError: false,
     options: {
-      extends: [
-        "html-validate:document",
-        "html-validate:recommended",
-      ],
+      extends: ["html-validate:document", "html-validate:recommended"],
       rules: {
         "no-unknown-elements": "error",
         "element-permitted-content": "error",
@@ -77,10 +83,7 @@ export default defineNuxtConfig({
 
   vite: {
     optimizeDeps: {
-      include: [
-        "date-fns",
-        "@internationalized/date",
-      ],
+      include: ["date-fns", "@internationalized/date"],
     },
   },
 

@@ -1,6 +1,18 @@
 import { consola } from "consola";
 
-import type { CreateTodoInput, TodoWithOrder, UpdateTodoInput } from "~/types/database";
+import type {
+  CreateTodoInput,
+  TodoWithOrder,
+  UpdateTodoInput,
+} from "~/types/database";
+
+function getClientDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}T00:00:00`;
+}
 
 export function useTodos() {
   const loading = ref(false);
@@ -15,7 +27,7 @@ export function useTodos() {
     error.value = null;
     try {
       await refreshNuxtData("todos");
-      consola.debug ("Use Todos: Todos refreshed successfully");
+      consola.debug("Use Todos: Todos refreshed successfully");
       return currentTodos.value;
     }
     catch (err) {
@@ -30,9 +42,16 @@ export function useTodos() {
 
   const createTodo = async (todoData: CreateTodoInput) => {
     try {
+      const clientDate = getClientDateString();
+
+      const requestBody = {
+        ...todoData,
+        clientDate,
+      };
+
       const newTodo = await $fetch<TodoWithOrder>("/api/todos", {
         method: "POST",
-        body: todoData,
+        body: requestBody,
       });
 
       await refreshNuxtData("todos");
@@ -48,9 +67,14 @@ export function useTodos() {
 
   const updateTodo = async (id: string, updates: UpdateTodoInput) => {
     try {
+      const clientDate = getClientDateString();
+
       const updatedTodo = await $fetch<TodoWithOrder>(`/api/todos/${id}`, {
         method: "PUT",
-        body: updates,
+        body: {
+          ...updates,
+          clientDate,
+        },
       });
 
       await refreshNuxtData("todos");
@@ -68,14 +92,21 @@ export function useTodos() {
     return updateTodo(id, { completed });
   };
 
-  const deleteTodo = async (id: string) => {
+  const deleteTodo = async (id: string, stopRecurrence = false) => {
     try {
-      const response = await fetch(`/api/todos/${id}`, {
+      const clientDate = getClientDateString();
+
+      const params = new URLSearchParams();
+      if (stopRecurrence) {
+        params.append("stopRecurrence", "true");
+      }
+      params.append("clientDate", clientDate);
+
+      const url = `/api/todos/${id}?${params.toString()}`;
+
+      await $fetch(url, {
         method: "DELETE",
       });
-      if (!response.ok) {
-        throw new Error("Failed to delete todo");
-      }
 
       await refreshNuxtData("todos");
     }
@@ -86,16 +117,21 @@ export function useTodos() {
     }
   };
 
-  const reorderTodo = async (todoId: string, direction: "up" | "down", todoColumnId: string | null) => {
+  const reorderTodo = async (
+    todoId: string,
+    direction: "up" | "down",
+    todoColumnId: string | null,
+  ) => {
     try {
       const currentTodo = currentTodos.value.find(t => t.id === todoId);
       if (!currentTodo)
         return;
 
       const sameSectionTodos = currentTodos.value
-        .filter(t =>
-          t.todoColumnId === todoColumnId
-          && t.completed === currentTodo.completed,
+        .filter(
+          t =>
+            t.todoColumnId === todoColumnId
+            && t.completed === currentTodo.completed,
         )
         .sort((a, b) => (a.order || 0) - (b.order || 0));
 
@@ -107,7 +143,10 @@ export function useTodos() {
       if (direction === "up" && currentIndex > 0) {
         targetIndex = currentIndex - 1;
       }
-      else if (direction === "down" && currentIndex < sameSectionTodos.length - 1) {
+      else if (
+        direction === "down"
+        && currentIndex < sameSectionTodos.length - 1
+      ) {
         targetIndex = currentIndex + 1;
       }
       else {
@@ -132,7 +171,10 @@ export function useTodos() {
     }
   };
 
-  const clearCompleted = async (columnId: string, completedTodos?: TodoWithOrder[]) => {
+  const clearCompleted = async (
+    columnId: string,
+    completedTodos?: TodoWithOrder[],
+  ) => {
     try {
       let todosToDelete: TodoWithOrder[] = [];
 
@@ -140,7 +182,9 @@ export function useTodos() {
         todosToDelete = completedTodos;
       }
       else {
-        todosToDelete = currentTodos.value.filter(t => t.todoColumnId === columnId && t.completed);
+        todosToDelete = currentTodos.value.filter(
+          t => t.todoColumnId === columnId && t.completed,
+        );
       }
 
       if (todosToDelete.length === 0)

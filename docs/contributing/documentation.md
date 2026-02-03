@@ -24,7 +24,7 @@ Alternatively, you can run the command directly from the `docs/` directory:
 cd docs && bundle exec jekyll serve --host 0.0.0.0
 ```
 
-The `--host 0.0.0.0` flag is important in the dev container so that the server is accessible from outside the container. The documentation site will be available at `http://localhost:4000/SkyLite-UX/` (port forwarding should be configured automatically). Jekyll will automatically regenerate the site when you make changes to Markdown files.
+The `--host 0.0.0.0` flag is important in the dev container so that the server is accessible from outside the container. The documentation site will be available at `http://localhost:4000/Skylite-UX/` (port forwarding should be configured automatically). Jekyll will automatically regenerate the site when you make changes to Markdown files.
 
 ## Making Changes
 

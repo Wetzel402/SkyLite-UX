@@ -3,6 +3,10 @@ import { defineEventHandler, readBody } from "h3";
 
 import type { Integration } from "~/types/database";
 
+import prisma from "~/lib/prisma";
+
+import { setupIntegrationSync } from "../../plugins/02.syncManager";
+
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
@@ -17,8 +21,6 @@ export default defineEventHandler(async (event) => {
 
     consola.debug(`Sync Trigger: Triggering manual sync for ${integrationType} integration ${integrationId} (force: ${force})`);
 
-    const { setupIntegrationSync } = await import("../../plugins/02.syncManager");
-    const prisma = await import("~/lib/prisma").then(m => m.default);
     const integration = await prisma.integration.findUnique({
       where: { id: integrationId },
     });

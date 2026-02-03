@@ -1,14 +1,7 @@
 <script setup lang="ts">
-type Props = {
-  icon?: string;
-  label?: string;
-  color?: "primary" | "secondary" | "success" | "warning" | "error";
-  size?: "sm" | "md" | "lg";
-  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  disabled?: boolean;
-};
+import type { GlobalFloatingActionButtonProps } from "~/types/ui";
 
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<GlobalFloatingActionButtonProps>(), {
   icon: "i-lucide-plus",
   label: "Add",
   color: "primary",
@@ -22,7 +15,8 @@ const emit = defineEmits<{
 }>();
 
 const positionClasses = computed(() => {
-  const baseClasses = "fixed z-50 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl flex items-center justify-center";
+  const baseClasses
+    = "fixed z-50 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl flex items-center justify-center";
 
   switch (props.position) {
     case "bottom-left":
@@ -77,9 +71,6 @@ function handleClick() {
     class="p-0"
     @click="handleClick"
   >
-    <UIcon
-      :name="icon"
-      :class="iconSizeClasses"
-    />
+    <UIcon :name="icon" :class="iconSizeClasses" />
   </UButton>
 </template>

@@ -1,12 +1,20 @@
 import { consola } from "consola";
 
-import type { CreateShoppingListInput, CreateShoppingListItemInput, ShoppingListItem, ShoppingListWithOrder, UpdateShoppingListItemInput } from "~/types/database";
+import type {
+  CreateShoppingListInput,
+  CreateShoppingListItemInput,
+  ShoppingListItem,
+  ShoppingListWithOrder,
+  UpdateShoppingListItemInput,
+} from "~/types/database";
 
 export function useShoppingLists() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  const { data: shoppingLists } = useNuxtData<ShoppingListWithOrder[]>("native-shopping-lists");
+  const { data: shoppingLists } = useNuxtData<ShoppingListWithOrder[]>(
+    "native-shopping-lists",
+  );
 
   const currentShoppingLists = computed(() => shoppingLists.value || []);
 
@@ -15,7 +23,9 @@ export function useShoppingLists() {
     error.value = null;
     try {
       await refreshNuxtData("native-shopping-lists");
-      consola.debug("Use Shopping Lists: Shopping lists refreshed successfully");
+      consola.debug(
+        "Use Shopping Lists: Shopping lists refreshed successfully",
+      );
     }
     catch (err) {
       error.value = "Failed to fetch shopping lists";
@@ -29,10 +39,13 @@ export function useShoppingLists() {
 
   const createShoppingList = async (listData: CreateShoppingListInput) => {
     try {
-      const newList = await $fetch<ShoppingListWithOrder>("/api/shopping-lists", {
-        method: "POST",
-        body: listData,
-      });
+      const newList = await $fetch<ShoppingListWithOrder>(
+        "/api/shopping-lists",
+        {
+          method: "POST",
+          body: listData,
+        },
+      );
 
       await refreshNuxtData("native-shopping-lists");
 
@@ -45,12 +58,18 @@ export function useShoppingLists() {
     }
   };
 
-  const updateShoppingList = async (listId: string, updates: { name?: string }) => {
+  const updateShoppingList = async (
+    listId: string,
+    updates: { name?: string },
+  ) => {
     try {
-      const updatedList = await $fetch<ShoppingListWithOrder>(`/api/shopping-lists/${listId}`, {
-        method: "PUT",
-        body: updates,
-      });
+      const updatedList = await $fetch<ShoppingListWithOrder>(
+        `/api/shopping-lists/${listId}`,
+        {
+          method: "PUT",
+          body: updates,
+        },
+      );
 
       await refreshNuxtData("native-shopping-lists");
 
@@ -63,12 +82,18 @@ export function useShoppingLists() {
     }
   };
 
-  const updateShoppingListItem = async (itemId: string, updates: UpdateShoppingListItemInput) => {
+  const updateShoppingListItem = async (
+    itemId: string,
+    updates: UpdateShoppingListItemInput,
+  ) => {
     try {
-      const updatedItem = await $fetch<ShoppingListItem>(`/api/shopping-list-items/${itemId}`, {
-        method: "PUT",
-        body: updates,
-      });
+      const updatedItem = await $fetch<ShoppingListItem>(
+        `/api/shopping-list-items/${itemId}`,
+        {
+          method: "PUT",
+          body: updates,
+        },
+      );
 
       await refreshNuxtData("native-shopping-lists");
 
@@ -76,17 +101,26 @@ export function useShoppingLists() {
     }
     catch (err) {
       error.value = "Failed to update shopping list item";
-      consola.error("Use Shopping Lists: Error updating shopping list item:", err);
+      consola.error(
+        "Use Shopping Lists: Error updating shopping list item:",
+        err,
+      );
       throw err;
     }
   };
 
-  const addItemToList = async (listId: string, itemData: CreateShoppingListItemInput) => {
+  const addItemToList = async (
+    listId: string,
+    itemData: CreateShoppingListItemInput,
+  ) => {
     try {
-      const newItem = await $fetch<ShoppingListItem>(`/api/shopping-lists/${listId}/items`, {
-        method: "POST",
-        body: itemData,
-      });
+      const newItem = await $fetch<ShoppingListItem>(
+        `/api/shopping-lists/${listId}/items`,
+        {
+          method: "POST",
+          body: itemData,
+        },
+      );
 
       await refreshNuxtData("native-shopping-lists");
 
@@ -94,7 +128,10 @@ export function useShoppingLists() {
     }
     catch (err) {
       error.value = "Failed to add item to shopping list";
-      consola.error("Use Shopping Lists: Error adding item to shopping list:", err);
+      consola.error(
+        "Use Shopping Lists: Error adding item to shopping list:",
+        err,
+      );
       throw err;
     }
   };
@@ -121,9 +158,14 @@ export function useShoppingLists() {
     return updateShoppingListItem(itemId, { checked });
   };
 
-  const reorderShoppingList = async (listId: string, direction: "up" | "down") => {
+  const reorderShoppingList = async (
+    listId: string,
+    direction: "up" | "down",
+  ) => {
     try {
-      const sortedLists = [...currentShoppingLists.value].sort((a, b) => (a.order || 0) - (b.order || 0));
+      const sortedLists = [...currentShoppingLists.value].sort(
+        (a, b) => (a.order || 0) - (b.order || 0),
+      );
       const currentIndex = sortedLists.findIndex(list => list.id === listId);
 
       if (currentIndex === -1)
@@ -133,7 +175,10 @@ export function useShoppingLists() {
       if (direction === "up" && currentIndex > 0) {
         targetIndex = currentIndex - 1;
       }
-      else if (direction === "down" && currentIndex < sortedLists.length - 1) {
+      else if (
+        direction === "down"
+        && currentIndex < sortedLists.length - 1
+      ) {
         targetIndex = currentIndex + 1;
       }
       else {
@@ -190,7 +235,9 @@ export function useShoppingLists() {
       if (!list?.items)
         return;
 
-      const sortedItems = [...list.items].sort((a, b) => (a.order || 0) - (b.order || 0));
+      const sortedItems = [...list.items].sort(
+        (a, b) => (a.order || 0) - (b.order || 0),
+      );
       const currentIndex = sortedItems.findIndex(item => item.id === itemId);
 
       if (currentIndex === -1)
@@ -200,7 +247,10 @@ export function useShoppingLists() {
       if (direction === "up" && currentIndex > 0) {
         targetIndex = currentIndex - 1;
       }
-      else if (direction === "down" && currentIndex < sortedItems.length - 1) {
+      else if (
+        direction === "down"
+        && currentIndex < sortedItems.length - 1
+      ) {
         targetIndex = currentIndex + 1;
       }
       else {
@@ -244,7 +294,10 @@ export function useShoppingLists() {
     }
   };
 
-  const deleteCompletedItems = async (listId: string, completedItemIds?: string[]) => {
+  const deleteCompletedItems = async (
+    listId: string,
+    completedItemIds?: string[],
+  ) => {
     try {
       let itemsToDelete: string[] = [];
 

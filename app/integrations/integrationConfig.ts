@@ -1,10 +1,24 @@
-import type { GoogleCalendarSettings, ICalSettings, IntegrationConfig } from "~/types/integrations";
+import type { ShoppingListItem, TodoListItem } from "~/types/database";
+import type {
+  GoogleCalendarSettings,
+  ICalSettings,
+  IntegrationConfig,
+} from "~/types/integrations";
 import type { DialogField } from "~/types/ui";
 
-import { createGoogleCalendarService, handleGoogleCalendarSave } from "./google_calendar/googleCalendar";
+import {
+  createGoogleCalendarService,
+  handleGoogleCalendarSave,
+} from "./google_calendar/googleCalendar";
 import { createICalService } from "./iCal/iCalendar";
-import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
-import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
+import {
+  createMealieService,
+  getMealieFieldsForItem,
+} from "./mealie/mealieShoppingLists";
+import {
+  createTandoorService,
+  getTandoorFieldsForItem,
+} from "./tandoor/tandoorShoppingLists";
 
 export const integrationConfigs: IntegrationConfig[] = [
   // ================================================
@@ -37,7 +51,8 @@ export const integrationConfigs: IntegrationConfig[] = [
         type: "text" as const,
         placeholder: "Jane Doe",
         required: false,
-        description: "Select user(s) to link to this calendar or choose an event color",
+        description:
+          "Select user(s) to link to this calendar or choose an event color",
       },
       {
         key: "eventColor",
@@ -51,7 +66,8 @@ export const integrationConfigs: IntegrationConfig[] = [
         label: "Use User Profile Colors",
         type: "boolean" as const,
         required: false,
-        description: "Use individual user profile colors for events instead of a single event color",
+        description:
+          "Use individual user profile colors for events instead of a single event color",
       },
     ],
     capabilities: ["get_events"],
@@ -62,8 +78,7 @@ export const integrationConfigs: IntegrationConfig[] = [
   {
     type: "calendar",
     service: "google",
-    settingsFields:
-    [
+    settingsFields: [
       {
         key: "clientId",
         label: "Client ID",
@@ -78,10 +93,18 @@ export const integrationConfigs: IntegrationConfig[] = [
         type: "password" as const,
         placeholder: "paste your client secret here",
         required: true,
-        description: "Your Google OAuth Client Secret (required for server-side token exchange)",
+        description:
+          "Your Google OAuth Client Secret (required for server-side token exchange)",
       },
     ],
-    capabilities: ["get_events", "edit_events", "add_events", "delete_events", "oauth", "select_calendars"],
+    capabilities: [
+      "get_events",
+      "edit_events",
+      "add_events",
+      "delete_events",
+      "oauth",
+      "select_calendars",
+    ],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
     dialogFields: [],
     syncInterval: 10,
@@ -212,14 +235,24 @@ export const integrationConfigs: IntegrationConfig[] = [
 ];
 
 const serviceFactoryMap = {
-  "calendar:iCal": (_id: string, _apiKey: string, baseUrl: string, settings?: ICalSettings | GoogleCalendarSettings) => {
+  "calendar:iCal": (
+    _id: string,
+    _apiKey: string,
+    baseUrl: string,
+    settings?: ICalSettings | GoogleCalendarSettings,
+  ) => {
     const iCalSettings = settings as ICalSettings;
     const eventColor = iCalSettings?.eventColor || "#06b6d4";
     const user = iCalSettings?.user;
     const useUserColors = iCalSettings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
-  "calendar:google": (_id: string, _apiKey: string, _baseUrl: string, settings?: ICalSettings | GoogleCalendarSettings) => {
+  "calendar:google": (
+    _id: string,
+    _apiKey: string,
+    _baseUrl: string,
+    settings?: ICalSettings | GoogleCalendarSettings,
+  ) => {
     const googleSettings = settings as GoogleCalendarSettings;
     return createGoogleCalendarService(
       _id,
@@ -240,18 +273,32 @@ export function getIntegrationFields(integrationType: string): DialogField[] {
   return config?.dialogFields || [];
 }
 
-export function getFieldsForItem(item: unknown, integrationType: string | undefined, allFields: { key: string }[]): { key: string }[] {
-  if (!integrationType || !fieldFilters[integrationType as keyof typeof fieldFilters]) {
+export function getFieldsForItem(
+  item: ShoppingListItem | TodoListItem | null | undefined,
+  integrationType: string | undefined,
+  allFields: { key: string }[],
+): { key: string }[] {
+  if (
+    !integrationType
+    || !fieldFilters[integrationType as keyof typeof fieldFilters]
+  ) {
     return allFields;
   }
 
-  const filterFunction = fieldFilters[integrationType as keyof typeof fieldFilters];
+  const filterFunction
+    = fieldFilters[integrationType as keyof typeof fieldFilters];
 
   if (integrationType === "mealie") {
-    return (filterFunction as typeof getMealieFieldsForItem)(item as { integrationData?: { isFood?: boolean } } | null | undefined, allFields);
+    return (filterFunction as typeof getMealieFieldsForItem)(
+      item as ShoppingListItem | null | undefined,
+      allFields,
+    );
   }
   else if (integrationType === "tandoor") {
-    return (filterFunction as typeof getTandoorFieldsForItem)(item as { unit?: unknown } | null | undefined, allFields);
+    return (filterFunction as typeof getTandoorFieldsForItem)(
+      item as ShoppingListItem | null | undefined,
+      allFields,
+    );
   }
 
   return allFields;
@@ -259,6 +306,9 @@ export function getFieldsForItem(item: unknown, integrationType: string | undefi
 export function getServiceFactories() {
   return integrationConfigs.map(config => ({
     key: `${config.type}:${config.service}`,
-    factory: serviceFactoryMap[`${config.type}:${config.service}` as keyof typeof serviceFactoryMap],
+    factory:
+      serviceFactoryMap[
+        `${config.type}:${config.service}` as keyof typeof serviceFactoryMap
+      ],
   }));
 }

@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { addDays, addMonths, addWeeks, isSameMonth, subMonths, subWeeks } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  addWeeks,
+  isSameMonth,
+  subMonths,
+  subWeeks,
+} from "date-fns";
 
 import type { CalendarEvent, CalendarView } from "~/types/calendar";
 import type { Integration } from "~/types/database";
@@ -16,7 +23,9 @@ const props = defineProps<{
   className?: string;
   initialView?: CalendarView;
   class?: string;
-  getIntegrationCapabilities?: (event: CalendarEvent) => { capabilities: string[]; serviceName?: string } | undefined;
+  getIntegrationCapabilities?: (
+    event: CalendarEvent,
+  ) => { capabilities: string[]; serviceName?: string } | undefined;
 }>();
 
 const _emit = defineEmits<{
@@ -28,7 +37,8 @@ const _emit = defineEmits<{
 const { getStableDate, stableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
 const { calendarIntegrations } = useCalendarIntegrations();
-const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
+const currentDate = useState<Date>("calendar-current-date", () =>
+  getStableDate());
 const view = ref<CalendarView>(props.initialView || "week");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
@@ -105,7 +115,9 @@ function handleToday() {
 }
 
 function getDayString(date: Date): string {
-  return date.toISOString().split("T")[0] || date.toISOString().substring(0, 10);
+  return (
+    date.toISOString().split("T")[0] || date.toISOString().substring(0, 10)
+  );
 }
 
 const lastDay = ref(getDayString(getStableDate()));
@@ -239,7 +251,9 @@ function getDaysForAgenda(date: Date) {
 
 <template>
   <div class="flex h-[calc(100vh-2rem)] w-full flex-col rounded-lg">
-    <div class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default">
+    <div
+      class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default"
+    >
       <GlobalDateHeader
         :show-navigation="true"
         :show-view-selector="true"
@@ -248,8 +262,8 @@ function getDaysForAgenda(date: Date) {
         @previous="handlePrevious"
         @next="handleNext"
         @today="handleToday"
-        @view-change="(newView) => view = newView"
-        @date-change="(newDate) => currentDate = newDate"
+        @view-change="(newView) => (view = newView)"
+        @date-change="(newDate) => (currentDate = newDate)"
       />
     </div>
     <div class="flex flex-1 flex-col min-h-0">
@@ -276,7 +290,7 @@ function getDaysForAgenda(date: Date) {
         :show-all-day-section="true"
         @event-click="handleEventSelect"
         @event-create="handleEventCreate"
-        @date-select="(date) => currentDate = date"
+        @date-select="(date) => (currentDate = date)"
       />
       <GlobalAgendaView
         v-if="view === 'agenda'"
@@ -297,9 +311,21 @@ function getDaysForAgenda(date: Date) {
   <CalendarEventDialog
     :event="selectedEvent"
     :is-open="isEventDialogOpen"
-    :integrations="calendarIntegrations && calendarIntegrations.length > 0 ? calendarIntegrations as Integration[] : undefined"
-    :integration-capabilities="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.capabilities : undefined"
-    :integration-service-name="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.serviceName : undefined"
+    :integrations="
+      calendarIntegrations && calendarIntegrations.length > 0
+        ? (calendarIntegrations as Integration[])
+        : undefined
+    "
+    :integration-capabilities="
+      selectedEvent && props.getIntegrationCapabilities
+        ? props.getIntegrationCapabilities(selectedEvent)?.capabilities
+        : undefined
+    "
+    :integration-service-name="
+      selectedEvent && props.getIntegrationCapabilities
+        ? props.getIntegrationCapabilities(selectedEvent)?.serviceName
+        : undefined
+    "
     @close="isEventDialogOpen = false"
     @save="handleEventSave"
     @delete="handleEventDelete"

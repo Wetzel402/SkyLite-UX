@@ -43,6 +43,9 @@ permalink: /
   <a href="https://www.postgresql.org/docs/">
     <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   </a>
+  <a href="https://cursor.com/home">
+    <img src="https://img.shields.io/badge/Cursor-black?style=for-the-badge&logo=cursor" alt="Cursor" />
+  </a>
 </div>
 
 ## About
