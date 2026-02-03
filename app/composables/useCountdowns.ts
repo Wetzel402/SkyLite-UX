@@ -62,17 +62,44 @@ export function useCountdowns() {
   };
 
   /**
-   * Check if the cached message needs to be refreshed (>24 hours old)
+   * Check if the cached message needs to be refreshed
+   * Refreshes if:
+   * - Message doesn't exist
+   * - Message is >24 hours old
+   * - Message was generated on a different calendar day (days remaining changed)
    */
-  const needsMessageRefresh = (messageGeneratedAt: Date | string | null): boolean => {
+  const needsMessageRefresh = (
+    messageGeneratedAt: Date | string | null,
+  ): boolean => {
     if (!messageGeneratedAt)
       return true;
 
     const generated = new Date(messageGeneratedAt);
     const now = new Date();
+
+    // Reset times to midnight for accurate day comparison
+    const generatedDay = new Date(generated);
+    generatedDay.setHours(0, 0, 0, 0);
+
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+
+    // Refresh if message was generated on a different day
+    // This ensures we get a fresh message every day with updated day count
+    if (generatedDay.getTime() !== today.getTime()) {
+      consola.debug(`Message generated on different day - refreshing`);
+      return true;
+    }
+
     const hoursSinceGeneration = (now.getTime() - generated.getTime()) / (1000 * 60 * 60);
 
-    return hoursSinceGeneration > 24;
+    // Also refresh if message is older than 24 hours (safety check)
+    if (hoursSinceGeneration > 24) {
+      consola.debug(`Message older than 24 hours - refreshing`);
+      return true;
+    }
+
+    return false;
   };
 
   /**
@@ -97,6 +124,8 @@ export function useCountdowns() {
     todo: Todo,
     forceRefresh: boolean = false,
   ): Promise<string> => {
+    const daysRemaining = calculateDaysRemaining(todo.dueDate);
+
     // Check if we need to refresh the message
     const shouldRefresh = forceRefresh
       || !todo.countdownMessage
@@ -110,8 +139,6 @@ export function useCountdowns() {
 
     // Generate a new message
     try {
-      const daysRemaining = calculateDaysRemaining(todo.dueDate);
-
       consola.debug(`Generating new message for todo ${todo.id} (${daysRemaining} days)`);
 
       const response = await $fetch<{
