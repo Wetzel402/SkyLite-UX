@@ -45,7 +45,7 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: "en",
       },
-      title: "SkyLite UX",
+      title: "Skylite UX",
     },
   },
 

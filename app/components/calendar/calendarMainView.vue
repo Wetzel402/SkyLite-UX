@@ -3,6 +3,7 @@ import {
   addDays,
   addMonths,
   addWeeks,
+  format,
   isSameMonth,
   subMonths,
   subWeeks,
@@ -115,9 +116,7 @@ function handleToday() {
 }
 
 function getDayString(date: Date): string {
-  return (
-    date.toISOString().split("T")[0] || date.toISOString().substring(0, 10)
-  );
+  return format(date, "yyyy-MM-dd");
 }
 
 const lastDay = ref(getDayString(getStableDate()));
