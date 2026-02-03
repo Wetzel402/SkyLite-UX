@@ -8,9 +8,9 @@ permalink: /contributing/help/
 
 # Help
 
-- Check the [issues](https://github.com/wetzel402/SkyLite-UX/issues) page
-- Search existing [discussions](https://github.com/wetzel402/SkyLite-UX/discussions)
-- Create a [new issue](https://github.com/wetzel402/SkyLite-UX/issues/new/choose) with detailed information
+- Check the [issues](https://github.com/wetzel402/Skylite-UX/issues) page
+- Search existing [discussions](https://github.com/wetzel402/Skylite-UX/discussions)
+- Create a [new issue](https://github.com/wetzel402/Skylite-UX/issues/new/choose) with detailed information
 - Join our [Discord](https://discord.gg/KJn3YfWxn7)
 
 ## Additional Resources

@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-<img src="https://github.com/user-attachments/assets/cf4b4b9f-c8db-4303-8fd0-58126a42382f" alt="SkyLite-UX"/>
+<img src="https://github.com/user-attachments/assets/cf4b4b9f-c8db-4303-8fd0-58126a42382f" alt="Skylite-UX"/>
 </p>
 
-[![GitHub Release](https://img.shields.io/github/v/release/wetzel402/SkyLite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release)](https://github.com/wetzel402/SkyLite-UX/releases)
-[![GitHub Repo stars](https://img.shields.io/github/stars/wetzel402/SkyLite-UX?style=for-the-badge)](https://github.com/wetzel402/SkyLite-UX)
+[![GitHub Release](https://img.shields.io/github/v/release/wetzel402/Skylite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release)](https://github.com/wetzel402/Skylite-UX/releases)
+[![GitHub Repo stars](https://img.shields.io/github/stars/wetzel402/Skylite-UX?style=for-the-badge)](https://github.com/wetzel402/Skylite-UX)
 [![Docker Pulls](https://img.shields.io/docker/pulls/wetzel402/skylite-ux?style=for-the-badge)](https://hub.docker.com/r/wetzel402/skylite-ux)
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/KJn3YfWxn7)
@@ -25,7 +25,7 @@
 
 Skylite UX was conceived as an open source, self-hosted alternative to commercial family managers. Most commercial offerings require expensive hardware and include subscriptions. Our goal was to create an offering that allows you to bring your own hardware, avoid subscriptions, and subscription-associated feature creep while playing nicely with other self-hosted offerings.
 
-Built with AI-assisted development tools. See our [contributing guide](https://wetzel402.github.io/SkyLite-UX/contributing/) for how we use and review AI-generated code.
+Built with AI-assisted development tools. See our [contributing guide](https://wetzel402.github.io/Skylite-UX/contributing/) for how we use and review AI-generated code.
 
 ## Features
 
@@ -37,15 +37,15 @@ Built with AI-assisted development tools. See our [contributing guide](https://w
 
 ## Installation
 
-View the [docs](https://wetzel402.github.io/SkyLite-UX/installation) for details.
+View the [docs](https://wetzel402.github.io/Skylite-UX/installation) for details.
 
 ## Development
 
-Read our [development guide](https://wetzel402.github.io/SkyLite-UX/contributing/code/) for more details.
+Read our [development guide](https://wetzel402.github.io/Skylite-UX/contributing/code/) for more details.
 
 ## Contributing
 
-Check out the [contributor guide](https://wetzel402.github.io/SkyLite-UX/contributing/) to get started.
+Check out the [contributor guide](https://wetzel402.github.io/Skylite-UX/contributing/) to get started.
 
 ## License
 

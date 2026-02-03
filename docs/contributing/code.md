@@ -262,7 +262,7 @@ AI-assisted contributions undergo the same review process as all other code:
 - **Explain in your own words:** In the PR body and commit messages, explain what changed and why in your own words. If you cannot explain the change, do not submit it.
 - **Test the change:** Code must build and run; explicitly test the functionality you changed (see [Testing](#testing)).
 - **Handle review yourself:** You must be able to respond to review feedback and implement requested changes yourself. Pasting reviewer feedback into an AI and resubmitting without understanding is not acceptable.
-- **Features and refactors:** Larger or structural changes require real understanding of the codebase and require discussion on [GitHub](https://github.com/wetzel402/SkyLite-UX/discussions) or [Discord](https://discord.gg/KJn3YfWxn7). Contributions that clearly lack that understanding may be rejected outright.
+- **Features and refactors:** Larger or structural changes require real understanding of the codebase and require discussion on [GitHub](https://github.com/wetzel402/Skylite-UX/discussions) or [Discord](https://discord.gg/KJn3YfWxn7). Contributions that clearly lack that understanding may be rejected outright.
 
 ### Best Practices
 
