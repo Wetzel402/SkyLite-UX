@@ -73,7 +73,11 @@ export function useTimePicker() {
     };
   }
 
-  function getTimeInMinutes(hour: number, minute: number, amPm: string): number {
+  function getTimeInMinutes(
+    hour: number,
+    minute: number,
+    amPm: string,
+  ): number {
     const hour24 = convert12To24(hour, amPm);
     return hour24 * 60 + minute;
   }
@@ -91,11 +95,26 @@ export function useTimePicker() {
     return minutes1 > minutes2;
   }
 
+  function isSameTime(
+    hour1: number,
+    minute1: number,
+    amPm1: string,
+    hour2: number,
+    minute2: number,
+    amPm2: string,
+  ): boolean {
+    return getTimeInMinutes(hour1, minute1, amPm1) === getTimeInMinutes(hour2, minute2, amPm2);
+  }
+
   function roundToNearest5Minutes(minutes: number): number {
     return Math.round(minutes / 5) * 5;
   }
 
-  function getCurrentTime12Hour(): { hour: number; minute: number; amPm: string } {
+  function getCurrentTime12Hour(): {
+    hour: number;
+    minute: number;
+    amPm: string;
+  } {
     const now = new Date();
     const currentMinutes = now.getMinutes();
     const roundedMinutes = roundToNearest5Minutes(currentMinutes);
@@ -119,6 +138,7 @@ export function useTimePicker() {
     subtractMinutes,
     getTimeInMinutes,
     isTimeAfter,
+    isSameTime,
     roundToNearest5Minutes,
     getCurrentTime12Hour,
   };

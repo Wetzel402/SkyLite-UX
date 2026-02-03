@@ -17,7 +17,8 @@ export function useTodoColumns() {
       consola.debug("Use Todo Columns: Todo columns refreshed successfully");
     }
     catch (err) {
-      error.value = err instanceof Error ? err.message : "Failed to fetch todo columns";
+      error.value
+        = err instanceof Error ? err.message : "Failed to fetch todo columns";
       consola.error("Use Todo Columns: Failed to fetch todo columns:", err);
       throw err;
     }
@@ -44,7 +45,8 @@ export function useTodoColumns() {
       return newColumn;
     }
     catch (err) {
-      error.value = err instanceof Error ? err.message : "Failed to create todo column";
+      error.value
+        = err instanceof Error ? err.message : "Failed to create todo column";
       consola.error("Use Todo Columns: Failed to create todo column:", err);
       throw err;
     }
@@ -53,12 +55,18 @@ export function useTodoColumns() {
     }
   };
 
-  const updateTodoColumn = async (columnId: string, updates: { name?: string }) => {
+  const updateTodoColumn = async (
+    columnId: string,
+    updates: { name?: string },
+  ) => {
     try {
-      const updatedColumn = await $fetch<TodoColumn>(`/api/todo-columns/${columnId}`, {
-        method: "PUT",
-        body: updates,
-      });
+      const updatedColumn = await $fetch<TodoColumn>(
+        `/api/todo-columns/${columnId}`,
+        {
+          method: "PUT",
+          body: updates,
+        },
+      );
 
       await refreshNuxtData("todo-columns");
 
@@ -66,7 +74,8 @@ export function useTodoColumns() {
       return updatedColumn;
     }
     catch (err) {
-      error.value = err instanceof Error ? err.message : "Failed to update todo column";
+      error.value
+        = err instanceof Error ? err.message : "Failed to update todo column";
       consola.error("Use Todo Columns: Failed to update todo column:", err);
       throw err;
     }
@@ -87,7 +96,8 @@ export function useTodoColumns() {
       return true;
     }
     catch (err) {
-      error.value = err instanceof Error ? err.message : "Failed to delete todo column";
+      error.value
+        = err instanceof Error ? err.message : "Failed to delete todo column";
       consola.error("Use Todo Columns: Failed to delete todo column:", err);
       throw err;
     }
@@ -119,7 +129,8 @@ export function useTodoColumns() {
       error.value = null;
     }
     catch (err) {
-      error.value = err instanceof Error ? err.message : "Failed to reorder todo columns";
+      error.value
+        = err instanceof Error ? err.message : "Failed to reorder todo columns";
       consola.error("Use Todo Columns: Failed to reorder todo columns:", err);
       throw err;
     }

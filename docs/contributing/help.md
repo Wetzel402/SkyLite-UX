@@ -21,4 +21,4 @@ permalink: /contributing/help/
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
-- [Vitest Documentation](https://vitest.dev/)
+- [Nuxt testing documentation](https://nuxt.com/docs/4.x/getting-started/testing).

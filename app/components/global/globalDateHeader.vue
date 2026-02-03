@@ -112,7 +112,10 @@ function handleToday() {
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2" :class="className">
+  <div
+    class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+    :class="className"
+  >
     <div class="flex sm:flex-col max-sm:items-center justify-between gap-1.5">
       <div class="flex items-center gap-1.5">
         <h1 class="font-semibold text-xl text-highlighted">
@@ -152,7 +155,8 @@ function handleToday() {
           <NuxtTime
             :datetime="startOfWeek(currentDate, { weekStartsOn: 0 })"
             month="short"
-          /> -
+          />
+          -
           <NuxtTime
             :datetime="endOfWeek(currentDate, { weekStartsOn: 0 })"
             month="short"
@@ -173,10 +177,7 @@ function handleToday() {
           year="numeric"
         />
         <span v-else-if="viewTitle === 'agenda-different-months'">
-          <NuxtTime
-            :datetime="currentDate"
-            month="short"
-          /> -
+          <NuxtTime :datetime="currentDate" month="short" /> -
           <NuxtTime
             :datetime="addDays(currentDate, 30 - 1)"
             month="short"
@@ -220,7 +221,10 @@ function handleToday() {
           Today
         </UButton>
       </div>
-      <div v-if="showViewSelector" class="flex items-center justify-between gap-2">
+      <div
+        v-if="showViewSelector"
+        class="flex items-center justify-between gap-2"
+      >
         <UDropdownMenu :items="items">
           <UButton
             color="neutral"

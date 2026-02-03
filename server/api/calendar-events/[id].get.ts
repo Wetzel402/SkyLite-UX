@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
       color: calendarEvent.color as string | string[] | undefined,
       location: calendarEvent.location,
       ical_event: calendarEvent.ical_event,
-      users: calendarEvent.users.map(ce => ce.user),
+      users: (calendarEvent.users || []).map(ce => ce.user),
     };
   }
   catch (error) {

@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -57,6 +58,9 @@ model Todo {
   todoColumnId String?
   todoColumn   TodoColumn? @relation(fields: [todoColumnId], references: [id], onDelete: Cascade)
 
+  recurringGroupId  String?
+  rrule             Json?
+
   @@map("todos")
 }
 
@@ -96,7 +100,7 @@ model Integration {
   baseUrl   String?
   icon      String?
   enabled   Boolean  @default(true)
-  settings  Json?   
+  settings  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -111,7 +115,7 @@ model CalendarEvent {
   start       DateTime
   end         DateTime
   allDay      Boolean  @default(false)
-  color       Json?  
+  color       Json?
   location    String?
   ical_event  Json?
   createdAt   DateTime @default(now())

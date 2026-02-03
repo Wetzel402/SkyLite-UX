@@ -14,6 +14,7 @@ import type {
 import type { ConnectedClient, ServerSyncEvent, SyncInterval } from "../../app/types/sync";
 
 import { integrationConfigs } from "../../app/integrations/integrationConfig";
+import prisma from "../../app/lib/prisma";
 import { createIntegrationService, registerIntegration } from "../../app/types/integrations";
 
 const syncIntervals = new Map<string, SyncInterval>();
@@ -57,7 +58,6 @@ export default defineNitroPlugin(async (nitroApp) => {
 
 async function initializeIntegrationSync() {
   try {
-    const prisma = await import("../../app/lib/prisma").then(m => m.default);
     const integrations = await prisma.integration.findMany({
       where: { enabled: true },
     });
@@ -220,7 +220,6 @@ function clearAllSyncIntervals() {
 }
 
 export async function sendCachedSyncData(event: H3Event, integrationId: string, syncInterval: SyncInterval) {
-  const prisma = await import("../../app/lib/prisma").then(m => m.default);
   const integration = await prisma.integration.findUnique({ where: { id: integrationId } });
   const service = integrationServices.get(integrationId);
 
@@ -292,7 +291,6 @@ export const syncManager = {
   getActiveSyncIntervals: () => Array.from(syncIntervals.keys()),
   getSyncIntervals: () => syncIntervals,
   getIntegrationById: async (id: string) => {
-    const prisma = await import("../../app/lib/prisma").then(m => m.default);
     return prisma.integration.findUnique({ where: { id } });
   },
 };

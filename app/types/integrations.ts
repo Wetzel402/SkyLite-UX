@@ -1,10 +1,23 @@
 import consola from "consola";
 
 import type { CalendarEvent } from "~/types/calendar";
-import type { CreateShoppingListItemInput, CreateTodoInput, Integration, ShoppingListItem, ShoppingListWithItemsAndCount, Todo, TodoWithUser, UpdateShoppingListItemInput, UpdateTodoInput } from "~/types/database";
+import type {
+  CreateShoppingListItemInput,
+  CreateTodoInput,
+  Integration,
+  ShoppingListItem,
+  ShoppingListWithItemsAndCount,
+  Todo,
+  TodoWithUser,
+  UpdateShoppingListItemInput,
+  UpdateTodoInput,
+} from "~/types/database";
 import type { DialogField, IntegrationSettingsField } from "~/types/ui";
 
-import { getServiceFactories, integrationConfigs } from "~/integrations/integrationConfig";
+import {
+  getServiceFactories,
+  integrationConfigs,
+} from "~/integrations/integrationConfig";
 
 export type IntegrationService = {
   initialize: () => Promise<void>;
@@ -23,10 +36,16 @@ export type IntegrationStatus = {
 
 export type CalendarIntegrationService = IntegrationService & {
   getEvents: () => Promise<CalendarEvent[]>;
-  updateEvent?: (eventId: string, eventData: Partial<CalendarEvent>) => Promise<CalendarEvent>;
+  updateEvent?: (
+    eventId: string,
+    eventData: Partial<CalendarEvent>,
+  ) => Promise<CalendarEvent>;
   getEvent?: (eventId: string, calendarId?: string) => Promise<CalendarEvent>;
   deleteEvent?: (eventId: string, calendarId?: string) => Promise<void>;
-  addEvent?: (calendarId: string, eventData: Partial<CalendarEvent>) => Promise<CalendarEvent>;
+  addEvent?: (
+    calendarId: string,
+    eventData: Partial<CalendarEvent>,
+  ) => Promise<CalendarEvent>;
   getAvailableCalendars?: () => Promise<CalendarConfig[]>;
 };
 
@@ -106,7 +125,9 @@ function ensureInitialized() {
   }
 }
 
-export async function createIntegrationService(integration: Integration): Promise<IntegrationService | null> {
+export async function createIntegrationService(
+  integration: Integration,
+): Promise<IntegrationService | null> {
   ensureInitialized();
   try {
     const key = `${integration.type}:${integration.service}`;
@@ -117,18 +138,32 @@ export async function createIntegrationService(integration: Integration): Promis
       return null;
     }
 
-    return serviceFactory.factory(integration.id, integration.apiKey || "", integration.baseUrl || "", integration.settings as IntegrationSettings);
+    return serviceFactory.factory(
+      integration.id,
+      integration.apiKey || "",
+      integration.baseUrl || "",
+      integration.settings as IntegrationSettings,
+    );
   }
   catch (error) {
-    consola.error(`Failed to create integration service for ${integration.type}:${integration.service}:`, error);
+    consola.error(
+      `Failed to create integration service for ${integration.type}:${integration.service}:`,
+      error,
+    );
     return null;
   }
 }
 
 export type ServerShoppingIntegrationService = {
   getShoppingLists: () => Promise<ShoppingListWithItemsAndCount[]>;
-  addItemToList?: (listId: string, item: CreateShoppingListItemInput) => Promise<ShoppingListItem>;
-  updateShoppingListItem?: (itemId: string, updates: UpdateShoppingListItemInput) => Promise<ShoppingListItem>;
+  addItemToList?: (
+    listId: string,
+    item: CreateShoppingListItemInput,
+  ) => Promise<ShoppingListItem>;
+  updateShoppingListItem?: (
+    itemId: string,
+    updates: UpdateShoppingListItemInput,
+  ) => Promise<ShoppingListItem>;
   toggleItem?: (itemId: string, checked: boolean) => Promise<void>;
   deleteShoppingListItems?: (ids: string[]) => Promise<void>;
 };
@@ -143,7 +178,10 @@ export type ServerTodoIntegrationService = {
 export type ServerCalendarIntegrationService = {
   getEvents: () => Promise<CalendarEvent[]>;
   addEvent?: (event: Omit<CalendarEvent, "id">) => Promise<CalendarEvent>;
-  updateEvent?: (eventId: string, updates: Partial<CalendarEvent>) => Promise<CalendarEvent>;
+  updateEvent?: (
+    eventId: string,
+    updates: Partial<CalendarEvent>,
+  ) => Promise<CalendarEvent>;
   deleteEvent?: (eventId: string) => Promise<void>;
 };
 

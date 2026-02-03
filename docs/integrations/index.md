@@ -36,4 +36,4 @@ While Skylite UX is self-hosted and gives you complete control over your data, t
 
 ## Sync Behavior
 
-Integrations sync automatically at regular intervals. The sync frequency varies by integration and is defined by the integration's developer. 
+Integrations sync automatically at regular intervals. The sync frequency varies by integration and is defined by the integration's developer.

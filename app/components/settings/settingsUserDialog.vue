@@ -35,24 +35,35 @@ const textColor = computed(() => {
   return luminance > 0.5 ? "374151" : "FFFFFF";
 });
 
-watch(() => props.user, (newUser) => {
-  if (newUser) {
-    name.value = newUser.name || "";
-    email.value = newUser.email || "";
-    color.value = newUser.color || "#06b6d4";
-    avatar.value = newUser.avatar && !newUser.avatar.startsWith("https://ui-avatars.com/api/") ? newUser.avatar : "";
-    error.value = null;
-  }
-  else {
-    resetForm();
-  }
-}, { immediate: true });
+watch(
+  () => props.user,
+  (newUser) => {
+    if (newUser) {
+      name.value = newUser.name || "";
+      email.value = newUser.email || "";
+      color.value = newUser.color || "#06b6d4";
+      avatar.value
+        = newUser.avatar
+          && !newUser.avatar.startsWith("https://ui-avatars.com/api/")
+          ? newUser.avatar
+          : "";
+      error.value = null;
+    }
+    else {
+      resetForm();
+    }
+  },
+  { immediate: true },
+);
 
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    resetForm();
-  }
-});
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) {
+      resetForm();
+    }
+  },
+);
 
 function resetForm() {
   name.value = "";
@@ -98,9 +109,11 @@ function handleDelete() {
       class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-default">
+      <div
+        class="flex items-center justify-between p-4 border-b border-default"
+      >
         <h3 class="text-base font-semibold leading-6">
-          {{ user?.id ? 'Edit User' : 'Create User' }}
+          {{ user?.id ? "Edit User" : "Create User" }}
         </h3>
         <UButton
           color="neutral"
@@ -113,7 +126,10 @@ function handleDelete() {
       </div>
 
       <div class="p-4 space-y-6">
-        <div v-if="error" class="bg-error/10 text-error rounded-md px-3 py-2 text-sm">
+        <div
+          v-if="error"
+          class="bg-error/10 text-error rounded-md px-3 py-2 text-sm"
+        >
           {{ error }}
         </div>
 

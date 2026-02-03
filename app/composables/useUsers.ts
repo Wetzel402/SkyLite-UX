@@ -134,7 +134,9 @@ export function useUsers() {
 
   const reorderUser = async (userId: string, direction: "up" | "down") => {
     try {
-      const sortedUsers = [...currentUsers.value].sort((a, b) => (a.todoOrder || 0) - (b.todoOrder || 0));
+      const sortedUsers = [...currentUsers.value].sort(
+        (a, b) => (a.todoOrder || 0) - (b.todoOrder || 0),
+      );
       const currentIndex = sortedUsers.findIndex(user => user.id === userId);
 
       if (currentIndex === -1)
@@ -144,7 +146,10 @@ export function useUsers() {
       if (direction === "up" && currentIndex > 0) {
         targetIndex = currentIndex - 1;
       }
-      else if (direction === "down" && currentIndex < sortedUsers.length - 1) {
+      else if (
+        direction === "down"
+        && currentIndex < sortedUsers.length - 1
+      ) {
         targetIndex = currentIndex + 1;
       }
       else {

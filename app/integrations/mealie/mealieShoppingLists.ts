@@ -2,8 +2,15 @@ import type { JsonObject } from "type-fest";
 
 import { consola } from "consola";
 
-import type { ShoppingList, ShoppingListItem, UpdateShoppingListItemInput } from "~/types/database";
-import type { IntegrationService, IntegrationStatus } from "~/types/integrations";
+import type {
+  ShoppingList,
+  ShoppingListItem,
+  UpdateShoppingListItemInput,
+} from "~/types/database";
+import type {
+  IntegrationService,
+  IntegrationStatus,
+} from "~/types/integrations";
 
 import { useStableDate } from "~/composables/useStableDate";
 import { integrationRegistry } from "~/types/integrations";
@@ -17,7 +24,10 @@ export class MealieService implements IntegrationService {
   private apiKey: string;
   private baseUrl: string;
 
-  private parseStableDate: (dateInput: string | Date | undefined, fallback?: Date) => Date;
+  private parseStableDate: (
+    dateInput: string | Date | undefined,
+    fallback?: Date,
+  ) => Date;
 
   private status: IntegrationStatus = {
     isConnected: false,
@@ -38,7 +48,10 @@ export class MealieService implements IntegrationService {
       this.status.lastChecked = getStableDate();
     }
     else {
-      this.parseStableDate = (dateInput: string | Date | undefined, fallback?: Date) => {
+      this.parseStableDate = (
+        dateInput: string | Date | undefined,
+        fallback?: Date,
+      ) => {
         if (!dateInput)
           return fallback || new Date();
         return new Date(dateInput);
@@ -88,17 +101,25 @@ export class MealieService implements IntegrationService {
 
   async testConnection(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/households/shopping/lists`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${this.baseUrl}/api/households/shopping/lists`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        consola.error("Mealie Shopping Lists: API error:", response.status, response.statusText, errorText);
+        consola.error(
+          "Mealie Shopping Lists: API error:",
+          response.status,
+          response.statusText,
+          errorText,
+        );
         this.status = {
           isConnected: false,
           lastChecked: this.getCurrentDate(),
@@ -134,12 +155,18 @@ export class MealieService implements IntegrationService {
 
   async getShoppingLists(): Promise<ShoppingList[]> {
     try {
-      const response = await $fetch<{ items: MealieShoppingList[] }>("/api/integrations/mealie/api/households/shopping/lists", {
-        query: { integrationId: this.integrationId },
-      });
+      const response = await $fetch<{ items: MealieShoppingList[] }>(
+        "/api/integrations/mealie/api/households/shopping/lists",
+        {
+          query: { integrationId: this.integrationId },
+        },
+      );
 
       if (!response || !response.items || !Array.isArray(response.items)) {
-        consola.warn("Mealie Shopping Lists: Service returned invalid response:", response);
+        consola.warn(
+          "Mealie Shopping Lists: Service returned invalid response:",
+          response,
+        );
         return [];
       }
 
@@ -147,9 +174,12 @@ export class MealieService implements IntegrationService {
 
       for (const mealieList of response.items) {
         try {
-          const fullList = await $fetch<MealieShoppingList>(`/api/integrations/mealie/api/households/shopping/lists/${mealieList.id}`, {
-            query: { integrationId: this.integrationId },
-          });
+          const fullList = await $fetch<MealieShoppingList>(
+            `/api/integrations/mealie/api/households/shopping/lists/${mealieList.id}`,
+            {
+              query: { integrationId: this.integrationId },
+            },
+          );
 
           shoppingLists.push({
             id: fullList.id,
@@ -157,32 +187,46 @@ export class MealieService implements IntegrationService {
             order: 0,
             createdAt: this.parseStableDate(fullList.createdAt),
             updatedAt: this.parseStableDate(fullList.updatedAt),
-            items: fullList.listItems?.map(mealieItem => ({
-              id: mealieItem.id,
-              name: mealieItem.food?.name || mealieItem.note || mealieItem.display || "Unknown",
-              checked: mealieItem.checked,
-              order: mealieItem.position,
-              notes: mealieItem.note,
-              quantity: mealieItem.quantity,
-              unit: mealieItem.unit?.name || null,
-              label: mealieItem.label?.name || null,
-              food: mealieItem.food?.name || null,
-              integrationData: mealieItem as unknown as JsonObject,
-            } as ShoppingListItem)) || [],
+            items:
+              fullList.listItems?.map(
+                mealieItem =>
+                  ({
+                    id: mealieItem.id,
+                    name:
+                      mealieItem.food?.name
+                      || mealieItem.note
+                      || mealieItem.display
+                      || "Unknown",
+                    checked: mealieItem.checked,
+                    order: mealieItem.position,
+                    notes: mealieItem.note,
+                    quantity: mealieItem.quantity,
+                    unit: mealieItem.unit?.name || null,
+                    label: mealieItem.label?.name || null,
+                    food: mealieItem.food?.name || null,
+                    integrationData: mealieItem as unknown as JsonObject,
+                  }) as ShoppingListItem,
+              ) || [],
             _count: {
               items: fullList.listItems?.length || 0,
             },
           });
         }
         catch (listError) {
-          consola.error(`Mealie Shopping Lists: Error fetching list ${mealieList.id}:`, listError);
+          consola.error(
+            `Mealie Shopping Lists: Error fetching list ${mealieList.id}:`,
+            listError,
+          );
         }
       }
 
       return shoppingLists;
     }
     catch (error) {
-      consola.error("Mealie Shopping Lists: Error fetching shopping lists:", error);
+      consola.error(
+        "Mealie Shopping Lists: Error fetching shopping lists:",
+        error,
+      );
       throw error;
     }
   }
@@ -196,30 +240,40 @@ export class MealieService implements IntegrationService {
       order: 0,
       createdAt: this.parseStableDate(mealieList.createdAt),
       updatedAt: this.parseStableDate(mealieList.updatedAt),
-      items: mealieList.listItems.map(mealieItem => ({
-        id: mealieItem.id,
-        name: mealieItem.food?.name || mealieItem.note || mealieItem.display || "Unknown",
-        checked: mealieItem.checked,
-        order: mealieItem.position,
-        notes: mealieItem.note,
-        quantity: mealieItem.quantity,
-        unit: mealieItem.unit?.name || null,
-        label: mealieItem.label?.name || null,
-        food: mealieItem.food?.name || null,
-        integrationData: mealieItem as unknown as JsonObject,
-      } as ShoppingListItem)),
+      items: mealieList.listItems.map(
+        mealieItem =>
+          ({
+            id: mealieItem.id,
+            name:
+              mealieItem.food?.name
+              || mealieItem.note
+              || mealieItem.display
+              || "Unknown",
+            checked: mealieItem.checked,
+            order: mealieItem.position,
+            notes: mealieItem.note,
+            quantity: mealieItem.quantity,
+            unit: mealieItem.unit?.name || null,
+            label: mealieItem.label?.name || null,
+            food: mealieItem.food?.name || null,
+            integrationData: mealieItem as unknown as JsonObject,
+          }) as ShoppingListItem,
+      ),
       _count: {
         items: mealieList.listItems.length,
       },
     };
   }
 
-  async addItemToList(listId: string, item: {
-    name: string;
-    quantity: number;
-    unit?: string;
-    notes?: string;
-  }): Promise<ShoppingListItem> {
+  async addItemToList(
+    listId: string,
+    item: {
+      name: string;
+      quantity: number;
+      unit?: string;
+      notes?: string;
+    },
+  ): Promise<ShoppingListItem> {
     const mealieItem = {
       quantity: item.quantity || 0,
       unit: null,
@@ -239,7 +293,8 @@ export class MealieService implements IntegrationService {
       recipeReferences: [],
     };
 
-    const apiResponse = await this.serverService.createShoppingListItem(mealieItem);
+    const apiResponse
+      = await this.serverService.createShoppingListItem(mealieItem);
     const createdItem = apiResponse.createdItems?.[0];
 
     if (!createdItem) {
@@ -248,7 +303,11 @@ export class MealieService implements IntegrationService {
 
     return {
       id: createdItem.id || "",
-      name: createdItem.food?.name || createdItem.note || createdItem.display || "Unknown",
+      name:
+        createdItem.food?.name
+        || createdItem.note
+        || createdItem.display
+        || "Unknown",
       checked: createdItem.checked,
       order: createdItem.position,
       notes: createdItem.note,
@@ -260,7 +319,10 @@ export class MealieService implements IntegrationService {
     };
   }
 
-  async updateShoppingListItem(itemId: string, updates: UpdateShoppingListItemInput): Promise<ShoppingListItem> {
+  async updateShoppingListItem(
+    itemId: string,
+    updates: UpdateShoppingListItemInput,
+  ): Promise<ShoppingListItem> {
     try {
       const lists = await this.getShoppingLists();
       let targetItem: ShoppingListItem | null = null;
@@ -305,11 +367,18 @@ export class MealieService implements IntegrationService {
         ...mealieUpdates,
       };
 
-      const updatedItem = await this.serverService.updateShoppingListItemById(itemId, updateData);
+      const updatedItem = await this.serverService.updateShoppingListItemById(
+        itemId,
+        updateData,
+      );
 
       return {
         id: updatedItem.id || "",
-        name: updatedItem.food?.name || updatedItem.note || updatedItem.display || "Unknown",
+        name:
+          updatedItem.food?.name
+          || updatedItem.note
+          || updatedItem.display
+          || "Unknown",
         checked: updatedItem.checked,
         order: updatedItem.position,
         notes: updatedItem.note,
@@ -321,12 +390,20 @@ export class MealieService implements IntegrationService {
       };
     }
     catch (error) {
-      consola.error(`Mealie Shopping Lists: Error updating item ${itemId}:`, error);
-      throw new Error(`Failed to update item: ${error instanceof Error ? error.message : "Unknown error"}`);
+      consola.error(
+        `Mealie Shopping Lists: Error updating item ${itemId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to update item: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
-  async toggleItem(itemId: string, checked: boolean): Promise<ShoppingListItem> {
+  async toggleItem(
+    itemId: string,
+    checked: boolean,
+  ): Promise<ShoppingListItem> {
     try {
       const lists = await this.getShoppingLists();
       let targetItem: ShoppingListItem | null = null;
@@ -353,11 +430,18 @@ export class MealieService implements IntegrationService {
         checked,
       };
 
-      const updatedItem = await this.serverService.updateShoppingListItemById(itemId, updateData);
+      const updatedItem = await this.serverService.updateShoppingListItemById(
+        itemId,
+        updateData,
+      );
 
       return {
         id: updatedItem.id || "",
-        name: updatedItem.food?.name || updatedItem.note || updatedItem.display || "Unknown",
+        name:
+          updatedItem.food?.name
+          || updatedItem.note
+          || updatedItem.display
+          || "Unknown",
         checked: updatedItem.checked,
         order: updatedItem.position,
         notes: updatedItem.isFood ? updatedItem.note : null,
@@ -369,8 +453,13 @@ export class MealieService implements IntegrationService {
       };
     }
     catch (error) {
-      consola.error(`Mealie Shopping Lists: Error toggling item ${itemId}:`, error);
-      throw new Error(`Failed to toggle item: ${error instanceof Error ? error.message : "Unknown error"}`);
+      consola.error(
+        `Mealie Shopping Lists: Error toggling item ${itemId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to toggle item: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -379,12 +468,24 @@ export class MealieService implements IntegrationService {
   }
 }
 
-export function createMealieService(integrationId: string, apiKey: string, baseUrl: string): MealieService {
+export function createMealieService(
+  integrationId: string,
+  apiKey: string,
+  baseUrl: string,
+): MealieService {
   return new MealieService(integrationId, apiKey, baseUrl);
 }
 
-export function getMealieFieldsForItem(item: { integrationData?: { isFood?: boolean } } | null | undefined, allFields: { key: string }[]): { key: string }[] {
-  if (!item || !item.integrationData || item.integrationData.isFood === null || item.integrationData.isFood === undefined) {
+export function getMealieFieldsForItem(
+  item: { integrationData?: { isFood?: boolean } } | null | undefined,
+  allFields: { key: string }[],
+): { key: string }[] {
+  if (
+    !item
+    || !item.integrationData
+    || item.integrationData.isFood === null
+    || item.integrationData.isFood === undefined
+  ) {
     return allFields.filter(field =>
       ["notes", "quantity"].includes(field.key),
     );

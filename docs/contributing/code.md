@@ -143,9 +143,26 @@ Skylite UX uses Nuxt's file-based API routing system. API endpoints are automati
 3. **Test your changes**
 
    ```bash
-   # npm run test (not currently implemented)
+   # Run linting
    npm run lint
+   
+   # Run type checking
    npm run type-check
+   
+   # Run all tests (unit, nuxt, and e2e)
+   npm run test
+   
+   # Run only unit tests (fast, isolated tests)
+   npm run test --project unit
+   
+   # Run only Nuxt tests (API endpoint tests)
+   npm run test --project nuxt
+   
+   # Run only e2e tests (end-to-end workflows)
+   npm run test:e2e
+   
+   # Run tests with coverage report
+   npm run test:coverage
    ```
 
 4. **Commit your changes**
@@ -195,7 +212,11 @@ The project uses a camelCase naming convention for all files with some exception
 
 ## AI-Assisted Code
 
-We welcome contributions that use AI-assisted development tools (such as GitHub Copilot, ChatGPT, Cursor, etc.). However, all contributors are responsible for ensuring their code meets our standards.
+We welcome and encourage contributions that use AI-assisted development tools (such as GitHub Copilot, ChatGPT, Cursor, etc.). Much of this project has been built with such tools. However, all contributors are responsible for ensuring their code meets our standards.
+
+### Communication
+
+Pull request descriptions, issue text, and review comments must be in **your own words**; do not use AI output. We expect **you** to understand the changes you make or that are requested. 
 
 ### Contributor Responsibility
 
@@ -205,6 +226,7 @@ You are fully accountable for all code you submit, regardless of whether it was 
 - Ensure the code meets our quality and security standards
 - Verify that you have the right to contribute the code
 - Test and validate AI-generated code thoroughly
+- Unfocused or low-quality contributions may be rejected
 
 ### Code Quality and Security
 
@@ -231,22 +253,131 @@ AI-assisted contributions undergo the same review process as all other code:
 
 - Must pass all code quality checks
 - Subject to the same review standards
-- May be rejected if they don't meet quality, licensing, etc
+- May be rejected if they don't meet quality, licensing, etc.
 - Maintainers will evaluate based on the code itself, not its origin
+
+### Code Contributions
+
+- **Focused changes:** Contributions should be concise and focused. If a PR targets one change, avoid unrelated edits elsewhere. Large changes should be split into smaller, reviewable commits where appropriate.
+- **Explain in your own words:** In the PR body and commit messages, explain what changed and why in your own words. If you cannot explain the change, do not submit it.
+- **Test the change:** Code must build and run; explicitly test the functionality you changed (see [Testing](#testing)).
+- **Handle review yourself:** You must be able to respond to review feedback and implement requested changes yourself. Pasting reviewer feedback into an AI and resubmitting without understanding is not acceptable.
+- **Features and refactors:** Larger or structural changes require real understanding of the codebase and require discussion on [GitHub](https://github.com/wetzel402/SkyLite-UX/discussions) or [Discord](https://discord.gg/KJn3YfWxn7). Contributions that clearly lack that understanding may be rejected outright.
 
 ### Best Practices
 
 When using AI tools:
 
 - Don't rely solely on AI-generated code without review
+- Don't use vague prompts
 - Always review, test, and validate AI-generated code
 - Ensure you understand what the code does before submitting
 - Use AI tools as assistants, not replacements for your judgment
 - Apply the same care and attention as you would to manually written code
 
-## Testing (Not currently implemented)
+## Testing
 
-Skylite UX uses [@nuxt/test-utils](https://nuxt.com/docs/4.x/getting-started/testing) for comprehensive testing support, including both unit and end-to-end tests.
+Skylite UX uses [@nuxt/test-utils](https://nuxt.com/docs/4.x/getting-started/testing) and Vitest for comprehensive testing support, including unit tests, Nuxt runtime tests, and end-to-end tests.
+
+### Test Structure
+
+The test suite is organized into three main categories:
+
+- **Unit Tests** (`test/unit/`) - Fast, isolated tests for individual functions and utilities (Node environment)
+- **Nuxt Tests** (`test/nuxt/`) - API endpoint tests and server-side integration tests (Nuxt runtime environment)
+- **E2E Tests** (`test/e2e/`) - End-to-end tests for complete user workflows using browser automation (Playwright)
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test
+
+# Run only unit tests
+npm run test --project unit
+
+# Run only Nuxt tests
+npm run test --project nuxt
+
+# Run only e2e tests
+npm run test:e2e
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Test File Organization
+
+Test files follow a naming convention that matches the source code structure:
+
+- Unit tests: `test/unit/{path-to-source}/{filename}.test.ts`
+- Nuxt tests: `test/nuxt/{path-to-source}/{filename}.test.ts`
+- E2E tests: `test/e2e/{feature-area}/{scenario}.test.ts`
+
+### E2E Test Setup
+
+E2E tests are configured as a separate Vitest project in `vitest.config.ts`. The setup uses a global setup pattern with `createTest()` and `exposeContextToEnv()` from `@nuxt/test-utils/e2e`, which allows the test context to be shared across all test files.
+
+**Configuration:**
+- **Global Setup** (`test/e2e/globalSetup.ts`): Uses `createTest()` to initialize the Nuxt test environment and `exposeContextToEnv()` to make the context available to test files
+- **Setup Files** (`test/e2e/setup.ts`): Each test file calls `recoverContextFromEnv()` to restore the shared context
+- **Vitest Project**: Configured with `testTimeout: 60_000`, `hookTimeout: 180_000`, and `pool: "forks"`
+
+**Example e2e test structure:**
+
+```typescript
+import { $fetch, url } from "@nuxt/test-utils/e2e";
+import { describe, it, expect } from "vitest";
+
+describe("Feature E2E", () => {
+  it("should test user workflow", async () => {
+    const html = await $fetch(url("/page"));
+    expect(html).toContain("Expected Content");
+  });
+});
+```
+
+Note: Individual test files do not call `setup()` directly. The context is automatically restored via `recoverContextFromEnv()` in the setup files.
+
+### Test Coverage Areas
+
+**Unit Tests:**
+- Server utilities (rrule calculations, timezone conversions)
+- Composable functions (calendar, todos, shopping lists)
+- Date and timezone handling
+
+**Nuxt Tests:**
+- API endpoints (CRUD operations)
+- Integration parsing (iCal, Google Calendar)
+- Timezone-aware date handling
+- Composable logic that does not call the real API (getters, state, reinit, mocked fetch)
+
+**E2E Tests:**
+- Complete user workflows
+- UI interactions and visual feedback
+- Cross-page navigation
+- Integration configurations
+- Integration CRUD (create, update, delete) against the real API
+
+**Composable vs E2E for API-dependent flows:**
+
+Composables that use `$fetch` for create/update/delete are tested in two layers:
+
+- **Nuxt composable tests** (`test/nuxt/app/composables/`) cover getters, derived state, `fetchIntegrations` (with mocked `refreshNuxtData`), and reinitialize logic. They do not call the real HTTP API.
+- **E2E tests** (`test/e2e/integrations/`) cover integration CRUD by calling the real `/api/integrations` endpoints (POST, PUT, DELETE) and asserting on responses and list state.
+
+### Timezone Testing
+
+Special attention is given to timezone and timestamp handling due to the calendar and todo features. Timezone tests cover:
+
+- DST transitions (spring forward, fall back)
+- Timezone conversions (UTC, America/New_York, Europe/London, Asia/Tokyo)
+- All-day event boundaries
+- Recurrence calculations across timezones
+- RFC 5545 compliance for iCal timezone handling
 
 ## Running
 
