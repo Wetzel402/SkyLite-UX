@@ -688,7 +688,7 @@ function formatEventTime(dateString: string | Date) {
                 <div
                   v-for="meal in todaysMenu.filter(m => m.dayLabel === 'Today')"
                   :key="meal.id"
-                  class="flex flex-col items-center"
+                  class="flex flex-col items-center w-28"
                 >
                   <div class="text-3xl mb-1">
                     {{ getMealIcon(meal.mealType) }}
@@ -696,7 +696,7 @@ function formatEventTime(dateString: string | Date) {
                   <div class="text-xs opacity-60 mb-1">
                     {{ meal.mealType }}
                   </div>
-                  <div class="text-sm opacity-80">
+                  <div class="text-sm opacity-80 text-center line-clamp-2">
                     {{ meal.name }}
                   </div>
                 </div>
@@ -712,7 +712,7 @@ function formatEventTime(dateString: string | Date) {
                 <div
                   v-for="meal in todaysMenu.filter(m => m.dayLabel === 'Tomorrow')"
                   :key="meal.id"
-                  class="flex flex-col items-center"
+                  class="flex flex-col items-center w-28"
                 >
                   <div class="text-3xl mb-1">
                     {{ getMealIcon(meal.mealType) }}
@@ -720,7 +720,7 @@ function formatEventTime(dateString: string | Date) {
                   <div class="text-xs opacity-60 mb-1">
                     {{ meal.mealType }}
                   </div>
-                  <div class="text-sm opacity-80">
+                  <div class="text-sm opacity-80 text-center line-clamp-2">
                     {{ meal.name }}
                   </div>
                 </div>
