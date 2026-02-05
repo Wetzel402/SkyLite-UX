@@ -278,4 +278,72 @@ describe("pUT /api/integrations/[id]", () => {
       expect(response.id).toBe("integration-1");
     });
   });
+
+  describe("webcal URL normalization", () => {
+    it("normalizes webcal:// to http:// when updating iCal integration", async () => {
+      integrationRegistry.set("calendar:ical", {
+        settingsFields: [
+          { key: "baseUrl", label: "URL", required: true },
+        ],
+        capabilities: ["get_events"],
+      });
+
+      const mockService = {
+        testConnection: vi.fn().mockResolvedValue(true),
+        getStatus: vi.fn().mockResolvedValue({ isConnected: true, lastChecked: new Date() }),
+      };
+      vi.mocked(createIntegrationService).mockResolvedValue(mockService as unknown as Awaited<ReturnType<typeof createIntegrationService>>);
+
+      const currentIntegration = createBaseIntegration();
+      const mockUpdated = { ...currentIntegration, baseUrl: "http://example.com/cal.ics" };
+      prisma.integration.findUnique.mockResolvedValue(currentIntegration as Awaited<ReturnType<typeof prisma.integration.findUnique>>);
+      prisma.integration.update.mockResolvedValue(mockUpdated as Awaited<ReturnType<typeof prisma.integration.update>>);
+
+      const event = createMockH3Event({
+        method: "PUT",
+        params: { id: "integration-1" },
+        body: { type: "calendar", service: "ical", baseUrl: "webcal://example.com/cal.ics" },
+      });
+
+      await handler(event);
+
+      expect(prisma.integration.update).toHaveBeenCalledWith({
+        where: { id: "integration-1" },
+        data: expect.objectContaining({ baseUrl: "http://example.com/cal.ics" }),
+      });
+    });
+
+    it("normalizes webcals:// to https:// when updating iCal integration", async () => {
+      integrationRegistry.set("calendar:ical", {
+        settingsFields: [
+          { key: "baseUrl", label: "URL", required: true },
+        ],
+        capabilities: ["get_events"],
+      });
+
+      const mockService = {
+        testConnection: vi.fn().mockResolvedValue(true),
+        getStatus: vi.fn().mockResolvedValue({ isConnected: true, lastChecked: new Date() }),
+      };
+      vi.mocked(createIntegrationService).mockResolvedValue(mockService as unknown as Awaited<ReturnType<typeof createIntegrationService>>);
+
+      const currentIntegration = createBaseIntegration();
+      const mockUpdated = { ...currentIntegration, baseUrl: "https://example.com/cal.ics" };
+      prisma.integration.findUnique.mockResolvedValue(currentIntegration as Awaited<ReturnType<typeof prisma.integration.findUnique>>);
+      prisma.integration.update.mockResolvedValue(mockUpdated as Awaited<ReturnType<typeof prisma.integration.update>>);
+
+      const event = createMockH3Event({
+        method: "PUT",
+        params: { id: "integration-1" },
+        body: { type: "calendar", service: "ical", baseUrl: "webcals://example.com/cal.ics" },
+      });
+
+      await handler(event);
+
+      expect(prisma.integration.update).toHaveBeenCalledWith({
+        where: { id: "integration-1" },
+        data: expect.objectContaining({ baseUrl: "https://example.com/cal.ics" }),
+      });
+    });
+  });
 });

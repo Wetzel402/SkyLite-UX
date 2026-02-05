@@ -41,9 +41,23 @@ export class ICalServerService {
     const startUTC = dtstart
       ? dtstart.convertToZone(ical.TimezoneService.get("UTC")).toString()
       : new Date().toISOString().replace(".000", "");
-    const endUTC = dtend
-      ? dtend.convertToZone(ical.TimezoneService.get("UTC")).toString()
-      : new Date().toISOString().replace(".000", "");
+
+    let endUTC: string;
+    if (dtend) {
+      endUTC = dtend.convertToZone(ical.TimezoneService.get("UTC")).toString();
+    }
+    else if (dtstart?.isDate) {
+      const startDate = dtstart.convertToZone(ical.TimezoneService.get("UTC")).toJSDate();
+      const endDate = new Date(Date.UTC(
+        startDate.getUTCFullYear(),
+        startDate.getUTCMonth(),
+        startDate.getUTCDate() + 1,
+      ));
+      endUTC = ical.Time.fromJSDate(endDate, true).toString();
+    }
+    else {
+      endUTC = startUTC;
+    }
 
     return {
       type: "VEVENT",
