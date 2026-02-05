@@ -203,6 +203,11 @@ async function handleInlineFormSave(data: { name: string; description: string; d
   // Store the day we're on before closing the form
   const currentDay = dayOfWeek;
 
+  // Set preservation flags BEFORE emitting to parent
+  // This ensures the watch on meals will restore this day after reload
+  preserveExpandedDay.value = true;
+  preservedDay.value = currentDay;
+
   if (editingMeal) {
     // Emit edit event to parent
     emit("editMeal", {
@@ -216,11 +221,6 @@ async function handleInlineFormSave(data: { name: string; description: string; d
   }
 
   closeInlineForm();
-
-  // Keep the accordion expanded on the day where we just added/edited
-  // Use nextTick to ensure it persists after parent reloads data
-  await nextTick();
-  expandedDay.value = currentDay;
 }
 
 // Handle form delete
@@ -231,13 +231,13 @@ async function handleInlineFormDelete() {
   // Store the day before closing
   const currentDay = inlineFormState.value.dayOfWeek;
 
+  // Set preservation flags BEFORE emitting to parent
+  // This ensures the watch on meals will restore this day after reload
+  preserveExpandedDay.value = true;
+  preservedDay.value = currentDay;
+
   emit("deleteMeal", inlineFormState.value.editingMeal);
   closeInlineForm();
-
-  // Keep the accordion expanded on the same day
-  // Use nextTick to ensure it persists after parent reloads data
-  await nextTick();
-  expandedDay.value = currentDay;
 }
 
 // Accordion animation hooks

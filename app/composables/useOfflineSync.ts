@@ -116,6 +116,7 @@ export function useOfflineSync() {
           await $fetch(`/api/meal-plans/${item.mealPlanId}/meals`, {
             method: "POST",
             body: item.mealData,
+            timeout: 10000, // 10 second timeout
           });
 
           await removePendingMeal(item.id);
@@ -159,6 +160,7 @@ export function useOfflineSync() {
           await $fetch("/api/todos", {
             method: "POST",
             body: item.todoData,
+            timeout: 10000, // 10 second timeout
           });
 
           await removePendingTodo(item.id);

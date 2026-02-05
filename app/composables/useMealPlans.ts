@@ -44,6 +44,9 @@ export function useMealPlans() {
       const weekStartStr = weekStart.toISOString().split("T")[0];
       const plan = await $fetch<MealPlanWithMeals | null>(
         `/api/meal-plans/by-week/${weekStartStr}`,
+        {
+          timeout: 10000, // 10 second timeout
+        },
       );
       return plan;
     }
@@ -62,6 +65,7 @@ export function useMealPlans() {
           ...planData,
           weekStart: planData.weekStart.toISOString(),
         },
+        timeout: 10000, // 10 second timeout
       });
 
       await refreshNuxtData("meal-plans");
@@ -78,6 +82,7 @@ export function useMealPlans() {
     try {
       await $fetch(`/api/meal-plans/${planId}`, {
         method: "DELETE",
+        timeout: 10000, // 10 second timeout
       });
 
       await refreshNuxtData("meal-plans");
@@ -161,6 +166,7 @@ export function useMealPlans() {
       const newMeal = await $fetch<Meal>(`/api/meal-plans/${planId}/meals`, {
         method: "POST",
         body: mealData,
+        timeout: 10000, // 10 second timeout
       });
 
       consola.info("[Use Meal Plans] Meal created successfully via API", newMeal);
@@ -180,6 +186,7 @@ export function useMealPlans() {
       const updatedMeal = await $fetch<Meal>(`/api/meals/${mealId}`, {
         method: "PUT",
         body: updates,
+        timeout: 10000, // 10 second timeout
       });
 
       await refreshNuxtData("meal-plans");
@@ -196,6 +203,7 @@ export function useMealPlans() {
     try {
       await $fetch(`/api/meals/${mealId}`, {
         method: "DELETE",
+        timeout: 10000, // 10 second timeout
       });
 
       await refreshNuxtData("meal-plans");
@@ -209,7 +217,9 @@ export function useMealPlans() {
 
   const getUpcomingPrepMeals = async () => {
     try {
-      const meals = await $fetch<Meal[]>("/api/meals/upcomingPrep");
+      const meals = await $fetch<Meal[]>("/api/meals/upcomingPrep", {
+        timeout: 10000, // 10 second timeout
+      });
       return meals;
     }
     catch (err) {
@@ -228,6 +238,7 @@ export function useMealPlans() {
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
           },
+          timeout: 10000, // 10 second timeout
         },
       );
       return meals;

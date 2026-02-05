@@ -24,6 +24,8 @@ const {
   getUpcomingPrepMeals,
 } = useMealPlans();
 
+const { isOnline } = useOfflineSync();
+
 // Current week state (Monday of the week)
 const currentWeekStart = ref<Date>(
   startOfWeek(getStableDate(), { weekStartsOn: 1 }),
@@ -72,8 +74,25 @@ async function loadWeekMealPlan() {
       currentPlan.value = plan;
     }
   }
-  catch {
-    showError("Load Failed", "Failed to load meal plan. Please try again.");
+  catch (error) {
+    // Provide different error messages based on online status
+    if (!isOnline.value) {
+      showError("Offline", "Cannot load meal plan while offline. Please check your connection.");
+      // Set empty plan so UI still renders
+      currentPlan.value = {
+        id: "",
+        weekStart: currentWeekStart.value,
+        order: 0,
+        meals: [],
+        _count: { meals: 0 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+    else {
+      showError("Load Failed", "Failed to load meal plan. Please try again.");
+    }
+    consola.error("Failed to load meal plan:", error);
   }
   finally {
     loading.value = false;
@@ -88,6 +107,13 @@ async function loadUpcomingPrepMeals() {
   }
   catch (error: any) {
     consola.error("Failed to load preparation reminders:", error);
+    // Set empty array so UI doesn't break
+    upcomingPrepMeals.value = [];
+
+    // Show error only if we're online (offline is expected to fail)
+    if (isOnline.value) {
+      showError("Load Failed", "Failed to load preparation reminders.");
+    }
   }
 }
 
