@@ -235,4 +235,112 @@ describe("pOST /api/integrations", () => {
       expect(prisma.integration.create).not.toHaveBeenCalled();
     });
   });
+
+  describe("webcal URL normalization", () => {
+    it("normalizes webcal:// to http:// when creating iCal integration", async () => {
+      const requestBody = {
+        ...createBaseRequestBody(),
+        baseUrl: "webcal://example.com/cal.ics",
+      };
+
+      const mockIntegrationConfig = {
+        type: "calendar",
+        service: "ical",
+        capabilities: ["get_events"],
+        settingsFields: [
+          { key: "baseUrl", label: "URL", type: "url" as const, required: true },
+        ],
+        icon: "",
+        dialogFields: [],
+        syncInterval: 10,
+      };
+
+      vi.mocked(integrationRegistry).set("calendar:ical", mockIntegrationConfig);
+
+      const mockService = {
+        testConnection: vi.fn().mockResolvedValue(true),
+        getStatus: vi.fn().mockResolvedValue({ error: null }),
+      };
+      vi.mocked(createIntegrationService).mockResolvedValue(mockService as never);
+
+      const mockCreatedIntegration = {
+        id: "integration-123",
+        ...requestBody,
+        baseUrl: "http://example.com/cal.ics",
+        icon: null,
+        settings: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prisma.integration.create.mockResolvedValue(mockCreatedIntegration as Awaited<ReturnType<typeof prisma.integration.create>>);
+
+      const event = createMockH3Event({
+        method: "POST",
+        body: requestBody,
+      });
+
+      await handler(event);
+
+      expect(prisma.integration.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            baseUrl: "http://example.com/cal.ics",
+          }),
+        }),
+      );
+    });
+
+    it("normalizes webcals:// to https:// when creating iCal integration", async () => {
+      const requestBody = {
+        ...createBaseRequestBody(),
+        baseUrl: "webcals://example.com/cal.ics",
+      };
+
+      const mockIntegrationConfig = {
+        type: "calendar",
+        service: "ical",
+        capabilities: ["get_events"],
+        settingsFields: [
+          { key: "baseUrl", label: "URL", type: "url" as const, required: true },
+        ],
+        icon: "",
+        dialogFields: [],
+        syncInterval: 10,
+      };
+
+      vi.mocked(integrationRegistry).set("calendar:ical", mockIntegrationConfig);
+
+      const mockService = {
+        testConnection: vi.fn().mockResolvedValue(true),
+        getStatus: vi.fn().mockResolvedValue({ error: null }),
+      };
+      vi.mocked(createIntegrationService).mockResolvedValue(mockService as never);
+
+      const mockCreatedIntegration = {
+        id: "integration-123",
+        ...requestBody,
+        baseUrl: "https://example.com/cal.ics",
+        icon: null,
+        settings: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prisma.integration.create.mockResolvedValue(mockCreatedIntegration as Awaited<ReturnType<typeof prisma.integration.create>>);
+
+      const event = createMockH3Event({
+        method: "POST",
+        body: requestBody,
+      });
+
+      await handler(event);
+
+      expect(prisma.integration.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            baseUrl: "https://example.com/cal.ics",
+          }),
+        }),
+      );
+    });
+  });
 });
