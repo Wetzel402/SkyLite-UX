@@ -13,6 +13,9 @@ export default defineEventHandler(async (event) => {
 
     const existingColumn = await prisma.todoColumn.findUnique({
       where: { id },
+      include: {
+        todos: true,
+      },
     });
 
     if (!existingColumn) {

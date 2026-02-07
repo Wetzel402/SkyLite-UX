@@ -6,17 +6,13 @@ import { addDays, endOfWeek, isSameMonth, startOfWeek } from "date-fns";
 import type { CalendarView } from "~/types/calendar";
 
 import { useStableDate } from "~/composables/useStableDate";
-import { useUsers } from "~/composables/useUsers";
 
 const props = defineProps<{
   showNavigation?: boolean;
   showViewSelector?: boolean;
-  showExport?: boolean;
-  showUserFilter?: boolean;
   currentDate?: Date;
   view?: CalendarView;
   className?: string;
-  selectedUserIds?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -25,62 +21,9 @@ const emit = defineEmits<{
   (e: "today"): void;
   (e: "viewChange", view: CalendarView): void;
   (e: "dateChange", date: Date): void;
-  (e: "export"): void;
-  (e: "userFilterChange", userIds: string[]): void;
 }>();
 
-const isExporting = ref(false);
-
-async function handleExport() {
-  isExporting.value = true;
-  try {
-    // Trigger file download by navigating to the export endpoint
-    const link = document.createElement("a");
-    link.href = "/api/calendar-events/export";
-    link.download = "skylite-calendar.ics";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    emit("export");
-  }
-  finally {
-    isExporting.value = false;
-  }
-}
-
 const { getStableDate } = useStableDate();
-const { users, fetchUsers } = useUsers();
-
-// Fetch users on mount
-onMounted(() => {
-  fetchUsers();
-});
-
-const selectedUsers = computed(() => props.selectedUserIds || []);
-
-function isUserSelected(userId: string) {
-  return selectedUsers.value.length === 0 || selectedUsers.value.includes(userId);
-}
-
-function toggleUserFilter(userId: string) {
-  const currentSelection = [...selectedUsers.value];
-  const index = currentSelection.indexOf(userId);
-
-  if (index === -1) {
-    // Add user to filter
-    currentSelection.push(userId);
-  }
-  else {
-    // Remove user from filter
-    currentSelection.splice(index, 1);
-  }
-
-  emit("userFilterChange", currentSelection);
-}
-
-function clearUserFilter() {
-  emit("userFilterChange", []);
-}
 
 const currentDate = computed(() => props.currentDate || getStableDate());
 const view = computed(() => props.view || "week");
@@ -169,10 +112,13 @@ function handleToday() {
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2" :class="className">
+  <div
+    class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+    :class="className"
+  >
     <div class="flex sm:flex-col max-sm:items-center justify-between gap-1.5">
-      <div class="flex items-center gap-3">
-        <h1 class="font-bold text-5xl text-highlighted">
+      <div class="flex items-center gap-1.5">
+        <h1 class="font-semibold text-xl text-highlighted">
           <NuxtTime
             :datetime="now"
             hour="numeric"
@@ -180,10 +126,8 @@ function handleToday() {
             :hour12="true"
           />
         </h1>
-        <!-- Weather Display -->
-        <WeatherDisplay />
       </div>
-      <div class="text-base text-muted">
+      <div class="text-sm text-muted">
         <NuxtTime
           :datetime="now"
           weekday="long"
@@ -194,7 +138,7 @@ function handleToday() {
     </div>
 
     <div v-if="showNavigation" class="flex items-center justify-center flex-1">
-      <h2 class="font-semibold text-2xl text-highlighted">
+      <h2 class="font-semibold text-lg text-highlighted">
         <NuxtTime
           v-if="viewTitle === 'month'"
           :datetime="currentDate"
@@ -211,7 +155,8 @@ function handleToday() {
           <NuxtTime
             :datetime="startOfWeek(currentDate, { weekStartsOn: 0 })"
             month="short"
-          /> -
+          />
+          -
           <NuxtTime
             :datetime="endOfWeek(currentDate, { weekStartsOn: 0 })"
             month="short"
@@ -232,10 +177,7 @@ function handleToday() {
           year="numeric"
         />
         <span v-else-if="viewTitle === 'agenda-different-months'">
-          <NuxtTime
-            :datetime="currentDate"
-            month="short"
-          /> -
+          <NuxtTime :datetime="currentDate" month="short" /> -
           <NuxtTime
             :datetime="addDays(currentDate, 30 - 1)"
             month="short"
@@ -279,7 +221,10 @@ function handleToday() {
           Today
         </UButton>
       </div>
-      <div v-if="showViewSelector" class="flex items-center justify-between gap-2">
+      <div
+        v-if="showViewSelector"
+        class="flex items-center justify-between gap-2"
+      >
         <UDropdownMenu :items="items">
           <UButton
             color="neutral"
@@ -290,57 +235,6 @@ function handleToday() {
             <span class="capitalize">{{ view }}</span>
           </UButton>
         </UDropdownMenu>
-      </div>
-      <div v-if="showExport" class="flex items-center">
-        <UButton
-          icon="i-lucide-download"
-          color="neutral"
-          variant="ghost"
-          size="xl"
-          aria-label="Export calendar to ICS"
-          :loading="isExporting"
-          @click="handleExport"
-        />
-      </div>
-    </div>
-
-    <!-- User Filter Badges -->
-    <div v-if="showUserFilter && users && users.length > 0" class="flex items-center gap-2 mt-2 sm:mt-0">
-      <div class="flex items-center gap-1 flex-wrap">
-        <button
-          v-for="user in users"
-          :key="user.id"
-          type="button"
-          class="flex items-center gap-1.5 px-2 py-1 rounded-full text-sm font-medium transition-all border-2"
-          :class="isUserSelected(user.id)
-            ? 'opacity-100 shadow-sm'
-            : 'opacity-40 hover:opacity-70'"
-          :style="{
-            backgroundColor: isUserSelected(user.id) ? `${user.color || '#22d3ee'}20` : 'transparent',
-            borderColor: user.color || '#22d3ee',
-            color: user.color || '#22d3ee',
-          }"
-          :aria-label="`Filter by ${user.name}`"
-          :aria-pressed="isUserSelected(user.id)"
-          @click="toggleUserFilter(user.id)"
-        >
-          <UAvatar
-            :src="user.avatar || undefined"
-            :alt="user.name"
-            size="xs"
-            :style="{ backgroundColor: user.color || '#22d3ee' }"
-          />
-          <span>{{ user.name }}</span>
-        </button>
-        <button
-          v-if="selectedUsers.length > 0"
-          type="button"
-          class="text-xs text-muted hover:text-highlighted underline ml-1"
-          aria-label="Clear user filter"
-          @click="clearUserFilter"
-        >
-          Clear
-        </button>
       </div>
     </div>
   </div>

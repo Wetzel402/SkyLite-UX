@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
             avatar: true,
           },
         },
+        todos: true,
         _count: {
           select: {
             todos: true,

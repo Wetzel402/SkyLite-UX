@@ -11,6 +11,11 @@ export default defineEventHandler(async (_event) => {
             avatar: true,
           },
         },
+        todos: {
+          orderBy: {
+            order: "asc",
+          },
+        },
         _count: {
           select: { todos: true },
         },

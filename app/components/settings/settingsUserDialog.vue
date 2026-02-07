@@ -18,7 +18,6 @@ const name = ref("");
 const email = ref("");
 const color = ref("#3b82f6");
 const avatar = ref("");
-const role = ref<"PARENT" | "CHILD">("CHILD");
 const error = ref<string | null>(null);
 
 const chip = computed(() => ({ backgroundColor: color.value }));
@@ -36,32 +35,41 @@ const textColor = computed(() => {
   return luminance > 0.5 ? "374151" : "FFFFFF";
 });
 
-watch(() => props.user, (newUser) => {
-  if (newUser) {
-    name.value = newUser.name || "";
-    email.value = newUser.email || "";
-    color.value = newUser.color || "#06b6d4";
-    avatar.value = newUser.avatar && !newUser.avatar.startsWith("https://ui-avatars.com/api/") ? newUser.avatar : "";
-    role.value = (newUser as User & { role?: "PARENT" | "CHILD" }).role || "CHILD";
-    error.value = null;
-  }
-  else {
-    resetForm();
-  }
-}, { immediate: true });
+watch(
+  () => props.user,
+  (newUser) => {
+    if (newUser) {
+      name.value = newUser.name || "";
+      email.value = newUser.email || "";
+      color.value = newUser.color || "#06b6d4";
+      avatar.value
+        = newUser.avatar
+          && !newUser.avatar.startsWith("https://ui-avatars.com/api/")
+          ? newUser.avatar
+          : "";
+      error.value = null;
+    }
+    else {
+      resetForm();
+    }
+  },
+  { immediate: true },
+);
 
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    resetForm();
-  }
-});
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) {
+      resetForm();
+    }
+  },
+);
 
 function resetForm() {
   name.value = "";
   email.value = "";
   color.value = "#06b6d4";
   avatar.value = "";
-  role.value = "CHILD";
   error.value = null;
 }
 
@@ -80,7 +88,6 @@ function handleSave() {
     email: email.value?.trim() || "",
     color: color.value,
     avatar: avatar.value || getDefaultAvatarUrl(),
-    role: role.value,
     todoOrder: 0,
   } as CreateUserInput);
 }
@@ -99,12 +106,14 @@ function handleDelete() {
     @click="emit('close')"
   >
     <div
-      class="w-full max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
+      class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-default">
+      <div
+        class="flex items-center justify-between p-4 border-b border-default"
+      >
         <h3 class="text-base font-semibold leading-6">
-          {{ user?.id ? 'Edit User' : 'Create User' }}
+          {{ user?.id ? "Edit User" : "Create User" }}
         </h3>
         <UButton
           color="neutral"
@@ -119,7 +128,6 @@ function handleDelete() {
       <div class="p-4 space-y-6">
         <div
           v-if="error"
-          role="alert"
           class="bg-error/10 text-error rounded-md px-3 py-2 text-sm"
         >
           {{ error }}
@@ -169,7 +177,6 @@ function handleDelete() {
           <div class="flex items-center gap-4">
             <img
               :src="avatar || getDefaultAvatarUrl()"
-              :alt="name ? `${name}'s avatar preview` : 'Avatar preview'"
               class="w-12 h-12 rounded-full border border-default"
             >
             <UInput

@@ -21,7 +21,9 @@ export type TodoListWithIntegration = TodoList & {
   integrationIcon?: string | null;
 };
 
-export type AnyListWithIntegration = ShoppingListWithIntegration | TodoListWithIntegration;
+export type AnyListWithIntegration
+  = | ShoppingListWithIntegration
+    | TodoListWithIntegration;
 
 export type ToggleEvent = {
   itemId: string;
@@ -53,11 +55,19 @@ export type DialogField = {
 export type IntegrationSettingsField = {
   key: string;
   label: string;
-  type: "text" | "password" | "url" | "color" | "boolean" | "oauth" | "multiselect" | "select";
+  type: "text" | "password" | "url" | "color" | "boolean";
   placeholder?: string;
   required?: boolean;
   description?: string;
-  options?: string[];
 };
 
 export type ToastType = "error" | "warning" | "success" | "info";
+
+export type GlobalFloatingActionButtonProps = {
+  icon?: string;
+  label?: string;
+  color?: "primary" | "secondary" | "success" | "warning" | "error";
+  size?: "sm" | "md" | "lg";
+  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
+  disabled?: boolean;
+};

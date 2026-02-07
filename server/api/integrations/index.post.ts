@@ -2,7 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, readBody } from "h3";
 
-import { integrationRegistry } from "~/types/integrations";
+import { createIntegrationService, integrationRegistry } from "~/types/integrations";
+
+import { sanitizeIntegration } from "../../utils/sanitizeIntegration";
 
 const prisma = new PrismaClient();
 
@@ -50,40 +52,39 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { createIntegrationService } = await import("~/types/integrations");
-    const tempIntegration = {
-      id: "temp",
-      type,
-      service,
-      apiKey: apiKey || "",
-      baseUrl,
-      enabled: true,
-      name: name || "Temp",
-      icon: icon || null,
-      settings: settings || {},
-      accessToken: null,
-      refreshToken: null,
-      tokenExpiry: null,
-      tokenType: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const hasOAuth = integrationConfig.capabilities.includes("oauth");
 
-    const integrationService = await createIntegrationService(tempIntegration);
-    if (!integrationService) {
-      throw createError({
-        statusCode: 400,
-        message: `Unsupported integration type: ${type}:${service}`,
-      });
-    }
+    if (!hasOAuth) {
+      const tempIntegration = {
+        id: "temp",
+        type,
+        service,
+        apiKey: apiKey || "",
+        baseUrl,
+        enabled: true,
+        name: name || "Temp",
+        icon: icon || null,
+        settings: settings || {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-    const connectionSuccess = await integrationService.testConnection?.();
-    if (!connectionSuccess) {
-      const status = await integrationService.getStatus();
-      throw createError({
-        statusCode: 400,
-        message: `Connection test failed: ${status.error || "Unknown error"}`,
-      });
+      const integrationService = await createIntegrationService(tempIntegration);
+      if (!integrationService) {
+        throw createError({
+          statusCode: 400,
+          message: `Unsupported integration type: ${type}:${service}`,
+        });
+      }
+
+      const connectionSuccess = await integrationService.testConnection?.();
+      if (!connectionSuccess) {
+        const status = await integrationService.getStatus();
+        throw createError({
+          statusCode: 400,
+          message: `Connection test failed: ${status.error || "Unknown error"}`,
+        });
+      }
     }
 
     const integration = await prisma.integration.create({
@@ -99,19 +100,7 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // Remove sensitive fields before sending to client
-    return {
-      id: integration.id,
-      name: integration.name,
-      type: integration.type,
-      service: integration.service,
-      icon: integration.icon,
-      enabled: integration.enabled,
-      settings: integration.settings,
-      createdAt: integration.createdAt,
-      updatedAt: integration.updatedAt,
-      // Explicitly exclude apiKey and baseUrl for security
-    };
+    return sanitizeIntegration(integration);
   }
   catch (error: unknown) {
     consola.error("Integrations index post: Error creating integration:", error);

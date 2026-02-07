@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { CreateShoppingListItemInput, ShoppingListItem } from "~/types/database";
+import type {
+  CreateShoppingListItemInput,
+  ShoppingListItem,
+} from "~/types/database";
 import type { FormData } from "~/types/forms";
 import type { DialogField } from "~/types/ui";
 
@@ -50,25 +53,31 @@ const canDelete = computed(() => {
   return props.integrationCapabilities.includes("delete_items");
 });
 
-watch(() => [props.isOpen, props.item], ([isOpen, item]) => {
-  if (isOpen) {
-    resetForm();
-    if (item && typeof item === "object") {
-      props.fields.forEach((field) => {
-        const fieldKey = field.key;
-        const fieldValue = (item as unknown as Record<string, unknown>)[fieldKey];
-        if (fieldValue !== undefined) {
-          if (field.type === "number") {
-            formData.value[fieldKey] = Number(fieldValue);
+watch(
+  () => [props.isOpen, props.item],
+  ([isOpen, item]) => {
+    if (isOpen) {
+      resetForm();
+      if (item && typeof item === "object") {
+        props.fields.forEach((field) => {
+          const fieldKey = field.key;
+          const fieldValue = (item as ShoppingListItem)[
+            fieldKey as keyof ShoppingListItem
+          ];
+          if (fieldValue !== undefined) {
+            if (field.type === "number") {
+              formData.value[fieldKey] = Number(fieldValue);
+            }
+            else {
+              formData.value[fieldKey] = fieldValue ? String(fieldValue) : "";
+            }
           }
-          else {
-            formData.value[fieldKey] = fieldValue ? String(fieldValue) : "";
-          }
-        }
-      });
+        });
+      }
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
 function resetForm() {
   initializeFormData();
@@ -76,14 +85,19 @@ function resetForm() {
 }
 
 function handleSave() {
-  const requiredField = props.fields.find((f: DialogField) => f.required && f.canEdit);
+  const requiredField = props.fields.find(
+    (f: DialogField) => f.required && f.canEdit,
+  );
   if (requiredField && !formData.value[requiredField.key]?.toString().trim()) {
     error.value = `${requiredField.label} is required`;
     return;
   }
 
   const saveData: CreateShoppingListItemInput = {
-    name: formData.value.name?.toString().trim() || formData.value.notes?.toString().trim() || "Unknown",
+    name:
+      formData.value.name?.toString().trim()
+      || formData.value.notes?.toString().trim()
+      || "Unknown",
     quantity: Number(formData.value.quantity) || 0,
     unit: formData.value.unit?.toString().trim() || "",
     notes: formData.value.notes?.toString().trim() || "",
@@ -111,12 +125,14 @@ function handleDelete() {
     @click="emit('close')"
   >
     <div
-      class="w-full max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
+      class="w-[425px] max-h-[90vh] overflow-y-auto bg-default rounded-lg border border-default shadow-lg"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-default">
+      <div
+        class="flex items-center justify-between p-4 border-b border-default"
+      >
         <h3 class="text-base font-semibold leading-6">
-          {{ item ? 'Edit Item' : 'Add Item' }}
+          {{ item ? "Edit Item" : "Add Item" }}
         </h3>
         <UButton
           color="neutral"
@@ -131,7 +147,6 @@ function handleDelete() {
       <div class="p-4 space-y-6">
         <div
           v-if="error"
-          role="alert"
           class="bg-error/10 text-error rounded-md px-3 py-2 text-sm"
         >
           {{ error }}
@@ -140,7 +155,9 @@ function handleDelete() {
         <template v-for="field in fields" :key="field.key">
           <div v-if="field.key === 'quantity'" class="flex gap-4">
             <div class="w-1/2 space-y-2">
-              <label class="block text-sm font-medium text-highlighted flex items-center gap-1">
+              <label
+                class="block text-sm font-medium text-highlighted flex items-center gap-1"
+              >
                 {{ field.label }}
                 <UIcon
                   v-if="field.disabled"
@@ -158,19 +175,31 @@ function handleDelete() {
               />
             </div>
 
-            <div v-if="fields.find((f: DialogField) => f.key === 'unit')" class="w-1/2 space-y-2">
-              <label class="block text-sm font-medium text-highlighted flex items-center gap-1">
+            <div
+              v-if="fields.find((f: DialogField) => f.key === 'unit')"
+              class="w-1/2 space-y-2"
+            >
+              <label
+                class="block text-sm font-medium text-highlighted flex items-center gap-1"
+              >
                 Unit
                 <UIcon
-                  v-if="fields.find((f: DialogField) => f.key === 'unit')?.disabled"
+                  v-if="
+                    fields.find((f: DialogField) => f.key === 'unit')?.disabled
+                  "
                   name="i-lucide-lock"
                   class="h-3 w-3 text-muted"
                 />
               </label>
               <UInput
                 v-model="formData.unit"
-                :placeholder="fields.find((f: DialogField) => f.key === 'unit')?.placeholder || 'Unit'"
-                :disabled="fields.find((f: DialogField) => f.key === 'unit')?.disabled"
+                :placeholder="
+                  fields.find((f: DialogField) => f.key === 'unit')
+                    ?.placeholder || 'Unit'
+                "
+                :disabled="
+                  fields.find((f: DialogField) => f.key === 'unit')?.disabled
+                "
                 class="w-full"
                 :ui="{ base: 'w-full' }"
               />
@@ -178,7 +207,9 @@ function handleDelete() {
           </div>
 
           <div v-else-if="field.key !== 'unit'" class="space-y-2">
-            <label class="block text-sm font-medium text-highlighted flex items-center gap-1">
+            <label
+              class="block text-sm font-medium text-highlighted flex items-center gap-1"
+            >
               {{ field.label }}
               <UIcon
                 v-if="field.disabled"
@@ -237,11 +268,8 @@ function handleDelete() {
           >
             Cancel
           </UButton>
-          <UButton
-            color="primary"
-            @click="handleSave"
-          >
-            {{ item ? 'Update Item' : 'Add Item' }}
+          <UButton color="primary" @click="handleSave">
+            {{ item ? "Update Item" : "Add Item" }}
           </UButton>
         </div>
       </div>

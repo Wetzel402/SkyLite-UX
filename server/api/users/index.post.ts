@@ -17,7 +17,6 @@ export default defineEventHandler(async (event) => {
           email: body.email && body.email.trim() ? body.email.trim() : null,
           avatar: body.avatar || null,
           color: body.color || null,
-          role: body.role === "PARENT" ? "PARENT" : "CHILD",
         },
       });
 

@@ -13,7 +13,7 @@ export default withNuxt(antfu({
     semi: true,
     quotes: "double",
   },
-  ignores: [".pnpm-store/**", "**/migrations/*", ".gitignore", ".devcontainer/**", ".github/**", "docker-compose-example.yaml"],
+  ignores: [".pnpm-store/**", "**/migrations/*", ".gitignore", ".devcontainer/**", ".github/**", "docker-compose-example.yaml", "docker-compose-dev.yaml", "./docs/**", "test/**"],
 }, {
   rules: {
     "vue/max-attributes-per-line": ["error", {
@@ -25,6 +25,7 @@ export default withNuxt(antfu({
       },
     }],
     "ts/no-redeclare": "off",
+    "ts/no-explicit-any": "error",
     "ts/consistent-type-definitions": ["error", "type"],
     "no-console": ["warn"],
     "antfu/no-top-level-await": ["off"],
@@ -37,9 +38,6 @@ export default withNuxt(antfu({
       case: "camelCase",
       ignore: [
         "README.md",
-        "CLAUDE.md",
-        "LICENSE.md",
-        "AGENTS.md",
         /docker-compose\.yml$/i,
         /-docker-compose\.yml$/i,
         /clear-completed\.post\.ts$/i,

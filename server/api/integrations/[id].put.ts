@@ -2,7 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { consola } from "consola";
 import { createError, defineEventHandler, readBody } from "h3";
 
-import { integrationRegistry } from "~/types/integrations";
+import { createIntegrationService, integrationRegistry } from "~/types/integrations";
+
+import { sanitizeIntegration } from "../../utils/sanitizeIntegration";
 
 const prisma = new PrismaClient();
 
@@ -18,8 +20,9 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event);
     const { name, type, service, apiKey, baseUrl, icon, enabled, settings } = body;
+    let preservedSettings = settings;
 
-    if (apiKey || baseUrl) {
+    if (apiKey || baseUrl || settings) {
       const currentIntegration = await prisma.integration.findUnique({
         where: { id },
       });
@@ -43,11 +46,24 @@ export default defineEventHandler(async (event) => {
         ...(settings && { settings }),
       };
 
-      if (type || service) {
-        const integrationKey = `${updatedData.type}:${updatedData.service}`;
-        const integrationConfig = integrationRegistry.get(integrationKey);
+      if (settings && typeof settings === "object") {
+        const currentSettings = currentIntegration.settings as Record<string, unknown> | null;
+        const newSettings = settings as Record<string, unknown>;
 
-        if (integrationConfig) {
+        if (!newSettings.clientSecret && currentSettings?.clientSecret) {
+          preservedSettings = {
+            ...newSettings,
+            clientSecret: currentSettings.clientSecret,
+          };
+          updatedData.settings = preservedSettings;
+        }
+      }
+
+      const integrationKey = `${updatedData.type}:${updatedData.service}`;
+      const integrationConfig = integrationRegistry.get(integrationKey);
+
+      if (integrationConfig) {
+        if (type || service) {
           const missingFields = integrationConfig.settingsFields
             .filter(field => field.required)
             .filter((field) => {
@@ -72,42 +88,41 @@ export default defineEventHandler(async (event) => {
             });
           }
         }
-      }
 
-      const { createIntegrationService } = await import("~/types/integrations");
-      const tempIntegration = {
-        id: "temp",
-        type: updatedData.type,
-        service: updatedData.service,
-        apiKey: updatedData.apiKey,
-        baseUrl: updatedData.baseUrl,
-        enabled: true,
-        name: updatedData.name || "Temp",
-        icon: updatedData.icon || null,
-        settings: updatedData.settings || {},
-        accessToken: null,
-        refreshToken: null,
-        tokenExpiry: null,
-        tokenType: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        const hasOAuth = integrationConfig.capabilities.includes("oauth");
 
-      const integrationService = await createIntegrationService(tempIntegration);
-      if (!integrationService) {
-        throw createError({
-          statusCode: 400,
-          message: `Unsupported integration type: ${updatedData.type}:${updatedData.service}`,
-        });
-      }
+        if (!hasOAuth) {
+          const tempIntegration = {
+            id: "temp",
+            type: updatedData.type,
+            service: updatedData.service,
+            apiKey: updatedData.apiKey,
+            baseUrl: updatedData.baseUrl,
+            enabled: true,
+            name: updatedData.name || "Temp",
+            icon: updatedData.icon || null,
+            settings: updatedData.settings || {},
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
 
-      const connectionSuccess = await integrationService.testConnection?.();
-      if (!connectionSuccess) {
-        const status = await integrationService.getStatus();
-        throw createError({
-          statusCode: 400,
-          message: `Connection test failed: ${status.error || "Unknown error"}`,
-        });
+          const integrationService = await createIntegrationService(tempIntegration);
+          if (!integrationService) {
+            throw createError({
+              statusCode: 400,
+              message: `Unsupported integration type: ${updatedData.type}:${updatedData.service}`,
+            });
+          }
+
+          const connectionSuccess = await integrationService.testConnection?.();
+          if (!connectionSuccess) {
+            const status = await integrationService.getStatus();
+            throw createError({
+              statusCode: 400,
+              message: `Connection test failed: ${status.error || "Unknown error"}`,
+            });
+          }
+        }
       }
     }
 
@@ -121,23 +136,11 @@ export default defineEventHandler(async (event) => {
         ...(baseUrl && { baseUrl }),
         ...(icon !== undefined && { icon }),
         ...(enabled !== undefined && { enabled }),
-        ...(settings && { settings }),
+        ...(preservedSettings && { settings: preservedSettings }),
       },
     });
 
-    // Remove sensitive fields before sending to client
-    return {
-      id: integration.id,
-      name: integration.name,
-      type: integration.type,
-      service: integration.service,
-      icon: integration.icon,
-      enabled: integration.enabled,
-      settings: integration.settings,
-      createdAt: integration.createdAt,
-      updatedAt: integration.updatedAt,
-      // Explicitly exclude apiKey and baseUrl for security
-    };
+    return sanitizeIntegration(integration);
   }
   catch (error: unknown) {
     consola.error("Integrations id put: Error updating integration:", error);

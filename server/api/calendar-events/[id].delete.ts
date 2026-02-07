@@ -1,7 +1,5 @@
 import prisma from "~/lib/prisma";
 
-import { broadcastNativeDataChange } from "../../plugins/02.syncManager";
-
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, "id");
@@ -13,11 +11,13 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const isExpandedEvent = id.includes("-");
+    const dashCount = (id.match(/-/g) || []).length;
+    const isExpandedEvent = dashCount > 1;
     let actualId = id;
 
     if (isExpandedEvent) {
-      actualId = id.split("-")[0] || id;
+      const parts = id.split("-");
+      actualId = parts[0] || id; // Fallback to full ID if split fails
     }
 
     const existingEvent = await prisma.calendarEvent.findUnique({
@@ -34,9 +34,6 @@ export default defineEventHandler(async (event) => {
     await prisma.calendarEvent.delete({
       where: { id: actualId },
     });
-
-    // Broadcast the change to all connected clients
-    broadcastNativeDataChange("calendar-events", "delete", actualId);
 
     return {
       success: true,

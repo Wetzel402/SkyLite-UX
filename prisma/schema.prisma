@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -13,82 +14,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
-// ENUMS (defined first for Prisma)
-// ============================================
-
-enum UserRole {
-  PARENT
-  CHILD
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum ChoreRecurrence {
-  NONE
-  DAILY
-  WEEKLY
-  MONTHLY
-}
-
-enum ChoreCompletionStatus {
-  PENDING_APPROVAL
-  APPROVED
-  REJECTED
-}
-
-enum RedemptionStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum ScreensaverActivationMode {
-  IDLE
-  SCHEDULED
-  MANUAL
-}
-
-enum TransitionEffect {
-  FADE
-  SLIDE
-  ZOOM
-  NONE
-}
-
-enum ChoreCompletionMode {
-  SELF_CLAIM
-  PARENT_VERIFY
-}
-
-// ============================================
-// CORE MODELS
-// ============================================
-
 model User {
   id        String   @id @default(cuid())
   name      String
   email     String?  @unique
   avatar    String?
   color     String?
-  role      UserRole @default(CHILD)
   todoOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  todoColumn         TodoColumn?
-  calendarEvents     CalendarEventUser[]
-  assignedChores     Chore[]             @relation("AssignedChores")
-  choreCompletions   ChoreCompletion[]   @relation("ChoreCompletions")
-  choreVerifications ChoreCompletion[]   @relation("ChoreVerifications")
-  rewardRedemptions  RewardRedemption[]  @relation("RewardRedemptions")
-  rewardApprovals    RewardRedemption[]  @relation("RewardApprovals")
-  points             UserPoints?
+  todoColumn TodoColumn?
+  calendarEvents CalendarEventUser[]
 
   @@map("users")
 }
@@ -120,6 +57,9 @@ model Todo {
 
   todoColumnId String?
   todoColumn   TodoColumn? @relation(fields: [todoColumnId], references: [id], onDelete: Cascade)
+
+  recurringGroupId  String?
+  rrule             Json?
 
   @@map("todos")
 }
@@ -161,10 +101,6 @@ model Integration {
   icon      String?
   enabled   Boolean  @default(true)
   settings  Json?
-  accessToken     String?
-  refreshToken    String?
-  tokenExpiry     DateTime?
-  tokenType       String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -179,7 +115,7 @@ model CalendarEvent {
   start       DateTime
   end         DateTime
   allDay      Boolean  @default(false)
-  color       Json?  
+  color       Json?
   location    String?
   ical_event  Json?
   createdAt   DateTime @default(now())
@@ -187,8 +123,6 @@ model CalendarEvent {
 
   users CalendarEventUser[]
 
-  @@index([start])
-  @@index([end])
   @@map("calendar_events")
 }
 
@@ -205,166 +139,9 @@ model CalendarEventUser {
   @@map("calendar_event_users")
 }
 
-model CalendarEventMapping {
-  id                String   @id @default(cuid())
-  skyliteEventId    String
-  googleEventId     String
-  googleCalendarId  String
-  integrationId     String
-  lastSyncedAt      DateTime @default(now())
-  syncDirection     String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@unique([skyliteEventId, integrationId])
-  @@unique([googleEventId, googleCalendarId, integrationId])
-  @@map("calendar_event_mappings")
-}
-
-// ============================================
-// CHORES SYSTEM
-// ============================================
-
-model Chore {
-  id             String          @id @default(cuid())
-  name           String
-  description    String?
-  pointValue     Int             @default(1)
-  recurrence     ChoreRecurrence @default(NONE)
-  assignedUserId String?
-  dueDate        DateTime?
-  icon           String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  assignedUser   User?             @relation("AssignedChores", fields: [assignedUserId], references: [id], onDelete: SetNull)
-  completions    ChoreCompletion[]
-
-  @@map("chores")
-}
-
-model ChoreCompletion {
-  id               String                @id @default(cuid())
-  choreId          String
-  userId           String
-  completedAt      DateTime?
-  verifiedAt       DateTime?
-  verifiedByUserId String?
-  status           ChoreCompletionStatus @default(PENDING_APPROVAL)
-  pointsAwarded    Int                   @default(0)
-
-  chore       Chore @relation(fields: [choreId], references: [id], onDelete: Cascade)
-  user        User  @relation("ChoreCompletions", fields: [userId], references: [id], onDelete: Cascade)
-  verifiedBy  User? @relation("ChoreVerifications", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
-
-  @@map("chore_completions")
-}
-
-// ============================================
-// REWARDS SYSTEM
-// ============================================
-
-model Reward {
-  id                String    @id @default(cuid())
-  name              String
-  description       String?
-  pointCost         Int
-  quantityAvailable Int?
-  expiresAt         DateTime?
-  icon              String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  redemptions RewardRedemption[]
-
-  @@map("rewards")
-}
-
-model RewardRedemption {
-  id               String           @id @default(cuid())
-  rewardId         String
-  userId           String
-  redeemedAt       DateTime         @default(now())
-  pointsSpent      Int
-  approvedByUserId String?
-  status           RedemptionStatus @default(PENDING)
-
-  reward     Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-  user       User   @relation("RewardRedemptions", fields: [userId], references: [id], onDelete: Cascade)
-  approvedBy User?  @relation("RewardApprovals", fields: [approvedByUserId], references: [id], onDelete: SetNull)
-
-  @@map("reward_redemptions")
-}
-
-model UserPoints {
-  id           String @id @default(cuid())
-  userId       String @unique
-  currentBalance Int  @default(0)
-  totalEarned  Int    @default(0)
-  totalSpent   Int    @default(0)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_points")
-}
-
-// ============================================
-// WEATHER SYSTEM
-// ============================================
-
-model WeatherCache {
-  id            String   @id @default(cuid())
-  integrationId String
-  location      String
-  data          Json
-  fetchedAt     DateTime @default(now())
-  expiresAt     DateTime
-
-  @@map("weather_cache")
-}
-
-// ============================================
-// SCREENSAVER / PHOTO SYSTEM
-// ============================================
-
-model ScreensaverSettings {
-  id                  String                    @id @default(cuid())
-  enabled             Boolean                   @default(false)
-  activationMode      ScreensaverActivationMode @default(IDLE)
-  idleTimeoutMinutes  Int                       @default(10)
-  scheduleStart       String?                   // Time in HH:mm format
-  scheduleEnd         String?                   // Time in HH:mm format
-  photoDisplaySeconds Int                       @default(15)
-  transitionEffect    TransitionEffect          @default(FADE)
-  showClock           Boolean                   @default(true)
-  clockPosition       String                    @default("bottom-right")
-
-  @@map("screensaver_settings")
-}
-
-model PhotoAlbum {
-  id              String   @id @default(cuid())
-  integrationId   String
-  externalAlbumId String
-  name            String
-  enabled         Boolean  @default(true)
-  lastSync        DateTime?
-  photoCount      Int      @default(0)
-
-  @@unique([integrationId, externalAlbumId])
-  @@map("photo_albums")
-}
-
-// ============================================
-// HOUSEHOLD SETTINGS
-// ============================================
-
-model HouseholdSettings {
-  id                      String              @id @default(cuid())
-  familyName              String              @default("Our Family")
-  choreCompletionMode     ChoreCompletionMode @default(SELF_CLAIM)
-  rewardApprovalThreshold Int?                // Points threshold requiring parent approval
-  parentPin               String?             // Encrypted PIN for parent verification
-
-  @@map("household_settings")
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }

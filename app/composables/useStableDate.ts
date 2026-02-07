@@ -3,7 +3,10 @@ export function useStableDate() {
 
   const getStableDate = () => stableDate.value;
 
-  const parseStableDate = (dateInput: string | Date | undefined, fallback?: Date): Date => {
+  const parseStableDate = (
+    dateInput: string | Date | undefined,
+    fallback?: Date,
+  ): Date => {
     if (!dateInput) {
       return fallback || stableDate.value;
     }
@@ -11,27 +14,42 @@ export function useStableDate() {
       return dateInput;
     }
 
-    if (typeof dateInput === "string" && dateInput.includes("T") && dateInput.endsWith("Z")) {
+    if (
+      typeof dateInput === "string"
+      && dateInput.includes("T")
+      && dateInput.endsWith("Z")
+    ) {
       return new Date(dateInput);
     }
 
     return new Date(dateInput);
   };
 
-  const scheduleNextMidnightUpdate = () => {
+  const scheduleNextUpdate = () => {
     const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(24, 0, 0, 0);
-    const msUntilMidnight = midnight.getTime() - now.getTime();
+    const nextUpdate = new Date(now);
+
+    const minutes = now.getMinutes();
+    const nextMinutes = Math.ceil((minutes + 1) / 5) * 5;
+
+    if (nextMinutes >= 60) {
+      nextUpdate.setHours(nextUpdate.getHours() + 1);
+      nextUpdate.setMinutes(0, 0, 0);
+    }
+    else {
+      nextUpdate.setMinutes(nextMinutes, 0, 0);
+    }
+
+    const msUntilNextUpdate = nextUpdate.getTime() - now.getTime();
 
     setTimeout(() => {
       stableDate.value = new Date();
-      scheduleNextMidnightUpdate();
-    }, msUntilMidnight);
+      scheduleNextUpdate();
+    }, msUntilNextUpdate);
   };
 
   if (import.meta.client) {
-    scheduleNextMidnightUpdate();
+    scheduleNextUpdate();
   }
 
   return {

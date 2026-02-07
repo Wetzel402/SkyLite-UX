@@ -14,6 +14,7 @@ import type {
 import type { ConnectedClient, ServerSyncEvent, SyncInterval } from "../../app/types/sync";
 
 import { integrationConfigs } from "../../app/integrations/integrationConfig";
+import prisma from "../../app/lib/prisma";
 import { createIntegrationService, registerIntegration } from "../../app/types/integrations";
 
 const syncIntervals = new Map<string, SyncInterval>();
@@ -57,7 +58,6 @@ export default defineNitroPlugin(async (nitroApp) => {
 
 async function initializeIntegrationSync() {
   try {
-    const prisma = await import("../../app/lib/prisma").then(m => m.default);
     const integrations = await prisma.integration.findMany({
       where: { enabled: true },
     });
@@ -219,6 +219,49 @@ function clearAllSyncIntervals() {
   consola.debug("Sync Manager: Cleared all sync intervals");
 }
 
+export async function sendCachedSyncData(event: H3Event, integrationId: string, syncInterval: SyncInterval) {
+  const integration = await prisma.integration.findUnique({ where: { id: integrationId } });
+  const service = integrationServices.get(integrationId);
+
+  if (!integration || !service) {
+    return;
+  }
+
+  try {
+    let data: CalendarEvent[] | ShoppingListWithItemsAndCount[] | TodoWithUser[] | null = null;
+
+    switch (integration.type) {
+      case "calendar":
+        data = await (service as ServerCalendarIntegrationService).getEvents();
+        break;
+      case "shopping":
+        data = await (service as ServerShoppingIntegrationService).getShoppingLists();
+        break;
+      case "todo":
+        data = await (service as ServerTodoIntegrationService).getTodos();
+        break;
+    }
+
+    if (data) {
+      const syncEvent: ServerSyncEvent = {
+        type: "integration_sync",
+        integrationId: integration.id,
+        integrationType: integration.type,
+        service: integration.service,
+        data,
+        timestamp: syncInterval.lastSync,
+        success: true,
+      };
+
+      event.node.res.write(`data: ${JSON.stringify(syncEvent)}\n\n`);
+      consola.debug(`Sync Manager: Sent cached data for integration ${integration.name} (${integration.id}) to reconnecting client`);
+    }
+  }
+  catch (error) {
+    consola.error(`Sync Manager: Failed to send cached data for ${integrationId}:`, error);
+  }
+}
+
 export function registerClient(event: H3Event) {
   const client: ConnectedClient = {
     event,
@@ -238,22 +281,6 @@ export function unregisterClient(event: H3Event) {
   }
 }
 
-export function broadcastNativeDataChange(
-  dataType: "calendar-events" | "todos" | "shopping-lists" | "users" | "integrations" | "todo-columns",
-  action: "create" | "update" | "delete",
-  entityId: string,
-) {
-  const event: ServerSyncEvent = {
-    type: "native_data_change",
-    dataType,
-    action,
-    entityId,
-    timestamp: new Date(),
-    success: true,
-  };
-  broadcastToClients(event);
-}
-
 export const syncManager = {
   setupIntegrationSync,
   clearIntegrationSync,
@@ -262,5 +289,8 @@ export const syncManager = {
   unregisterClient,
   getConnectedClientsCount: () => connectedClients.size,
   getActiveSyncIntervals: () => Array.from(syncIntervals.keys()),
-  broadcastNativeDataChange,
+  getSyncIntervals: () => syncIntervals,
+  getIntegrationById: async (id: string) => {
+    return prisma.integration.findUnique({ where: { id } });
+  },
 };

@@ -1,7 +1,5 @@
 import prisma from "~/lib/prisma";
 
-import { broadcastNativeDataChange } from "../../plugins/02.syncManager";
-
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, "id");
@@ -27,7 +25,7 @@ export default defineEventHandler(async (event) => {
         end: utcEnd,
         allDay: allDay || false,
         color: color || null,
-        location,
+        location: location || null,
         ical_event: ical_event || null,
         users: {
           deleteMany: {},
@@ -52,9 +50,6 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // Broadcast the change to all connected clients
-    broadcastNativeDataChange("calendar-events", "update", calendarEvent.id);
-
     return {
       id: calendarEvent.id,
       title: calendarEvent.title,
@@ -65,17 +60,10 @@ export default defineEventHandler(async (event) => {
       color: calendarEvent.color as string | string[] | undefined,
       location: calendarEvent.location,
       ical_event: calendarEvent.ical_event,
-      users: calendarEvent.users.map(ce => ce.user),
+      users: (calendarEvent.users || []).map(ce => ce.user),
     };
   }
-  catch (error: unknown) {
-    // Handle record not found (deleted while viewing)
-    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
-      throw createError({
-        statusCode: 404,
-        message: "Event not found. It may have been deleted.",
-      });
-    }
+  catch (error) {
     throw createError({
       statusCode: 500,
       message: `Failed to update calendar event: ${error}`,

@@ -8,6 +8,11 @@ permalink: /installation/docker/
 
 # Docker
 
+## Requirements
+
+- [Docker](https://docs.docker.com/get-docker/)
+- Knowledge of [Docker CLI](https://docs.docker.com/desktop/features/desktop-cli/) or [Docker Compose](https://docs.docker.com/compose/)
+
 ## Tags
 
 - **latest** (not currently implemented) - The default most recent release

@@ -2,8 +2,15 @@ import type { JsonObject } from "type-fest";
 
 import { consola } from "consola";
 
-import type { ShoppingList, ShoppingListItem, UpdateShoppingListItemInput } from "~/types/database";
-import type { IntegrationService, IntegrationStatus } from "~/types/integrations";
+import type {
+  ShoppingList,
+  ShoppingListItem,
+  UpdateShoppingListItemInput,
+} from "~/types/database";
+import type {
+  IntegrationService,
+  IntegrationStatus,
+} from "~/types/integrations";
 
 import { useStableDate } from "~/composables/useStableDate";
 import { integrationRegistry } from "~/types/integrations";
@@ -125,42 +132,55 @@ export class TandoorService implements IntegrationService {
 
   async getShoppingLists(): Promise<ShoppingList[]> {
     try {
-      const response = await $fetch<{ results: TandoorShoppingListEntry[] }>("/api/integrations/tandoor/shopping-list-entry/", {
-        query: { integrationId: this.integrationId },
-      });
+      const response = await $fetch<{ results: TandoorShoppingListEntry[] }>(
+        "/api/integrations/tandoor/shopping-list-entry/",
+        {
+          query: { integrationId: this.integrationId },
+        },
+      );
 
       if (!response || !response.results || !Array.isArray(response.results)) {
-        consola.warn("Tandoor Shopping Lists: Service returned invalid response:", response);
+        consola.warn(
+          "Tandoor Shopping Lists: Service returned invalid response:",
+          response,
+        );
         return [];
       }
 
-      const items: ShoppingListItem[] = response.results.map((entry: TandoorShoppingListEntry, index) => ({
-        id: entry.id.toString(),
-        name: entry.food?.name || "Unknown",
-        checked: entry.checked,
-        order: entry.order || index,
-        notes: null,
-        quantity: entry.amount,
-        unit: entry.unit?.name || null,
-        label: null,
-        food: null,
-        integrationData: entry as unknown as JsonObject,
-      }));
+      const items: ShoppingListItem[] = response.results.map(
+        (entry: TandoorShoppingListEntry, index) => ({
+          id: entry.id.toString(),
+          name: entry.food?.name || "Unknown",
+          checked: entry.checked,
+          order: entry.order || index,
+          notes: null,
+          quantity: entry.amount,
+          unit: entry.unit?.name || null,
+          label: null,
+          food: null,
+          integrationData: entry as unknown as JsonObject,
+        }),
+      );
 
-      return [{
-        id: "default",
-        name: "Shopping List",
-        order: 0,
-        createdAt: this.parseStableDate(),
-        updatedAt: this.parseStableDate(),
-        items,
-        _count: {
-          items: items.length,
+      return [
+        {
+          id: "default",
+          name: "Shopping List",
+          order: 0,
+          createdAt: this.parseStableDate(),
+          updatedAt: this.parseStableDate(),
+          items,
+          _count: {
+            items: items.length,
+          },
         },
-      }];
+      ];
     }
     catch (error) {
-      consola.error("Tandoor Shopping Lists: Error fetching shopping lists:", error);
+      consola.error(
+        "Tandoor Shopping Lists: Error fetching shopping lists:",
+        error,
+      );
       throw error;
     }
   }
@@ -176,12 +196,15 @@ export class TandoorService implements IntegrationService {
     return list;
   }
 
-  async addItemToList(listId: string, item: {
-    name: string;
-    quantity: number;
-    unit?: string;
-    notes?: string;
-  }): Promise<ShoppingListItem> {
+  async addItemToList(
+    listId: string,
+    item: {
+      name: string;
+      quantity: number;
+      unit?: string;
+      notes?: string;
+    },
+  ): Promise<ShoppingListItem> {
     const tandoorItem = {
       food: { name: item.name },
       unit: item.unit ? { name: item.unit } : undefined,
@@ -189,11 +212,14 @@ export class TandoorService implements IntegrationService {
       list_recipe: undefined,
     };
 
-    const createdEntry = await $fetch<TandoorShoppingListEntry>("/api/integrations/tandoor/shopping-list-entry/", {
-      method: "POST",
-      query: { integrationId: this.integrationId },
-      body: tandoorItem,
-    });
+    const createdEntry = await $fetch<TandoorShoppingListEntry>(
+      "/api/integrations/tandoor/shopping-list-entry/",
+      {
+        method: "POST",
+        query: { integrationId: this.integrationId },
+        body: tandoorItem,
+      },
+    );
 
     return {
       id: createdEntry.id.toString(),
@@ -209,7 +235,10 @@ export class TandoorService implements IntegrationService {
     };
   }
 
-  async updateShoppingListItem(itemId: string, updates: UpdateShoppingListItemInput): Promise<ShoppingListItem> {
+  async updateShoppingListItem(
+    itemId: string,
+    updates: UpdateShoppingListItemInput,
+  ): Promise<ShoppingListItem> {
     try {
       const tandoorUpdates: Record<string, unknown> = {};
 
@@ -226,11 +255,14 @@ export class TandoorService implements IntegrationService {
         tandoorUpdates.order = updates.order;
       }
 
-      const updatedEntry = await $fetch<TandoorShoppingListEntry>(`/api/integrations/tandoor/shopping-list-entry/${itemId}/`, {
-        method: "PATCH",
-        query: { integrationId: this.integrationId },
-        body: tandoorUpdates,
-      });
+      const updatedEntry = await $fetch<TandoorShoppingListEntry>(
+        `/api/integrations/tandoor/shopping-list-entry/${itemId}/`,
+        {
+          method: "PATCH",
+          query: { integrationId: this.integrationId },
+          body: tandoorUpdates,
+        },
+      );
 
       return {
         id: updatedEntry.id.toString(),
@@ -246,18 +278,29 @@ export class TandoorService implements IntegrationService {
       };
     }
     catch (error) {
-      consola.error(`Tandoor Shopping Lists: Error updating item ${itemId}:`, error);
-      throw new Error(`Failed to update item: ${error instanceof Error ? error.message : "Unknown error"}`);
+      consola.error(
+        `Tandoor Shopping Lists: Error updating item ${itemId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to update item: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
-  async toggleItem(itemId: string, checked: boolean): Promise<ShoppingListItem> {
+  async toggleItem(
+    itemId: string,
+    checked: boolean,
+  ): Promise<ShoppingListItem> {
     try {
-      const updatedEntry = await $fetch<TandoorShoppingListEntry>(`/api/integrations/tandoor/shopping-list-entry/${itemId}/`, {
-        method: "PATCH",
-        query: { integrationId: this.integrationId },
-        body: { checked },
-      });
+      const updatedEntry = await $fetch<TandoorShoppingListEntry>(
+        `/api/integrations/tandoor/shopping-list-entry/${itemId}/`,
+        {
+          method: "PATCH",
+          query: { integrationId: this.integrationId },
+          body: { checked },
+        },
+      );
 
       return {
         id: updatedEntry.id.toString(),
@@ -273,17 +316,29 @@ export class TandoorService implements IntegrationService {
       };
     }
     catch (error) {
-      consola.error(`Tandoor Shopping Lists: Error toggling item ${itemId}:`, error);
-      throw new Error(`Failed to toggle item: ${error instanceof Error ? error.message : "Unknown error"}`);
+      consola.error(
+        `Tandoor Shopping Lists: Error toggling item ${itemId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to toggle item: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 }
 
-export function createTandoorService(integrationId: string, apiKey: string, baseUrl: string): TandoorService {
+export function createTandoorService(
+  integrationId: string,
+  apiKey: string,
+  baseUrl: string,
+): TandoorService {
   return new TandoorService(integrationId, apiKey, baseUrl);
 }
 
-export function getTandoorFieldsForItem(item: { unit?: unknown } | null | undefined, allFields: { key: string }[]): { key: string }[] {
+export function getTandoorFieldsForItem(
+  item: { unit?: unknown } | null | undefined,
+  allFields: { key: string }[],
+): { key: string }[] {
   if (!item || item.unit === null || item.unit === undefined) {
     return allFields.filter(field => field.key !== "unit");
   }

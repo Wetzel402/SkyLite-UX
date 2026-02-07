@@ -1,6 +1,8 @@
 <template>
   <div class="flex w-full flex-col rounded-lg">
-    <div class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default">
+    <div
+      class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default"
+    >
       <GlobalDateHeader />
     </div>
     <div class="flex flex-col items-center justify-center gap-4 h-screen">

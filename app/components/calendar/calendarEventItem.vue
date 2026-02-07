@@ -62,7 +62,9 @@ const isAllDay = computed(() => {
   const endHours = displayEnd.value.getHours();
   const endMinutes = displayEnd.value.getMinutes();
 
-  return startHours === 0 && startMinutes === 0 && endHours === 0 && endMinutes === 0;
+  return (
+    startHours === 0 && startMinutes === 0 && endHours === 0 && endMinutes === 0
+  );
 });
 
 const isSameDateTime = computed(() => {
@@ -78,7 +80,8 @@ function isPast(date: Date) {
 }
 
 function isEventPast(event: CalendarEvent): boolean {
-  const endDate = event.end instanceof Date ? event.end : parseStableDate(event.end);
+  const endDate
+    = event.end instanceof Date ? event.end : parseStableDate(event.end);
   return isPast(endDate);
 }
 
@@ -99,16 +102,30 @@ function handleTouchStart(e: TouchEvent) {
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" || e.key === " ") {
-    handleClick(e as unknown as MouseEvent);
+    e.preventDefault();
+    if (props.onClick) {
+      const syntheticEvent = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      });
+      props.onClick(syntheticEvent);
+    }
   }
 }
 </script>
 
 <template>
   <div
-    class="focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90 cursor-pointer shadow-sm hover:shadow-md"
-    :class="typeof eventColorClasses === 'string' ? eventColorClasses : className"
-    v-bind="typeof eventColorClasses === 'object' && eventColorClasses !== null ? eventColorClasses : undefined"
+    class="focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90 cursor-pointer"
+    :class="
+      typeof eventColorClasses === 'string' ? eventColorClasses : className
+    "
+    v-bind="
+      typeof eventColorClasses === 'object' && eventColorClasses !== null
+        ? eventColorClasses
+        : undefined
+    "
     :data-past-event="isEventPast(event) || undefined"
     tabindex="0"
     role="button"
@@ -120,13 +137,13 @@ function handleKeydown(e: KeyboardEvent) {
   >
     <div v-show="view === 'month'">
       <div class="flex items-center justify-between">
-        <span class="truncate flex-1" :title="event.title">
+        <span class="truncate flex-1">
           {{ event.title }}
         </span>
       </div>
     </div>
     <div v-show="view === 'week'">
-      <div class="font-medium text-sm truncate" :title="event.title">
+      <div class="font-medium text-sm truncate">
         {{ event.title }}
       </div>
       <div class="flex items-center justify-between gap-2 mt-1 min-h-[1.25rem]">
@@ -142,7 +159,8 @@ function handleKeydown(e: KeyboardEvent) {
               :hour12="true"
             />
             <template v-if="!isSameDateTime">
-              - <NuxtTime
+              -
+              <NuxtTime
                 :datetime="displayEnd"
                 hour="numeric"
                 minute="2-digit"
@@ -176,7 +194,7 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
     </div>
     <div v-show="view === 'day'">
-      <div class="text-sm font-medium truncate" :title="event.title">
+      <div class="text-sm font-medium">
         {{ event.title }}
       </div>
       <div class="flex items-end justify-between mt-1">
@@ -194,7 +212,8 @@ function handleKeydown(e: KeyboardEvent) {
                   :hour12="true"
                 />
                 <template v-if="!isSameDateTime">
-                  - <NuxtTime
+                  -
+                  <NuxtTime
                     :datetime="displayEnd"
                     hour="numeric"
                     minute="2-digit"
@@ -236,7 +255,7 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
     </div>
     <div v-show="view === 'agenda'">
-      <div class="text-sm font-medium truncate" :title="event.title">
+      <div class="text-sm font-medium">
         {{ event.title }}
       </div>
       <div class="flex items-end justify-between mt-1">
@@ -254,7 +273,8 @@ function handleKeydown(e: KeyboardEvent) {
                   :hour12="true"
                 />
                 <template v-if="!isSameDateTime">
-                  - <NuxtTime
+                  -
+                  <NuxtTime
                     :datetime="displayEnd"
                     hour="numeric"
                     minute="2-digit"

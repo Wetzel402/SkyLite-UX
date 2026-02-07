@@ -17,22 +17,48 @@ const emit = defineEmits<{
   (e: "dateSelect", date: Date): void;
 }>();
 
-const { isToday, isSelectedDate: _isSelectedDate, handleDateSelect: _handleDateSelect, getMiniCalendarWeeks, getAllEventsForDay, getAgendaEventsForDay, getEventsForDateRange } = useCalendar();
+const {
+  isToday,
+  isSelectedDate: _isSelectedDate,
+  handleDateSelect: _handleDateSelect,
+  getMiniCalendarWeeks,
+  getAllEventsForDay,
+  getAgendaEventsForDay,
+  getEventsForDateRange,
+} = useCalendar();
 
-const miniCalendarWeeks = computed(() => getMiniCalendarWeeks(props.currentDate));
+const miniCalendarWeeks = computed(() =>
+  getMiniCalendarWeeks(props.currentDate),
+);
 
 const monthEvents = computed(() => {
   const currentDate = props.currentDate;
   const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   start.setDate(start.getDate() - 7);
-  const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const end = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0,
+  );
   end.setDate(end.getDate() + 7);
   return getEventsForDateRange(start, end);
 });
 
-const todaysEvents = computed(() => getAgendaEventsForDay(props.events, props.currentDate));
+const todaysEvents = computed(() =>
+  getAgendaEventsForDay(props.events, props.currentDate),
+);
 
-function getChipColor(day: Date): "error" | "info" | "success" | "primary" | "secondary" | "warning" | "neutral" | undefined {
+function getChipColor(
+  day: Date,
+):
+  | "error"
+  | "info"
+  | "success"
+  | "primary"
+  | "secondary"
+  | "warning"
+  | "neutral"
+  | undefined {
   return isSameMonth(day, props.currentDate) ? "primary" : "secondary";
 }
 
@@ -73,8 +99,13 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
         </div>
 
         <div class="grid grid-cols-7 gap-1">
-          <template v-for="day in miniCalendarWeeks.flat()" :key="day.toISOString()">
-            <div class="bg-muted rounded-lg shadow-sm border border-default aspect-square">
+          <template
+            v-for="day in miniCalendarWeeks.flat()"
+            :key="day.toISOString()"
+          >
+            <div
+              class="bg-muted rounded-lg shadow-sm border border-default aspect-square"
+            >
               <UChip
                 v-if="getAllEventsForDay(monthEvents, day).length > 0"
                 inset
@@ -88,9 +119,13 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
                   class="w-full h-full flex items-center justify-center text-sm transition-colors rounded-md hover:bg-accented"
                   :class="{
                     'text-dimmed': !isSameMonth(day, currentDate),
-                    'text-highlighted': isSameMonth(day, currentDate) && !isToday(day) && !isSelectedDate(day),
+                    'text-highlighted':
+                      isSameMonth(day, currentDate)
+                      && !isToday(day)
+                      && !isSelectedDate(day),
                     'bg-primary text-white font-semibold': isSelectedDate(day),
-                    'bg-info/10 text-info font-medium': isToday(day) && !isSelectedDate(day),
+                    'bg-info/10 text-info font-medium':
+                      isToday(day) && !isSelectedDate(day),
                   }"
                   @click="handleDateSelect(day)"
                 >
@@ -104,9 +139,13 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
                 class="w-full h-full flex items-center justify-center text-sm transition-colors rounded-md hover:bg-accented"
                 :class="{
                   'text-dimmed': !isSameMonth(day, currentDate),
-                  'text-highlighted': isSameMonth(day, currentDate) && !isToday(day) && !isSelectedDate(day),
+                  'text-highlighted':
+                    isSameMonth(day, currentDate)
+                    && !isToday(day)
+                    && !isSelectedDate(day),
                   'bg-primary text-white font-semibold': isSelectedDate(day),
-                  'bg-info/10 text-info font-medium': isToday(day) && !isSelectedDate(day),
+                  'bg-info/10 text-info font-medium':
+                    isToday(day) && !isSelectedDate(day),
                 }"
                 @click="handleDateSelect(day)"
               >
@@ -139,7 +178,10 @@ function handleEventClick(event: CalendarEvent, e: MouseEvent) {
         </div>
         <div class="p-4">
           <div v-show="todaysEvents.length === 0" class="text-center py-8">
-            <UIcon name="i-lucide-calendar-off" class="w-8 h-8 text-muted mx-auto mb-2" />
+            <UIcon
+              name="i-lucide-calendar-off"
+              class="w-8 h-8 text-muted mx-auto mb-2"
+            />
             <h4 class="text-sm font-medium text-highlighted">
               No events today
             </h4>

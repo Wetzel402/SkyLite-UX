@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import consola from "consola";
 import ical from "ical.js";
 
@@ -87,17 +86,6 @@ export default defineEventHandler(async (event) => {
     const endDate = query.end ? new Date(query.end as string) : new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
 
     const events = await prisma.calendarEvent.findMany({
-      where: {
-        AND: [
-          { start: { lte: endDate } },
-          {
-            OR: [
-              { ical_event: { not: Prisma.DbNull } },
-              { end: { gte: startDate } },
-            ],
-          },
-        ],
-      },
       select: {
         id: true,
         title: true,

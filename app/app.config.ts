@@ -7,8 +7,7 @@ export default defineAppConfig({
       neutral: "slate",
     },
     button: {
-      defaultVariants: {
-      },
+      defaultVariants: {},
     },
     toaster: {
       defaultVariants: {

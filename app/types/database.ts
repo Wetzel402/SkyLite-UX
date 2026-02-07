@@ -1,4 +1,5 @@
 import type { Priority, Prisma } from "@prisma/client";
+import type { JsonObject } from "type-fest";
 
 export type User = Prisma.UserGetPayload<Record<string, never>> & {
   avatar?: string | null;
@@ -31,22 +32,26 @@ export type TodoWithUser = Prisma.TodoGetPayload<{
   };
 }>;
 
-export type TodoColumn = Omit<Prisma.TodoColumnGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        avatar: true;
+export type TodoColumn = Omit<
+  Prisma.TodoColumnGetPayload<{
+    include: {
+      user: {
+        select: {
+          id: true;
+          name: true;
+          avatar: true;
+        };
+      };
+      todos: true;
+      _count: {
+        select: {
+          todos: true;
+        };
       };
     };
-    _count: {
-      select: {
-        todos: true;
-      };
-    };
-  };
-}>, "todos" | "createdAt" | "updatedAt"> & {
+  }>,
+  "todos" | "createdAt" | "updatedAt"
+> & {
   todos?: Prisma.TodoGetPayload<Record<string, never>>[];
   createdAt: string;
   updatedAt: string;
@@ -89,7 +94,7 @@ export type ShoppingListItem = BaseListItem & {
   unit: string | null;
   label: string | null;
   food: string | null;
-  integrationData?: Record<string, any>;
+  integrationData?: JsonObject;
   source?: "native" | "integration";
   integrationId?: string;
 };
@@ -113,24 +118,34 @@ export type Integration = {
   baseUrl: string | null;
   icon: string | null;
   enabled: boolean;
-  settings: Record<string, any> | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  tokenExpiry: Date | null;
-  tokenType: string | null;
+  settings: JsonObject | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export type CreateIntegrationInput = Omit<Integration, "id" | "createdAt" | "updatedAt">;
+export type CreateIntegrationInput = Omit<
+  Integration,
+  "id" | "createdAt" | "updatedAt"
+>;
 export type UpdateIntegrationInput = Partial<CreateIntegrationInput>;
 
-export type CreateUserInput = Omit<User, "id" | "createdAt" | "updatedAt" | "avatar" | "color">;
+export type CreateUserInput = Omit<
+  User,
+  "id" | "createdAt" | "updatedAt" | "avatar" | "color"
+>;
 export type CreateTodoInput = Omit<Todo, "id" | "createdAt" | "updatedAt">;
-export type CreateShoppingListInput = Omit<ShoppingList, "id" | "createdAt" | "updatedAt" | "items">;
-export type CreateShoppingListItemInput = Omit<ShoppingListItem, "id" | "shoppingListId">;
+export type CreateShoppingListInput = Omit<
+  ShoppingList,
+  "id" | "createdAt" | "updatedAt" | "items"
+>;
+export type CreateShoppingListItemInput = Omit<
+  ShoppingListItem,
+  "id" | "shoppingListId"
+>;
 
-export type UpdateTodoInput = Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">>;
+export type UpdateTodoInput = Partial<
+  Omit<Todo, "id" | "createdAt" | "updatedAt">
+>;
 export type UpdateShoppingListItemInput = Partial<CreateShoppingListItemInput>;
 
 export type TodoList = {
@@ -152,13 +167,19 @@ export type TodoListItem = BaseListItem & {
   dueDate: Date | null;
   todoColumnId: string;
   shoppingListId: string;
+  recurringGroupId?: string | null;
+  rrule?:
+    | import("../../server/integrations/iCal/types").ICalEvent["rrule"]
+    | null;
 };
 
 export type TodoWithOrder = TodoWithUser & { order: number };
 
 export type UserWithOrder = User & { todoOrder: number };
 
-export type ShoppingListWithOrder = ShoppingListWithItemsAndCount & { order: number };
+export type ShoppingListWithOrder = ShoppingListWithItemsAndCount & {
+  order: number;
+};
 
 export type RawIntegrationList = {
   readonly id: string;
@@ -181,7 +202,7 @@ export type RawIntegrationItem = {
   quantity: number;
   unit: string | null;
   food: string | null;
-  integrationData?: Record<string, any>;
+  integrationData?: JsonObject;
 };
 
 export type { Priority };

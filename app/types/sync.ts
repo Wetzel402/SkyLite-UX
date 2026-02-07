@@ -1,10 +1,20 @@
 import type { CalendarEvent } from "~/types/calendar";
-import type { ShoppingListWithItemsAndCount, TodoWithUser } from "~/types/database";
+import type {
+  ShoppingListWithItemsAndCount,
+  TodoWithUser,
+} from "~/types/database";
 
-export type SyncData = CalendarEvent[] | ShoppingListWithItemsAndCount[] | TodoWithUser[];
+export type SyncData
+  = | CalendarEvent[]
+    | ShoppingListWithItemsAndCount[]
+    | TodoWithUser[];
 
 export type SyncEvent = {
-  type: "integration_sync" | "connection_established" | "sync_status" | "heartbeat" | "native_data_change";
+  type:
+    | "integration_sync"
+    | "connection_established"
+    | "sync_status"
+    | "heartbeat";
   integrationId?: string;
   integrationType?: string;
   service?: string;
@@ -15,9 +25,6 @@ export type SyncEvent = {
   message?: string;
   activeIntegrations?: string[];
   connectedClients?: number;
-  dataType?: "calendar-events" | "todos" | "shopping-lists" | "users" | "integrations" | "todo-columns";
-  action?: "create" | "update" | "delete";
-  entityId?: string;
 };
 
 export type IntegrationSyncData = {
@@ -29,7 +36,11 @@ export type IntegrationSyncData = {
   };
 };
 
-export type SyncConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+export type SyncConnectionStatus
+  = | "connecting"
+    | "connected"
+    | "disconnected"
+    | "error";
 
 export type EventSourceStatus = "CONNECTING" | "OPEN" | "CLOSED";
 
@@ -38,12 +49,15 @@ export type SyncStatus = {
   successfulSyncs: number;
   failedSyncs: number;
   lastSyncTime: Date | null;
-  integrations: Record<string, {
-    lastSync: Date;
-    success: boolean;
-    error?: string;
-    hasData: boolean;
-  }>;
+  integrations: Record<
+    string,
+    {
+      lastSync: Date;
+      success: boolean;
+      error?: string;
+      hasData: boolean;
+    }
+  >;
 };
 
 export type SyncInterval = {
@@ -70,15 +84,12 @@ export type ConnectedClient = {
 };
 
 export type ServerSyncEvent = {
-  type: "integration_sync" | "native_data_change";
-  integrationId?: string;
-  integrationType?: string;
-  service?: string;
-  data?: SyncData;
+  type: "integration_sync";
+  integrationId: string;
+  integrationType: string;
+  service: string;
+  data: SyncData;
   timestamp: Date;
   success: boolean;
   error?: string;
-  dataType?: "calendar-events" | "todos" | "shopping-lists" | "users" | "integrations" | "todo-columns";
-  action?: "create" | "update" | "delete";
-  entityId?: string;
 };

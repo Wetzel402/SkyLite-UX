@@ -1,23 +1,37 @@
-import type { ICalSettings, IntegrationConfig } from "~/types/integrations";
-// Shared integrations configuration
-// This file contains all integration configurations that are used by both client and server
+import type { ShoppingListItem, TodoListItem } from "~/types/database";
+import type {
+  GoogleCalendarSettings,
+  ICalSettings,
+  IntegrationConfig,
+} from "~/types/integrations";
 import type { DialogField } from "~/types/ui";
 
-import type { HomeAssistantWeatherSettings } from "./home-assistant/homeAssistantWeather";
-
-import { createGoogleCalendarService } from "./google-calendar/googleCalendar";
-import { createHomeAssistantWeatherService } from "./home-assistant/homeAssistantWeather";
+import {
+  createGoogleCalendarService,
+  handleGoogleCalendarSave,
+} from "./google_calendar/googleCalendar";
 import { createICalService } from "./iCal/iCalendar";
-import { createMealieService, getMealieFieldsForItem } from "./mealie/mealieShoppingLists";
-import { createTandoorService, getTandoorFieldsForItem } from "./tandoor/tandoorShoppingLists";
+import {
+  createMealieService,
+  getMealieFieldsForItem,
+} from "./mealie/mealieShoppingLists";
+import {
+  createTandoorService,
+  getTandoorFieldsForItem,
+} from "./tandoor/tandoorShoppingLists";
 
 export const integrationConfigs: IntegrationConfig[] = [
   // ================================================
-  // Calendar integration configs can support the following list-level capabilities:
+  // Calendar integration configs can support the following capabilities:
   // - get_events: Can get events from the calendar
   // - add_events: Can add events to the calendar
   // - edit_events: Can edit events in the calendar
   // - delete_events: Can delete events from the calendar
+  // - oauth: Can authenticate using OAuth
+  // - select_calendars: Can select calendars from the user's account
+  //   - individual calendars define access role: read or write
+  //   - if access role is read, add_events, edit_events, and delete_events permissions are stripped
+  // - select_users: Can select users to link to the calendar event (currently only enables the user selection in the event dialog if declared)
   // ================================================
   {
     type: "calendar",
@@ -37,7 +51,8 @@ export const integrationConfigs: IntegrationConfig[] = [
         type: "text" as const,
         placeholder: "Jane Doe",
         required: false,
-        description: "Select user(s) to link to this calendar or choose an event color",
+        description:
+          "Select user(s) to link to this calendar or choose an event color",
       },
       {
         key: "eventColor",
@@ -51,135 +66,49 @@ export const integrationConfigs: IntegrationConfig[] = [
         label: "Use User Profile Colors",
         type: "boolean" as const,
         required: false,
-        description: "Use individual user profile colors for events instead of a single event color",
+        description:
+          "Use individual user profile colors for events instead of a single event color",
       },
     ],
     capabilities: ["get_events"],
     icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
-    files: [],
     dialogFields: [],
     syncInterval: 10,
   },
   {
     type: "calendar",
-    service: "google-calendar",
+    service: "google",
     settingsFields: [
       {
-        key: "oauth",
-        label: "Google Account",
-        type: "oauth" as const,
-        required: true,
-        description: "Connect your Google account to sync calendars",
-      },
-      {
-        key: "selectedCalendars",
-        label: "Calendars to Sync",
-        type: "multiselect" as const,
-        required: false,
-        description: "Select which Google Calendars to sync",
-      },
-    ],
-    capabilities: ["get_events", "add_events", "edit_events", "delete_events"],
-    icon: "https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png",
-    files: [],
-    dialogFields: [],
-    syncInterval: 1,
-  },
-  // ================================================
-  // Weather integration configs
-  // - get_current: Get current weather conditions
-  // - get_forecast: Get weather forecast
-  // ================================================
-  {
-    type: "weather",
-    service: "open-meteo",
-    settingsFields: [
-      {
-        key: "location",
-        label: "Location",
+        key: "clientId",
+        label: "Client ID",
         type: "text" as const,
-        placeholder: "City name or coordinates (lat,lon)",
+        placeholder: "paste your client id here",
         required: true,
-        description: "Your location for weather data",
+        description: "Your Google OAuth Client ID",
       },
       {
-        key: "units",
-        label: "Temperature Units",
-        type: "select" as const,
-        options: ["fahrenheit", "celsius"],
-        required: false,
-        description: "Choose temperature display units",
-      },
-    ],
-    capabilities: ["get_current", "get_forecast"],
-    icon: "https://unpkg.com/lucide-static@latest/icons/cloud-sun.svg",
-    files: [],
-    dialogFields: [],
-    syncInterval: 30,
-  },
-  {
-    type: "weather",
-    service: "home-assistant",
-    settingsFields: [
-      {
-        key: "baseUrl",
-        label: "Home Assistant URL",
-        type: "url" as const,
-        placeholder: "http://homeassistant.local:8123",
-        required: true,
-        description: "Your Home Assistant instance URL",
-      },
-      {
-        key: "apiKey",
-        label: "Long-Lived Access Token",
+        key: "clientSecret",
+        label: "Client Secret",
         type: "password" as const,
+        placeholder: "paste your client secret here",
         required: true,
-        description: "Create a token in Home Assistant under Profile > Security",
-      },
-      {
-        key: "entityId",
-        label: "Weather Entity",
-        type: "text" as const,
-        placeholder: "weather.home",
-        required: true,
-        description: "The weather entity ID to use",
+        description:
+          "Your Google OAuth Client Secret (required for server-side token exchange)",
       },
     ],
-    capabilities: ["get_current", "get_forecast"],
-    icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/home-assistant.svg",
-    files: [],
-    dialogFields: [],
-    syncInterval: 30,
-  },
-  // ================================================
-  // Photos integration configs
-  // - get_albums: List available albums
-  // - get_photos: Get photos from selected albums
-  // ================================================
-  {
-    type: "photos",
-    service: "google-photos",
-    settingsFields: [
-      {
-        key: "oauth",
-        label: "Google Account",
-        type: "oauth" as const,
-        required: true,
-        description: "Connect your Google account to access photos",
-      },
-      {
-        key: "selectedAlbums",
-        label: "Albums to Display",
-        type: "multiselect" as const,
-        required: false,
-        description: "Select which albums to use for screensaver",
-      },
+    capabilities: [
+      "get_events",
+      "edit_events",
+      "add_events",
+      "delete_events",
+      "oauth",
+      "select_calendars",
     ],
-    capabilities: ["get_albums", "get_photos"],
-    icon: "https://www.gstatic.com/images/branding/product/1x/photos_2020q4_48dp.png",
-    files: [],
+    icon: "https://unpkg.com/lucide-static@latest/icons/calendar.svg",
     dialogFields: [],
-    syncInterval: 60,
+    syncInterval: 10,
+    customSaveHandler: handleGoogleCalendarSave,
   },
   // ================================================
   // Meal integration configs can support the following list-level capabilities:
@@ -216,11 +145,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["add_items", "edit_items"],
     icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/tandoor-recipes.svg",
-    files: [
-      "/integrations/tandoor/tandoorShoppingLists.ts",
-      "/server/api/integrations/tandoor/[...path].ts",
-      "/server/integrations/tandoor/",
-    ],
     dialogFields: [
       {
         key: "name",
@@ -270,11 +194,6 @@ export const integrationConfigs: IntegrationConfig[] = [
     ],
     capabilities: ["add_items", "clear_items", "edit_items"],
     icon: "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/mealie.svg",
-    files: [
-      "/integrations/mealie/mealieShoppingLists.ts",
-      "/server/api/integrations/mealie/[...path].ts",
-      "/server/integrations/mealie/",
-    ],
     dialogFields: [
       {
         key: "quantity",
@@ -316,18 +235,33 @@ export const integrationConfigs: IntegrationConfig[] = [
 ];
 
 const serviceFactoryMap = {
-  "calendar:iCal": (_id: string, _apiKey: string, baseUrl: string, settings?: ICalSettings) => {
-    const eventColor = settings?.eventColor || "#06b6d4";
-    const user = settings?.user;
-    const useUserColors = settings?.useUserColors || false;
+  "calendar:iCal": (
+    _id: string,
+    _apiKey: string,
+    baseUrl: string,
+    settings?: ICalSettings | GoogleCalendarSettings,
+  ) => {
+    const iCalSettings = settings as ICalSettings;
+    const eventColor = iCalSettings?.eventColor || "#06b6d4";
+    const user = iCalSettings?.user;
+    const useUserColors = iCalSettings?.useUserColors || false;
     return createICalService(_id, baseUrl, eventColor, user, useUserColors);
   },
-  "calendar:google-calendar": (id: string, _apiKey: string, _baseUrl: string, _settings?: unknown) => createGoogleCalendarService(id),
-  "weather:home-assistant": (id: string, apiKey: string, baseUrl: string, settings?: HomeAssistantWeatherSettings) => {
-    return createHomeAssistantWeatherService(id, apiKey, baseUrl, settings);
+  "calendar:google": (
+    _id: string,
+    _apiKey: string,
+    _baseUrl: string,
+    settings?: ICalSettings | GoogleCalendarSettings,
+  ) => {
+    const googleSettings = settings as GoogleCalendarSettings;
+    return createGoogleCalendarService(
+      _id,
+      googleSettings?.clientId || "",
+      googleSettings?.clientSecret || "",
+    );
   },
-  "shopping:mealie": (id: string, apiKey: string, baseUrl: string, _settings?: unknown) => createMealieService(id, apiKey, baseUrl),
-  "shopping:tandoor": (id: string, apiKey: string, baseUrl: string, _settings?: unknown) => createTandoorService(id, apiKey, baseUrl),
+  "shopping:mealie": createMealieService,
+  "shopping:tandoor": createTandoorService,
 } as const;
 
 const fieldFilters = {
@@ -339,18 +273,32 @@ export function getIntegrationFields(integrationType: string): DialogField[] {
   return config?.dialogFields || [];
 }
 
-export function getFieldsForItem(item: unknown, integrationType: string | undefined, allFields: { key: string }[]): { key: string }[] {
-  if (!integrationType || !fieldFilters[integrationType as keyof typeof fieldFilters]) {
+export function getFieldsForItem(
+  item: ShoppingListItem | TodoListItem | null | undefined,
+  integrationType: string | undefined,
+  allFields: { key: string }[],
+): { key: string }[] {
+  if (
+    !integrationType
+    || !fieldFilters[integrationType as keyof typeof fieldFilters]
+  ) {
     return allFields;
   }
 
-  const filterFunction = fieldFilters[integrationType as keyof typeof fieldFilters];
+  const filterFunction
+    = fieldFilters[integrationType as keyof typeof fieldFilters];
 
   if (integrationType === "mealie") {
-    return (filterFunction as typeof getMealieFieldsForItem)(item as { integrationData?: { isFood?: boolean } } | null | undefined, allFields);
+    return (filterFunction as typeof getMealieFieldsForItem)(
+      item as ShoppingListItem | null | undefined,
+      allFields,
+    );
   }
   else if (integrationType === "tandoor") {
-    return (filterFunction as typeof getTandoorFieldsForItem)(item as { unit?: unknown } | null | undefined, allFields);
+    return (filterFunction as typeof getTandoorFieldsForItem)(
+      item as ShoppingListItem | null | undefined,
+      allFields,
+    );
   }
 
   return allFields;
@@ -358,6 +306,9 @@ export function getFieldsForItem(item: unknown, integrationType: string | undefi
 export function getServiceFactories() {
   return integrationConfigs.map(config => ({
     key: `${config.type}:${config.service}`,
-    factory: serviceFactoryMap[`${config.type}:${config.service}` as keyof typeof serviceFactoryMap],
+    factory:
+      serviceFactoryMap[
+        `${config.type}:${config.service}` as keyof typeof serviceFactoryMap
+      ],
   }));
 }

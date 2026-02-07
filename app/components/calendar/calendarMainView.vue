@@ -1,41 +1,48 @@
 <script setup lang="ts">
-import { addDays, addMonths, addWeeks, isSameMonth, subMonths, subWeeks } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  addWeeks,
+  format,
+  isSameMonth,
+  subMonths,
+  subWeeks,
+} from "date-fns";
 
 import type { CalendarEvent, CalendarView } from "~/types/calendar";
+import type { Integration } from "~/types/database";
 
 import GlobalDateHeader from "~/components/global/globalDateHeader.vue";
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import { useCalendar } from "~/composables/useCalendar";
+import { useCalendarIntegrations } from "~/composables/useCalendarIntegrations";
 import { useStableDate } from "~/composables/useStableDate";
+import { DEFAULT_LOCAL_EVENT_COLOR } from "~/types/global";
 
 const props = defineProps<{
   events?: CalendarEvent[];
   className?: string;
   initialView?: CalendarView;
   class?: string;
-  getIntegrationCapabilities?: (event: CalendarEvent) => { capabilities: string[]; serviceName?: string } | undefined;
-  initialUserFilter?: string[];
+  getIntegrationCapabilities?: (
+    event: CalendarEvent,
+  ) => { capabilities: string[]; serviceName?: string } | undefined;
 }>();
 
-const emit = defineEmits<{
+const _emit = defineEmits<{
   (e: "eventAdd", event: CalendarEvent): void;
   (e: "eventUpdate", event: CalendarEvent): void;
   (e: "eventDelete", eventId: string): void;
-  (e: "userFilterChange", userIds: string[]): void;
 }>();
 
-const { getStableDate } = useStableDate();
+const { getStableDate, stableDate } = useStableDate();
 const { getEventsForDateRange, scrollToDate } = useCalendar();
-const currentDate = useState<Date>("calendar-current-date", () => getStableDate());
+const { calendarIntegrations } = useCalendarIntegrations();
+const currentDate = useState<Date>("calendar-current-date", () =>
+  getStableDate());
 const view = ref<CalendarView>(props.initialView || "week");
 const isEventDialogOpen = ref(false);
 const selectedEvent = ref<CalendarEvent | null>(null);
-const selectedUserIds = ref<string[]>(props.initialUserFilter || []);
-
-function handleUserFilterChange(userIds: string[]) {
-  selectedUserIds.value = userIds;
-  emit("userFilterChange", userIds);
-}
 
 onMounted(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -108,6 +115,35 @@ function handleToday() {
   });
 }
 
+function getDayString(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}
+
+const lastDay = ref(getDayString(getStableDate()));
+let dayChangeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(stableDate, (newDate) => {
+  const newDay = getDayString(newDate);
+  if (newDay !== lastDay.value) {
+    lastDay.value = newDay;
+
+    if (dayChangeTimeout) {
+      clearTimeout(dayChangeTimeout);
+    }
+
+    dayChangeTimeout = setTimeout(() => {
+      handleToday();
+      dayChangeTimeout = null;
+    }, 1000);
+  }
+});
+
+onUnmounted(() => {
+  if (dayChangeTimeout) {
+    clearTimeout(dayChangeTimeout);
+  }
+});
+
 function handleEventSelect(event: CalendarEvent) {
   selectedEvent.value = event;
   isEventDialogOpen.value = true;
@@ -121,24 +157,24 @@ function handleEventCreate(date: Date) {
     start: date,
     end: addDays(date, 1),
     allDay: false,
-    color: "sky",
+    color: DEFAULT_LOCAL_EVENT_COLOR,
   };
   isEventDialogOpen.value = true;
 }
 
 function handleEventSave(event: CalendarEvent) {
   if (event.id) {
-    emit("eventUpdate", event);
+    _emit("eventUpdate", event);
   }
   else {
-    emit("eventAdd", event);
+    _emit("eventAdd", event);
   }
   isEventDialogOpen.value = false;
   selectedEvent.value = null;
 }
 
 function handleEventDelete(eventId: string) {
-  emit("eventDelete", eventId);
+  _emit("eventDelete", eventId);
   isEventDialogOpen.value = false;
   selectedEvent.value = null;
 }
@@ -198,18 +234,6 @@ const filteredEvents = computed(() => {
       end = new Date();
   }
 
-  // Filter by selected users if any are selected
-  if (selectedUserIds.value.length > 0) {
-    events = events.filter((event) => {
-      // If event has no users, always show it
-      if (!event.users || event.users.length === 0) {
-        return true;
-      }
-      // Check if any of the event's users are in the selected filter
-      return event.users.some(user => selectedUserIds.value.includes(user.id));
-    });
-  }
-
   return events;
 });
 
@@ -226,21 +250,19 @@ function getDaysForAgenda(date: Date) {
 
 <template>
   <div class="flex h-[calc(100vh-2rem)] w-full flex-col rounded-lg">
-    <div class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default">
+    <div
+      class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default"
+    >
       <GlobalDateHeader
         :show-navigation="true"
         :show-view-selector="true"
-        :show-export="true"
-        :show-user-filter="true"
         :current-date="currentDate"
         :view="view"
-        :selected-user-ids="selectedUserIds"
         @previous="handlePrevious"
         @next="handleNext"
         @today="handleToday"
-        @view-change="(newView) => view = newView"
-        @date-change="(newDate) => currentDate = newDate"
-        @user-filter-change="handleUserFilterChange"
+        @view-change="(newView) => (view = newView)"
+        @date-change="(newDate) => (currentDate = newDate)"
       />
     </div>
     <div class="flex flex-1 flex-col min-h-0">
@@ -267,7 +289,7 @@ function getDaysForAgenda(date: Date) {
         :show-all-day-section="true"
         @event-click="handleEventSelect"
         @event-create="handleEventCreate"
-        @date-select="(date) => currentDate = date"
+        @date-select="(date) => (currentDate = date)"
       />
       <GlobalAgendaView
         v-if="view === 'agenda'"
@@ -288,8 +310,21 @@ function getDaysForAgenda(date: Date) {
   <CalendarEventDialog
     :event="selectedEvent"
     :is-open="isEventDialogOpen"
-    :integration-capabilities="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.capabilities : undefined"
-    :integration-service-name="selectedEvent && props.getIntegrationCapabilities ? props.getIntegrationCapabilities(selectedEvent)?.serviceName : undefined"
+    :integrations="
+      calendarIntegrations && calendarIntegrations.length > 0
+        ? (calendarIntegrations as Integration[])
+        : undefined
+    "
+    :integration-capabilities="
+      selectedEvent && props.getIntegrationCapabilities
+        ? props.getIntegrationCapabilities(selectedEvent)?.capabilities
+        : undefined
+    "
+    :integration-service-name="
+      selectedEvent && props.getIntegrationCapabilities
+        ? props.getIntegrationCapabilities(selectedEvent)?.serviceName
+        : undefined
+    "
     @close="isEventDialogOpen = false"
     @save="handleEventSave"
     @delete="handleEventDelete"
