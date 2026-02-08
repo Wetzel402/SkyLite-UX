@@ -158,6 +158,8 @@ async function handleTodoSave(todoData: TodoListItem) {
         completed: todoData.checked,
         order: todoData.order,
         todoColumnId: todoData.todoColumnId,
+        recurringGroupId: null,
+        rrule: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -176,6 +178,8 @@ async function handleTodoSave(todoData: TodoListItem) {
           completed: todoData.checked,
           order: todoData.order,
           todoColumnId: todoData.todoColumnId,
+          recurringGroupId: null,
+          rrule: null,
         });
         consola.debug("Todo Lists: Todo created successfully");
 

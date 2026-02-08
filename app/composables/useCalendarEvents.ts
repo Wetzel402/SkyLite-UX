@@ -74,7 +74,8 @@ export function useCalendarEvents() {
 
   const deleteEvent = async (id: string) => {
     try {
-      await $fetch(`/api/calendar-events/${id}`, {
+      // eslint-disable-next-line ts/no-unsafe-function-type
+      await ($fetch as Function)(`/api/calendar-events/${id}`, {
         method: "DELETE",
       });
 
