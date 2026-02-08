@@ -89,6 +89,7 @@ function handleSave() {
     color: color.value,
     avatar: avatar.value || getDefaultAvatarUrl(),
     todoOrder: 0,
+    role: "CHILD",
   } as CreateUserInput);
 }
 
