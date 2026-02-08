@@ -65,8 +65,10 @@ export default defineCachedEventHandler(async (event) => {
   const query = getQuery(event);
 
   // Get location from query or use default (Chicago)
-  let lat = Number.parseFloat(query.lat as string) || 41.8781;
-  let lon = Number.parseFloat(query.lon as string) || -87.6298;
+  const parsedLat = Number.parseFloat(query.lat as string);
+  const parsedLon = Number.parseFloat(query.lon as string);
+  let lat = Number.isNaN(parsedLat) ? 41.8781 : parsedLat;
+  let lon = Number.isNaN(parsedLon) ? -87.6298 : parsedLon;
   const units = (query.units as string) || "fahrenheit";
 
   // If location is provided as city name, we'll use a simple geocoding
