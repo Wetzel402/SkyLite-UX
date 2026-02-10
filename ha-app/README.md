@@ -1,25 +1,56 @@
-# SkyLite UX Home Assistant App (formerly add-on)
+<h3 align="center">Skylite UX</h3>
 
-Self-hosted family manager (Calendar, Todos, Shopping Lists) for Home Assistant.
+<p align="center">
+    Life, Organized.
+</p>
+
+<p align="center">
+<img src="https://github.com/user-attachments/assets/cf4b4b9f-c8db-4303-8fd0-58126a42382f" alt="Skylite-UX"/>
+</p>
+
+[![GitHub Release](https://img.shields.io/github/v/release/wetzel402/Skylite-UX?include_prereleases&style=for-the-badge&label=Latest%20Release)](https://github.com/wetzel402/Skylite-UX/releases)
+[![GitHub Repo stars](https://img.shields.io/github/stars/wetzel402/Skylite-UX?style=for-the-badge)](https://github.com/wetzel402/Skylite-UX)
+[![Docker Pulls](https://img.shields.io/docker/pulls/wetzel402/skylite-ux?style=for-the-badge)](https://hub.docker.com/r/wetzel402/skylite-ux)
+
+[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/KJn3YfWxn7)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/wetzel402/skylite-ux)
+[![NUXT](https://img.shields.io/badge/Nuxt-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/docs/getting-started/introduction)
+[![NUXT UI](https://img.shields.io/badge/NuxtUI-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://ui.nuxt.com)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/docs/installation/using-vite)
+[![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/docs)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/)
+[![Static Badge](https://img.shields.io/badge/Cursor-black?style=for-the-badge&logo=cursor)](https://cursor.com/home)
+
+# About The Project
+
+Skylite UX was conceived as an open source, self-hosted alternative to commercial family managers. Most commercial offerings require expensive hardware and include subscriptions. Our goal was to create an offering that allows you to bring your own hardware, avoid subscriptions, and subscription-associated feature creep while playing nicely with other self-hosted offerings.
+
+Built with AI-assisted development tools. See our [contributing guide](https://wetzel402.github.io/Skylite-UX/contributing/) for how we use and review AI-generated code.
+
+## Features
+
+- Family Calendar
+- Todo Lists
+- Shopping Lists
+- Meal Planning (Not yet implemented)
+- User Management
 
 ## Installation
 
-1. In Home Assistant go to **Settings** → **Apps** → **App store**.
-2. Click the three dots (top right) → **Repositories**.
-3. Add this repository URL: `https://github.com/wetzel402/Skylite-UX`
-4. Click **Add**, then **Check for updates** (or refresh).
-5. Find **SkyLite UX** in the app list and click **Install** → **Start**.
+View the [docs](https://wetzel402.github.io/Skylite-UX/installation) for details.
 
-## Configuration
+## Development
 
-- **database**: Choose `bundled` (PostgreSQL runs inside the app, data on mapped volume) or `external` (use an existing PostgreSQL server; set DB_HOSTNAME, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE_NAME).
-- **port**: Host port for the Web UI (default 3000).
-- **data_location**: Path where app data (and bundled Postgres data) is stored (default `/data`). The mapped volume is mounted here; data persists across restarts and upgrades.
-- **TZ**: Timezone (e.g. `America/Chicago`, `Europe/London`). Passed to the app as `NUXT_PUBLIC_TZ`.
-- **log_level**: Logging level: `debug`, `info`, `warn`, `error`, or `verbose`. Passed to the app as `NUXT_PUBLIC_LOG_LEVEL`.
+Read our [development guide](https://wetzel402.github.io/Skylite-UX/contributing/code/) for more details.
 
-With **bundled** database, a PostgreSQL instance runs inside the app and data is stored in the mapped volume. Upgrading the app does not lose data because the same volume is reused.
+## Contributing
 
-## Access
+Check out the [contributor guide](https://wetzel402.github.io/Skylite-UX/contributing/) to get started.
 
-After starting the app, open the Web UI from the app card or go to `http://<your-ha-host>:3000` (or the port you configured).
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Special Thanks
+
+The calendar UI was rewritten from [OriginUI](https://github.com/origin-space/ui-experiments) React code with express permission. Thank you Pasquale and Davide!

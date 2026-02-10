@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage --project unit --project nuxt",
     "test:e2e": "vitest run --project e2e --no-file-parallelism",
     "docs": "cd docs && bundle exec jekyll serve --host 0.0.0.0",
+    "copy-readme": "node scripts/copyReadmeToHaApp.js",
     "version": "node scripts/version.js"
   },
   "dependencies": {

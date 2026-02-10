@@ -17,7 +17,7 @@ The HA app lives in the `ha-app/` folder and the repo root:
 - **ha-app/config.yaml** – Supervisor config, options defaults, and schema. For generic app folder structure and config keys, see the [Home Assistant app configuration](https://developers.home-assistant.io/docs/add-ons/configuration/) docs.
 - **ha-app/Dockerfile** – Multi-stage build; uses the repo root as build context so it can copy the built app and `ha-app/run.sh`.
 - **ha-app/run.sh** – Entrypoint: reads options from `/data/options.json`, starts bundled Postgres or uses external DB, runs migrations, then starts the Node server.
-- **ha-app/README.md** – Shown in the Home Assistant app store; keep it user-focused.
+- **ha-app/README.md** – Copy of the root README; shown in the Home Assistant app store. Kept in sync via `npm run copy-readme`. Do not edit directly.
 - **repository.yaml** (repo root) – Defines this repo as a Home Assistant app repository. For repository format, see [Create an app repository](https://developers.home-assistant.io/docs/add-ons/repository/).
 
 ## Prerequisites
