@@ -1,0 +1,42 @@
+name: SkyLite UX
+description: Self-hosted family manager (Calendar, Todos, Shopping Lists). Bundled or external PostgreSQL.
+version: 2026.2.3
+slug: skylite_ux
+image: wetzel402/skylite-ux-ha
+arch:
+  - amd64
+  - aarch64
+panel_icon: mdi:calendar
+panel_title: SkyLite UX
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: Web UI port
+map:
+  - addon_config:rw
+  - data:rw
+webui: http://[HOST]:[PORT:3000]/
+options:
+  database: bundled
+  port: 3000
+  data_location: /data
+  TZ: America/Chicago
+  log_level: info
+  DB_HOSTNAME: ""
+  DB_PORT: 5432
+  DB_USERNAME: ""
+  DB_PASSWORD: ""
+  DB_DATABASE_NAME: skylite
+schema:
+  database: list(bundled|external)
+  port: int
+  data_location: str
+  TZ: str
+  log_level: list(debug|info|warn|error|verbose)
+  DB_HOSTNAME: str?
+  DB_PORT: int
+  DB_USERNAME: str?
+  DB_PASSWORD: str?
+  DB_DATABASE_NAME: str?
+services:
+  - postgresql:want

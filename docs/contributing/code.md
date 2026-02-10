@@ -36,7 +36,7 @@ npm run dev
 - Default values are configured in `nuxt.config.ts`
 - `DATABASE_URL` is automatically configured by the dev container
 
-### Environment Variables
+### Variable reference
 
 - `DATABASE_URL` (production only) - PostgreSQL connection string format: `postgresql://user:password@host:port/database`. In development, this is handled automatically by the dev container.
 - `NUXT_PUBLIC_TZ` (optional) - Timezone. Default: `America/Chicago` Examples: `America/Chicago`, `Europe/London`, `Asia/Tokyo`
@@ -396,6 +396,20 @@ The development server will start on `http://localhost:3000` and automatically r
 ### Stopping the Server
 
 Press `Ctrl+C` in the terminal where the server is running to stop it.
+
+## Versioning
+
+The project uses calendar versioning per [CalVer](https://calver.org). Format: `YYYY.M.MICRO` – **YYYY** is the 4-digit year, **M** is the month (1–12, no leading zero), **MICRO** is the revision within that month (0, 1, 2, …). Source of truth is `package.json`; the same version is synced to `ha-app/config.yaml` for the HA app image.
+
+### Bump rules
+
+- Same year + month → micro increments (e.g. 2026.2.3 → 2026.2.4)
+- Same year, different month → year.month.0 (e.g. 2026.2.3 → 2026.3.0)
+- New year → year.1.0 (e.g. 2026.12.1 → 2027.1.0)
+
+### Bump command
+
+Run `npm run version` to bump the version. The script reads `package.json`, computes the next version, and writes it to both `package.json` and `ha-app/config.yaml`. Workflow: run before a release, commit the bumped files, then create the release tag. For HA app version sync details, see [Contributing: Home Assistant app]({{ '/contributing/haos/' | relative_url }}).
 
 ## Building
 
