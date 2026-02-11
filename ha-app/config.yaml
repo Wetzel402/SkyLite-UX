@@ -2,6 +2,7 @@ name: SkyLite UX
 description: Self-hosted family manager (Calendar, Todos, Shopping Lists). Bundled or external PostgreSQL.
 version: 2026.2.3
 slug: skylite_ux
+url: https://github.com/Wetzel402/Skylite-UX
 image: wetzel402/skylite-ux-ha
 arch:
   - amd64
