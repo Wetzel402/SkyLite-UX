@@ -31,6 +31,14 @@ export NUXT_PUBLIC_LOG_LEVEL="$log_level"
 if [ "$database" = "bundled" ]; then
   PGDATA="${data_location}/postgres"
   PWFILE="${data_location}/.skylite_db_password"
+  
+  PG_BIN=$(find /usr/lib/postgresql -name initdb -type f 2>/dev/null | head -1 | xargs dirname)
+  if [ -z "$PG_BIN" ] || [ ! -d "$PG_BIN" ]; then
+    echo "Error: Could not find PostgreSQL binaries directory" >&2
+    exit 1
+  fi
+  export PATH="$PG_BIN:$PATH"
+  
   if [ ! -f "$PWFILE" ]; then
     mkdir -p "$data_location"
     (od -An -N16 -tx1 /dev/urandom | tr -d ' \n') > "$PWFILE"
