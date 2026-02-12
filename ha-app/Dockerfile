@@ -31,7 +31,7 @@ COPY prisma ./prisma/
 COPY package-lock.json ./package-lock.json
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update -y && apt-get install -y hostname openssl jq postgresql postgresql-client locales && \
+RUN apt-get update -y && apt-get install -y hostname openssl jq postgresql postgresql-client gosu locales && \
     sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
     locale-gen en_US.UTF-8 && \
     PRISMA_VERSION=$(node -p "require('./package-lock.json').packages['node_modules/prisma'].version") && \

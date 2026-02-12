@@ -40,19 +40,19 @@ if [ "$database" = "bundled" ]; then
   if [ ! -d "$PGDATA" ] || [ ! -f "$PGDATA/PG_VERSION" ]; then
     mkdir -p "$PGDATA"
     chown postgres:postgres "$PGDATA"
-    su postgres -c "initdb -D $PGDATA"
-    su postgres -c "pg_ctl -D $PGDATA -l ${PGDATA}/logfile start" || true
+    gosu postgres initdb -D $PGDATA --locale=en_US.UTF-8
+    gosu postgres pg_ctl -D $PGDATA -l ${PGDATA}/logfile start || true
     sleep 2
     for _ in 1 2 3 4 5 6 7 8 9 10; do
-      if su postgres -c "pg_isready -D $PGDATA" 2>/dev/null; then break; fi
+      if gosu postgres pg_isready -D $PGDATA 2>/dev/null; then break; fi
       sleep 1
     done
-    su postgres -c "psql -d postgres -c \"CREATE USER skylite WITH PASSWORD '$SKYLITE_PW';\""
-    su postgres -c "psql -d postgres -c \"CREATE DATABASE skylite OWNER skylite;\""
+    gosu postgres psql -d postgres -c "CREATE USER skylite WITH PASSWORD '$SKYLITE_PW';"
+    gosu postgres psql -d postgres -c "CREATE DATABASE skylite OWNER skylite;"
   else
-    su postgres -c "pg_ctl -D $PGDATA -l ${PGDATA}/logfile start" || true
+    gosu postgres pg_ctl -D $PGDATA -l ${PGDATA}/logfile start || true
     for _ in 1 2 3 4 5 6 7 8 9 10; do
-      if su postgres -c "pg_isready -D $PGDATA" 2>/dev/null; then break; fi
+      if gosu postgres pg_isready -D $PGDATA 2>/dev/null; then break; fi
       sleep 1
     done
   fi
