@@ -18,6 +18,7 @@ map:
   - data:rw
 webui: http://[HOST]:[PORT:3000]/
 ingress: true
+ingress_port: 3000
 options:
   data_location: /data
   TZ: America/Chicago
