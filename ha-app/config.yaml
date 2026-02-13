@@ -1,4 +1,4 @@
-name: SkyLite UX
+name: Skylite UX
 description: Self-hosted family manager (Calendar, Todos, Shopping Lists)
 version: 2026.2.3
 slug: skylite_ux
@@ -8,7 +8,7 @@ arch:
   - amd64
   - aarch64
 panel_icon: mdi:calendar
-panel_title: SkyLite UX
+panel_title: Skylite UX
 ports:
   3000/tcp: 3000
 ports_description:
@@ -17,6 +17,7 @@ map:
   - addon_config:rw
   - data:rw
 webui: http://[HOST]:[PORT:3000]/
+ingress: true
 options:
   data_location: /data
   TZ: America/Chicago
