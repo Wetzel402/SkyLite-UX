@@ -3,3 +3,8 @@ description: We store timestamps in UTC and use the global TZ when converting ti
 globs:
 alwaysApply: true
 ---
+
+# Timestamps
+
+- Store datetimes in UTC in the database (Prisma `DateTime`).
+- When converting for display or APIs, use the app's global timezone (or user TZ if added later). Use `date-fns` with UTC helpers / TZ when formatting.

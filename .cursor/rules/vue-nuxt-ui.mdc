@@ -1,0 +1,9 @@
+---
+description: Prefer @nuxt/ui components; use @vueuse/core and project composables
+globs: ["**/*.vue", "composables/**"]
+alwaysApply: false
+---
+
+# Vue and Nuxt UI
+
+- Prefer `@nuxt/ui` components where they fit. Use composables from `@vueuse/core` and from project `composables/` when relevant.
