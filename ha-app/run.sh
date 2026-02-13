@@ -48,7 +48,7 @@ if [ "$database" = "bundled" ]; then
   if [ ! -d "$PGDATA" ] || [ ! -f "$PGDATA/PG_VERSION" ]; then
     mkdir -p "$PGDATA"
     chown postgres:postgres "$PGDATA"
-    gosu postgres initdb -D $PGDATA --locale=en_US.UTF-8
+    gosu postgres initdb -D $PGDATA --locale=C.UTF-8
     gosu postgres pg_ctl -D $PGDATA -l ${PGDATA}/logfile start || true
     sleep 2
     for _ in 1 2 3 4 5 6 7 8 9 10; do
