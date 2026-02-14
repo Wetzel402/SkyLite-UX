@@ -20,6 +20,7 @@
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/docs)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/)
 [![Static Badge](https://img.shields.io/badge/Cursor-black?style=for-the-badge&logo=cursor)](https://cursor.com/home)
+![Static Badge](https://img.shields.io/badge/Home_Assistant-App-blue?style=for-the-badge&logo=homeassistant&color=%2318BCF2&link=https%3A%2F%2Fmy.home-assistant.io%2Fredirect%2Fsupervisor_add_addon_repository%2F%3Frepository_url%3Dhttps%253A%252F%252Fgithub.com%252FWetzel402%252FSkylite-UX)
 
 # About The Project
 

@@ -15,6 +15,8 @@ Run Skylite UX as a Home Assistant app with optional bundled PostgreSQL or an ex
 - [Home Assistant OS](https://www.home-assistant.io/installation/) or Home Assistant Supervised.
 
 ## Add the repository
+<br>
+[![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FWetzel402%2FSkylite-UX)
 
 1. In Home Assistant go to **Settings** → **Apps** → **Install app**.
 2. Click the three dots (top right) → **Repositories**.
@@ -33,7 +35,6 @@ Run Skylite UX as a Home Assistant app with optional bundled PostgreSQL or an ex
 Set the following options in the app **Configuration** tab:
 
 - **database**: Choose **bundled** (PostgreSQL runs inside the app; data is stored on a mapped volume and survives restarts and upgrades) or **external** to use an existing PostgreSQL server (e.g. another app or host).
-- **port**: Port for the Web UI (default `3000`).
 - **data_location**: Path where app and bundled database data is stored (default `/data`). The mapped volume is mounted here.
 - **TZ**: Timezone (e.g. `America/Chicago`, `Europe/London`).
 - **log_level**: Logging level: `debug`, `info`, `warn`, `error`, or `verbose`.
@@ -47,6 +48,25 @@ Set **database** to `external`, then set:
 - **DB_USERNAME**: PostgreSQL user.
 - **DB_PASSWORD**: Password for that user.
 - **DB_DATABASE_NAME**: Database name (e.g. `skylite`).
+
+#### Using the Postgres 17 app from [alexbelgium](https://github.com/alexbelgium)
+<br>
+[![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Falexbelgium%2Fhassio-addons)
+
+You can use a dedicated PostgreSQL app such as [Postgres 17](https://github.com/alexbelgium/hassio-addons/tree/master/postgres_17) from the alexbelgium hassio-addons repository. Add the repository `https://github.com/alexbelgium/hassio-addons` in **Settings → Apps → Repositories**, install **Postgres 17**, then configure a user and database (or use the add-on's defaults). Use the add-on's documented hostname (or the one shown in its Info or Network tab) as **DB_HOSTNAME** in SkyLite UX.
+
+#### Example configuration
+
+When using the Postgres 17 add-on with its default user and `skylite` database name, SkyLite UX configuration can look like this (hostname may vary by installation; use a strong password in production):
+
+```yaml
+database: external
+DB_HOSTNAME: db21ed7f-postgres-latest
+DB_PORT: 5432
+DB_USERNAME: postgres
+DB_PASSWORD: homeassistant
+DB_DATABASE_NAME: skylite
+```
 
 ## Access the app
 
