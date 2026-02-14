@@ -41,9 +41,17 @@ const { selectedAlbums, fetchSelectedAlbums, openPicker } = usePhotosPicker();
 // Holiday countdown settings
 const availableCountries = ref<Array<{ countryCode: string; name: string }>>([]);
 const countriesLoading = ref(false);
-const selectedCountry = ref<{ countryCode: string; name: string } | null>(null);
+const selectedCountryCode = ref<string>("");
 const subdivisionCode = ref<string>("");
 let countryUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Transform countries for USelect component
+const countryOptions = computed(() => {
+  return availableCountries.value.map(country => ({
+    label: country.name,
+    value: country.countryCode,
+  }));
+});
 let isInitialMount = true;
 
 // Photo management state
@@ -695,10 +703,7 @@ async function fetchHolidayCountries() {
 
     // Set initial selection from settings
     if (settings.value?.holidayCountryCode) {
-      const currentCountry = countries.find(c => c.countryCode === settings.value!.holidayCountryCode);
-      if (currentCountry) {
-        selectedCountry.value = currentCountry;
-      }
+      selectedCountryCode.value = settings.value.holidayCountryCode;
     }
 
     // Set initial subdivision
@@ -737,8 +742,8 @@ async function handleSubdivisionChange() {
 }
 
 // Watch for country selection changes with debouncing
-watch(selectedCountry, (newCountry, oldCountry) => {
-  if (!newCountry)
+watch(selectedCountryCode, (newCountryCode, oldCountryCode) => {
+  if (!newCountryCode)
     return;
 
   // Skip if this is the initial programmatic set
@@ -748,7 +753,7 @@ watch(selectedCountry, (newCountry, oldCountry) => {
   }
 
   // Skip if country didn't actually change
-  if (oldCountry && newCountry.countryCode === oldCountry.countryCode) {
+  if (oldCountryCode && newCountryCode === oldCountryCode) {
     return;
   }
 
@@ -761,7 +766,7 @@ watch(selectedCountry, (newCountry, oldCountry) => {
   countryUpdateTimeout = setTimeout(async () => {
     try {
       await updateSettings({
-        holidayCountryCode: newCountry.countryCode,
+        holidayCountryCode: newCountryCode,
         holidaySubdivisionCode: null, // Clear subdivision when country changes
       });
 
@@ -1089,12 +1094,12 @@ watch(selectedCountry, (newCountry, oldCountry) => {
               <div>
                 <label class="text-sm font-medium text-highlighted mb-2 block">Country</label>
                 <USelect
-                  v-model="selectedCountry"
-                  :items="availableCountries"
+                  v-model="selectedCountryCode"
+                  :items="countryOptions"
                   :loading="countriesLoading"
                   placeholder="Select country"
-                  value-attribute="countryCode"
-                  option-attribute="name"
+                  option-attribute="label"
+                  value-attribute="value"
                   searchable
                   searchable-placeholder="Search countries..."
                 />
