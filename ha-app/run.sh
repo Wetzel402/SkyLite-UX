@@ -75,6 +75,8 @@ else
   fi
 fi
 
+export NUXT_APP_BASE_URL="/api/hassio_ingress/skylite_ux"
+
 cd /app
 npx prisma migrate deploy
 exec node .output/server/index.mjs
