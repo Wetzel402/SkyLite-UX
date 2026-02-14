@@ -39,6 +39,7 @@ describe("nagerDateApi", () => {
       expect(result).toEqual(mockHolidays);
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "https://date.nager.at/api/v3/PublicHolidays/2026/CA",
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
     });
 
@@ -69,6 +70,7 @@ describe("nagerDateApi", () => {
       expect(result).toEqual(mockCountries);
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "https://date.nager.at/api/v3/AvailableCountries",
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
     });
   });
@@ -94,6 +96,7 @@ describe("nagerDateApi", () => {
       expect(result).toEqual(mockInfo);
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "https://date.nager.at/api/v3/CountryInfo/CA",
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
     });
   });
