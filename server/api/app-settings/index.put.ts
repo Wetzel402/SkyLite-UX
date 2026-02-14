@@ -25,11 +25,13 @@ export default defineEventHandler(async (event) => {
       && body.holidaySubdivisionCode !== settings?.holidaySubdivisionCode;
 
     if (settings && (countryChanged || subdivisionChanged)) {
-      // Invalidate old cache before updating
-      await invalidateHolidayCache(
-        settings.holidayCountryCode || "CA",
-        settings.holidaySubdivisionCode ?? undefined,
-      );
+      // Only invalidate if a country was previously configured
+      if (settings.holidayCountryCode) {
+        await invalidateHolidayCache(
+          settings.holidayCountryCode,
+          settings.holidaySubdivisionCode ?? undefined,
+        );
+      }
     }
 
     if (!settings) {

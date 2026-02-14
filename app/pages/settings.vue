@@ -42,6 +42,7 @@ const availableCountries = ref<Array<{ countryCode: string; name: string }>>([])
 const countriesLoading = ref(false);
 const selectedCountry = ref<{ countryCode: string; name: string } | null>(null);
 const subdivisionCode = ref<string>("");
+let countryUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Photo management state
 const selectedPhotoIds = ref<Set<string>>(new Set());
@@ -717,24 +718,32 @@ async function handleSubdivisionChange() {
   }
 }
 
-// Watch for country selection changes
-watch(selectedCountry, async (newCountry) => {
+// Watch for country selection changes with debouncing
+watch(selectedCountry, (newCountry) => {
   if (!newCountry)
     return;
 
-  try {
-    await updateSettings({
-      holidayCountryCode: newCountry.countryCode,
-      holidaySubdivisionCode: null, // Clear subdivision when country changes
-    });
+  // Clear existing timeout
+  if (countryUpdateTimeout) {
+    clearTimeout(countryUpdateTimeout);
+  }
 
-    // Clear subdivision input
-    subdivisionCode.value = "";
-  }
-  catch (error) {
-    consola.error("Settings: Failed to update country:", error);
-    showError("Update Failed", "Failed to save country setting");
-  }
+  // Set new debounced timeout
+  countryUpdateTimeout = setTimeout(async () => {
+    try {
+      await updateSettings({
+        holidayCountryCode: newCountry.countryCode,
+        holidaySubdivisionCode: null, // Clear subdivision when country changes
+      });
+
+      // Clear subdivision input
+      subdivisionCode.value = "";
+    }
+    catch (error) {
+      consola.error("Settings: Failed to update country:", error);
+      showError("Update Failed", "Failed to save country setting");
+    }
+  }, 300);
 });
 </script>
 
@@ -1047,7 +1056,7 @@ watch(selectedCountry, async (newCountry) => {
               />
             </div>
 
-            <div v-if="enableHolidayCountdowns.value" class="space-y-4 pl-4 pt-2 border-t border-muted">
+            <div v-if="enableHolidayCountdowns" class="space-y-4 pl-4 pt-2 border-t border-muted">
               <div>
                 <label class="text-sm font-medium text-highlighted mb-2 block">Country</label>
                 <USelectMenu
