@@ -82,6 +82,7 @@
     "typescript": "~5.8.2",
     "vite": "^6.3.5",
     "vitest": "^4.0.18",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^2.2.10",
+    "workbox-window": "^7.4.0"
   }
 }
