@@ -37,6 +37,12 @@ const { settings, updateSettings, getSettings } = useAppSettings();
 const { homeSettings, fetchHomeSettings, updateHomeSettings: updateHomeSettingsComposable } = useHomeSettings();
 const { selectedAlbums, fetchSelectedAlbums, openPicker } = usePhotosPicker();
 
+// Holiday countdown settings
+const availableCountries = ref<Array<{ countryCode: string; name: string }>>([]);
+const countriesLoading = ref(false);
+const selectedCountry = ref<{ countryCode: string; name: string } | null>(null);
+const subdivisionCode = ref<string>("");
+
 // Photo management state
 const selectedPhotoIds = ref<Set<string>>(new Set());
 const currentPage = ref(1);
@@ -160,6 +166,42 @@ const showMeals = computed({
   },
 });
 
+const enableHolidayCountdowns = computed({
+  get() {
+    return settings.value?.enableHolidayCountdowns ?? true;
+  },
+  set(value: boolean) {
+    // Get mutable cached settings for optimistic update
+    const { data: cachedSettings } = useNuxtData<AppSettings>("app-settings");
+
+    // Capture previous state for rollback
+    const previousValue = cachedSettings.value?.enableHolidayCountdowns ?? true;
+
+    // Optimistic update - apply immediately to cached data
+    if (cachedSettings.value) {
+      cachedSettings.value.enableHolidayCountdowns = value;
+    }
+
+    // Update server and handle errors with rollback
+    (async () => {
+      try {
+        await updateSettings({ enableHolidayCountdowns: value });
+      }
+      catch (error) {
+        // Rollback optimistic update on failure
+        if (cachedSettings.value) {
+          cachedSettings.value.enableHolidayCountdowns = previousValue;
+        }
+        // Refresh from server to ensure consistency
+        await getSettings();
+
+        consola.error("Settings: Failed to update holiday countdowns setting:", error);
+        showError("Settings Update Failed", "Failed to update holiday countdowns setting.");
+      }
+    })();
+  },
+});
+
 // Color mode initialization is now handled globally by the colorMode plugin
 
 const selectedUser = ref<User | null>(null);
@@ -189,6 +231,7 @@ onMounted(async () => {
   await refreshNuxtData("integrations");
   await fetchHomeSettings();
   await fetchSelectedAlbums();
+  await fetchHolidayCountries();
 });
 
 watch(() => route.query, (query) => {
@@ -634,6 +677,65 @@ async function handleOpenPhotosPicker() {
     showError("Picker Error", "Failed to open Google Photos picker");
   }
 }
+
+// Holiday countdown functions
+async function fetchHolidayCountries() {
+  try {
+    countriesLoading.value = true;
+    const countries = await $fetch<Array<{ countryCode: string; name: string }>>("/api/settings/holiday-countries");
+    availableCountries.value = countries;
+
+    // Set initial selection from settings
+    if (settings.value?.holidayCountryCode) {
+      const currentCountry = countries.find(c => c.countryCode === settings.value.holidayCountryCode);
+      if (currentCountry) {
+        selectedCountry.value = currentCountry;
+      }
+    }
+
+    // Set initial subdivision
+    subdivisionCode.value = settings.value?.holidaySubdivisionCode || "";
+  }
+  catch (error) {
+    consola.error("Settings: Failed to fetch holiday countries:", error);
+    showError("Load Failed", "Failed to load available countries");
+  }
+  finally {
+    countriesLoading.value = false;
+  }
+}
+
+async function handleSubdivisionChange() {
+  try {
+    await updateSettings({
+      holidaySubdivisionCode: subdivisionCode.value.trim() || null,
+    });
+  }
+  catch (error) {
+    consola.error("Settings: Failed to update subdivision:", error);
+    showError("Update Failed", "Failed to save subdivision setting");
+  }
+}
+
+// Watch for country selection changes
+watch(selectedCountry, async (newCountry) => {
+  if (!newCountry)
+    return;
+
+  try {
+    await updateSettings({
+      holidayCountryCode: newCountry.countryCode,
+      holidaySubdivisionCode: null, // Clear subdivision when country changes
+    });
+
+    // Clear subdivision input
+    subdivisionCode.value = "";
+  }
+  catch (error) {
+    consola.error("Settings: Failed to update country:", error);
+    showError("Update Failed", "Failed to save country setting");
+  }
+});
 </script>
 
 <template>
@@ -917,6 +1019,71 @@ async function handleOpenPhotosPicker() {
                 size="xl"
                 aria-label="Toggle notifications"
               />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-default rounded-lg shadow-sm border border-default p-6 mb-6">
+          <h2 class="text-lg font-semibold text-highlighted mb-4">
+            Holiday Countdowns
+          </h2>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Enable Holiday Countdowns
+                </p>
+                <p class="text-sm text-muted">
+                  When enabled, shows countdown to upcoming holidays if no personal countdowns exist
+                </p>
+              </div>
+              <USwitch
+                v-model="enableHolidayCountdowns"
+                color="primary"
+                checked-icon="i-lucide-calendar-heart"
+                unchecked-icon="i-lucide-x"
+                size="xl"
+                aria-label="Toggle holiday countdowns"
+              />
+            </div>
+
+            <div v-if="enableHolidayCountdowns.value" class="space-y-4 pl-4 pt-2 border-t border-muted">
+              <div>
+                <label class="text-sm font-medium text-highlighted mb-2 block">Country</label>
+                <USelectMenu
+                  v-model="selectedCountry"
+                  :options="availableCountries"
+                  :loading="countriesLoading"
+                  searchable
+                  placeholder="Select country"
+                  value-attribute="countryCode"
+                  option-attribute="name"
+                >
+                  <template #label>
+                    <span v-if="selectedCountry">
+                      {{ selectedCountry.countryCode }} - {{ selectedCountry.name }}
+                    </span>
+                    <span v-else class="text-muted">Select country</span>
+                  </template>
+                </USelectMenu>
+                <p class="text-xs text-muted mt-1">
+                  Select which country's holidays to display
+                </p>
+              </div>
+
+              <div>
+                <label class="text-sm font-medium text-highlighted mb-2 block">Region/Subdivision (Optional)</label>
+                <input
+                  v-model="subdivisionCode"
+                  type="text"
+                  placeholder="e.g., ON for Ontario"
+                  class="w-full px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
+                  @blur="handleSubdivisionChange"
+                >
+                <p class="text-xs text-muted mt-1">
+                  Optional. If not specified, national holidays will be used. Enter subdivision code (e.g., ON, BC, QC for Canadian provinces)
+                </p>
+              </div>
             </div>
           </div>
         </div>
