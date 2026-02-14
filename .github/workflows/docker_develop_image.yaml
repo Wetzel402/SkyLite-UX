@@ -6,8 +6,38 @@ on:
       - main
 
 jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test database
+        run: npx prisma generate
+        env:
+          DATABASE_URL: file:./test.db
+
+      - name: Run tests
+        run: npm run test
+        env:
+          CI: true
+          DATABASE_URL: file:./test.db
+
   push_to_registry:
     name: Push Docker develop image to Docker Hub
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       packages: write

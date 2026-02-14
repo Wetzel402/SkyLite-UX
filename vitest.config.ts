@@ -17,7 +17,7 @@ export default defineConfig({
         'docs/',
       ],
     },
-    // Exit with error code if tests fail
+    // Exit with error if no tests are found
     passWithNoTests: false,
   },
   resolve: {

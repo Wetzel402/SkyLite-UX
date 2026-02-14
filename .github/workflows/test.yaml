@@ -34,11 +34,12 @@ jobs:
         run: |
           # Use in-memory SQLite for tests
           npx prisma generate
+          npx prisma db push --accept-data-loss
         env:
           DATABASE_URL: file:./test.db
 
       - name: Run tests
-        run: npx vitest run
+        run: npm run test
         env:
           CI: true
           DATABASE_URL: file:./test.db

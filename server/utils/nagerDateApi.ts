@@ -1,4 +1,5 @@
 const NAGER_API_BASE = "https://date.nager.at/api/v3";
+const FETCH_TIMEOUT_MS = 5000; // 5 seconds
 
 export type NagerHoliday = {
   date: string;
@@ -27,32 +28,49 @@ export async function getPublicHolidays(
   year: number,
   countryCode: string,
 ): Promise<NagerHoliday[]> {
-  const response = await fetch(
-    `${NAGER_API_BASE}/PublicHolidays/${year}/${countryCode}`,
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch holidays: ${response.status} ${response.statusText}`,
+  try {
+    const response = await fetch(
+      `${NAGER_API_BASE}/PublicHolidays/${year}/${countryCode}`,
+      { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
     );
-  }
 
-  return await response.json();
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch holidays: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout fetching holidays for ${countryCode}`);
+    }
+    throw error;
+  }
 }
 
 /**
  * Get list of available countries
  */
 export async function getAvailableCountries(): Promise<NagerCountry[]> {
-  const response = await fetch(`${NAGER_API_BASE}/AvailableCountries`);
+  try {
+    const response = await fetch(`${NAGER_API_BASE}/AvailableCountries`, {
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch countries: ${response.status} ${response.statusText}`,
-    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch countries: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout fetching available countries');
+    }
+    throw error;
   }
-
-  return await response.json();
 }
 
 /**
@@ -61,15 +79,24 @@ export async function getAvailableCountries(): Promise<NagerCountry[]> {
 export async function getCountryInfo(
   countryCode: string,
 ): Promise<NagerCountryInfo> {
-  const response = await fetch(`${NAGER_API_BASE}/CountryInfo/${countryCode}`);
+  try {
+    const response = await fetch(`${NAGER_API_BASE}/CountryInfo/${countryCode}`, {
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch country info: ${response.status} ${response.statusText}`,
-    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch country info: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout fetching country info for ${countryCode}`);
+    }
+    throw error;
   }
-
-  return await response.json();
 }
 
 /**
