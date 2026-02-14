@@ -43,6 +43,8 @@ const availableCountries = ref<Array<{ countryCode: string; name: string }>>([])
 const countriesLoading = ref(false);
 const selectedCountryCode = ref<string>("");
 const subdivisionCode = ref<string>("");
+const availableSubdivisions = ref<Array<{ code: string; name: string }>>([]);
+const subdivisionsLoading = ref(false);
 let countryUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Transform countries for USelect component
@@ -52,6 +54,15 @@ const countryOptions = computed(() => {
     value: country.countryCode,
   }));
 });
+
+// Transform subdivisions for USelect component
+const subdivisionOptions = computed(() => {
+  return availableSubdivisions.value.map(subdivision => ({
+    label: subdivision.name,
+    value: subdivision.code,
+  }));
+});
+
 let isInitialMount = true;
 
 // Photo management state
@@ -741,14 +752,38 @@ async function handleSubdivisionChange() {
   }
 }
 
+// Fetch subdivisions for selected country
+async function fetchSubdivisions(countryCode: string) {
+  if (!countryCode) {
+    availableSubdivisions.value = [];
+    return;
+  }
+
+  try {
+    subdivisionsLoading.value = true;
+    const subdivisions = await $fetch(`/api/settings/holiday-countries/${countryCode}/subdivisions`);
+    availableSubdivisions.value = subdivisions;
+  }
+  catch (error) {
+    consola.error("Settings: Failed to fetch subdivisions:", error);
+    availableSubdivisions.value = [];
+    // Don't show error toast - subdivisions might not be available for all countries
+  }
+  finally {
+    subdivisionsLoading.value = false;
+  }
+}
+
 // Watch for country selection changes with debouncing
-watch(selectedCountryCode, (newCountryCode, oldCountryCode) => {
+watch(selectedCountryCode, async (newCountryCode, oldCountryCode) => {
   if (!newCountryCode)
     return;
 
   // Skip if this is the initial programmatic set
   if (isInitialMount) {
     isInitialMount = false;
+    // Fetch subdivisions for the initially loaded country
+    await fetchSubdivisions(newCountryCode);
     return;
   }
 
@@ -756,6 +791,9 @@ watch(selectedCountryCode, (newCountryCode, oldCountryCode) => {
   if (oldCountryCode && newCountryCode === oldCountryCode) {
     return;
   }
+
+  // Fetch subdivisions for the new country
+  await fetchSubdivisions(newCountryCode);
 
   // Clear existing timeout
   if (countryUpdateTimeout) {
@@ -1108,15 +1146,25 @@ watch(selectedCountryCode, (newCountryCode, oldCountryCode) => {
                 </p>
               </div>
 
-              <div>
+              <div v-if="selectedCountryCode">
                 <label class="text-sm font-medium text-highlighted mb-2 block">Region/Subdivision (Optional)</label>
-                <UInput
+                <USelect
+                  v-if="availableSubdivisions.length > 0"
                   v-model="subdivisionCode"
-                  placeholder="e.g., ON for Ontario"
-                  @blur="handleSubdivisionChange"
+                  :items="subdivisionOptions"
+                  :loading="subdivisionsLoading"
+                  placeholder="Select subdivision"
+                  option-attribute="label"
+                  value-attribute="value"
+                  searchable
+                  searchable-placeholder="Search subdivisions..."
+                  @update:model-value="handleSubdivisionChange"
                 />
-                <p class="text-xs text-muted mt-1">
-                  Optional. Enter subdivision code (e.g., ON, BC, NY). If not specified, national holidays will be used.
+                <p v-else class="text-xs text-muted italic">
+                  No subdivisions available for this country. National holidays will be used.
+                </p>
+                <p v-if="availableSubdivisions.length > 0" class="text-xs text-muted mt-1">
+                  Optional. Select a subdivision for region-specific holidays. If not specified, national holidays will be used.
                 </p>
               </div>
             </div>
