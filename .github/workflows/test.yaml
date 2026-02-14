@@ -32,7 +32,7 @@ jobs:
 
       - name: Setup test database
         run: |
-          # Use in-memory SQLite for tests
+          # Use file-based SQLite for tests (file:./test.db)
           npx prisma generate
           npx prisma db push --accept-data-loss
         env:
