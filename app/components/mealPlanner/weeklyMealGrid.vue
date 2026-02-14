@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { format } from "date-fns";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import type { Meal, MealType } from "~/types/database";
 

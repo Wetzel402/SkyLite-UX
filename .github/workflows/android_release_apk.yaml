@@ -11,8 +11,43 @@ on:
         type: string
 
 jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare Nuxt
+        run: npx nuxt prepare
+
+      - name: Setup test database
+        run: |
+          npx prisma generate
+          npx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: file:./test.db
+
+      - name: Run tests
+        run: npm run test
+        env:
+          CI: true
+          DATABASE_URL: file:./test.db
+
   build-release-apk:
     name: Build Release APK
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -35,7 +70,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4

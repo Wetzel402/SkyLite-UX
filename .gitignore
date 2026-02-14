@@ -19,6 +19,10 @@ logs
 .idea
 tmpclaude-*
 
+# Test coverage
+coverage/
+test-results/
+
 # Local env files
 .env
 .env.*

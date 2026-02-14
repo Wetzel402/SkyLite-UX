@@ -34,6 +34,7 @@ Beautiful ambient display perfect for a family command center:
 - **Photo Slideshow** - Google Photos integration with Ken Burns effect
 - **Interactive Widgets** - All widgets are clickable and navigate to their pages
 - **Countdown Widget** - Display upcoming events with AI-generated whimsical messages powered by Google Gemini
+- **Holiday Countdown Fallback** - Automatic countdowns to upcoming public holidays when no user events exist
 - **Today's Menu** - Shows all meals planned for today with meal type icons (🍳🥗🍽️)
 - **7-Day Weather Forecast** - Current conditions plus daily forecasts
 - **Upcoming Events** - Next 5 events from Google Calendar with smart date formatting

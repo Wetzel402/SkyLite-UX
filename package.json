@@ -11,6 +11,9 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.json --composite false",
     "lint": "eslint . --fix",
     "format": "prettier --write app/ server/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "docs": "cd docs && bundle exec jekyll serve --host 0.0.0.0",
     "build:mobile": "cross-env CAPACITOR_BUILD=true nuxt generate && npx cap sync android",
     "android:build": "cd android && .\\gradlew assembleDebug",
@@ -27,7 +30,7 @@
     "@headlessui/vue": "^1.7.19",
     "@heroicons/vue": "^2.1.1",
     "@nuxt/ui": "^3.1.2",
-    "@prisma/client": "^6.9.0",
+    "@prisma/client": "^6.19.2",
     "@vueuse/core": "^10.9.0",
     "consola": "^3.4.2",
     "date-fns": "^3.3.1",
@@ -55,6 +58,8 @@
     "@typescript-eslint/parser": "^8.25.0",
     "@vite-pwa/nuxt": "^1.1.0",
     "@vitejs/plugin-vue": "^5.0.4",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
     "@vue/eslint-config-prettier": "^8.0.0",
     "@vue/eslint-config-typescript": "^14.5.0",
     "@vue/tsconfig": "^0.5.1",
@@ -76,6 +81,8 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "typescript": "~5.8.2",
     "vite": "^6.3.5",
-    "vue-tsc": "^2.2.10"
+    "vitest": "^4.0.18",
+    "vue-tsc": "^2.2.10",
+    "workbox-window": "^7.4.0"
   }
 }

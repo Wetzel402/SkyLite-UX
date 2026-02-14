@@ -185,10 +185,34 @@ model AppSettings {
   id                    String   @id @default(cuid())
   singletonId           Int      @unique @default(1)
   showMealsOnCalendar   Boolean  @default(false)
+
+  // Holiday countdown settings
+  holidayCountryCode       String  @default("CA")
+  holidaySubdivisionCode   String?
+  enableHolidayCountdowns  Boolean @default(true)
+
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   @@map("app_settings")
+}
+
+model HolidayCache {
+  id              String   @id @default(cuid())
+  countryCode     String
+  subdivisionCode String?
+  holidayName     String
+  holidayDate     DateTime
+  fetchedAt       DateTime @default(now())
+  cachedUntil     DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([countryCode, subdivisionCode, holidayDate, holidayName])
+  @@index([countryCode, subdivisionCode])
+  @@index([cachedUntil])
+  @@index([createdAt])
+  @@map("holiday_cache")
 }
 
 model HomeSettings {

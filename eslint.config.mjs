@@ -80,6 +80,8 @@ export default withNuxt(antfu({
         /get-picker-media\.get\.ts$/i,
         /proxy-image\.get\.ts$/i,
         /generate-countdown-message\.post\.ts$/i,
+        /holiday-countries\.get\.ts$/i,
+        /subdivisions\.get\.ts$/i,
         // PascalCase components
         /HomeCountdownWidget\.vue$/i,
         /TodoCountdownCheckbox\.vue$/i,

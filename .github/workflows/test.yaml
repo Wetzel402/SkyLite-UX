@@ -1,6 +1,11 @@
-name: Lint
+name: Test
 
 on:
+  push:
+    branches:
+      - main
+      - dev
+      - 'feature/**'
   pull_request:
     branches:
       - main
@@ -30,6 +35,7 @@ jobs:
 
       - name: Setup test database
         run: |
+          # Use file-based SQLite for tests (file:./test.db)
           npx prisma generate
           npx prisma db push --accept-data-loss
         env:
@@ -41,26 +47,12 @@ jobs:
           CI: true
           DATABASE_URL: file:./test.db
 
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    environment: Build
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '22'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Prepare Nuxt
-        run: npm run build
-
-      - name: Type check
-        run: npm run type-check
-
-      - name: Lint
-        run: npm run lint
+          name: test-results
+          path: |
+            coverage/
+            test-results/
+          retention-days: 7

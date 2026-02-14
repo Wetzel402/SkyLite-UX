@@ -22,6 +22,7 @@ export type CountdownTodo = Todo & {
   isCountdown: true;
   countdownMessage: string | null;
   messageGeneratedAt: Date | null;
+  isHoliday?: boolean; // Flag to indicate holiday countdown vs user event
 };
 
 export type TodoWithUser = Prisma.TodoGetPayload<{
@@ -136,6 +137,7 @@ export type CreateTodoInput = Omit<Todo, "id" | "createdAt" | "updatedAt"> & {
   isCountdown?: boolean;
   countdownMessage?: string | null;
   messageGeneratedAt?: Date | null;
+  isHoliday?: boolean;
 };
 export type CreateShoppingListInput = Omit<ShoppingList, "id" | "createdAt" | "updatedAt" | "items">;
 export type CreateShoppingListItemInput = Omit<ShoppingListItem, "id" | "shoppingListId">;
@@ -144,6 +146,7 @@ export type UpdateTodoInput = Partial<Omit<Todo, "id" | "createdAt" | "updatedAt
   isCountdown?: boolean;
   countdownMessage?: string | null;
   messageGeneratedAt?: Date | null;
+  isHoliday?: boolean;
 };
 export type UpdateShoppingListItemInput = Partial<CreateShoppingListItemInput>;
 
@@ -169,6 +172,7 @@ export type TodoListItem = BaseListItem & {
   isCountdown?: boolean;
   countdownMessage?: string | null;
   messageGeneratedAt?: Date | null;
+  isHoliday?: boolean; // Flag to indicate holiday countdown vs user event
 };
 
 export type TodoWithOrder = TodoWithUser & { order: number };
