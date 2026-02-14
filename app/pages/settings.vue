@@ -1088,21 +1088,16 @@ watch(selectedCountry, (newCountry, oldCountry) => {
             <div v-if="enableHolidayCountdowns" class="space-y-4 pl-4 pt-2 border-t border-muted">
               <div>
                 <label class="text-sm font-medium text-highlighted mb-2 block">Country</label>
-                <USelectMenu
+                <USelect
                   v-model="selectedCountry"
-                  :options="availableCountries"
+                  :items="availableCountries"
                   :loading="countriesLoading"
-                  searchable
                   placeholder="Select country"
-                  by="countryCode"
-                >
-                  <template #label>
-                    {{ selectedCountry?.name || 'Select country' }}
-                  </template>
-                  <template #option="{ option }">
-                    {{ option.name }}
-                  </template>
-                </USelectMenu>
+                  value-attribute="countryCode"
+                  option-attribute="name"
+                  searchable
+                  searchable-placeholder="Search countries..."
+                />
                 <p class="text-xs text-muted mt-1">
                   Select which country's holidays to display
                 </p>
