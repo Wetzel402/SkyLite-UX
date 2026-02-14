@@ -34,6 +34,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Prepare Nuxt
+        run: npx nuxt prepare
+
       - name: Setup test database
         run: |
           npx prisma generate
