@@ -25,7 +25,9 @@ jobs:
         run: npm ci
 
       - name: Setup test database
-        run: npx prisma generate
+        run: |
+          npx prisma generate
+          npx prisma db push --accept-data-loss
         env:
           DATABASE_URL: file:./test.db
 
