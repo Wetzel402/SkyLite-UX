@@ -1,6 +1,7 @@
 import { consola } from "consola";
 
 import prisma from "~/lib/prisma";
+import { invalidateHolidayCache } from "~/server/utils/holidayCache";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -17,11 +18,28 @@ export default defineEventHandler(async (event) => {
     // Get or create the single settings record
     let settings = await prisma.appSettings.findFirst();
 
+    // Check if holiday location changed to invalidate cache
+    const countryChanged = body.holidayCountryCode !== undefined
+      && body.holidayCountryCode !== settings?.holidayCountryCode;
+    const subdivisionChanged = "holidaySubdivisionCode" in body
+      && body.holidaySubdivisionCode !== settings?.holidaySubdivisionCode;
+
+    if (settings && (countryChanged || subdivisionChanged)) {
+      // Invalidate old cache before updating
+      await invalidateHolidayCache(
+        settings.holidayCountryCode || "CA",
+        settings.holidaySubdivisionCode || undefined,
+      );
+    }
+
     if (!settings) {
       // Create with provided values
       settings = await prisma.appSettings.create({
         data: {
           showMealsOnCalendar: body.showMealsOnCalendar ?? false,
+          holidayCountryCode: body.holidayCountryCode,
+          holidaySubdivisionCode: body.holidaySubdivisionCode,
+          enableHolidayCountdowns: body.enableHolidayCountdowns,
         },
       });
     }
@@ -31,6 +49,9 @@ export default defineEventHandler(async (event) => {
         where: { id: settings.id },
         data: {
           showMealsOnCalendar: body.showMealsOnCalendar,
+          holidayCountryCode: body.holidayCountryCode,
+          holidaySubdivisionCode: body.holidaySubdivisionCode,
+          enableHolidayCountdowns: body.enableHolidayCountdowns,
         },
       });
     }
