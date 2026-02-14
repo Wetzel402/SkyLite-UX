@@ -1094,9 +1094,15 @@ watch(selectedCountry, (newCountry, oldCountry) => {
                   :loading="countriesLoading"
                   searchable
                   placeholder="Select country"
-                  value-attribute="countryCode"
-                  option-attribute="name"
-                />
+                  by="countryCode"
+                >
+                  <template #label>
+                    {{ selectedCountry?.name || 'Select country' }}
+                  </template>
+                  <template #option="{ option }">
+                    {{ option.name }}
+                  </template>
+                </USelectMenu>
                 <p class="text-xs text-muted mt-1">
                   Select which country's holidays to display
                 </p>
