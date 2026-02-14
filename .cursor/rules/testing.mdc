@@ -1,0 +1,10 @@
+---
+description: Vitest testing; unit, nuxt, and e2e projects; mock consola when needed
+globs: "**/*.{test,spec}.ts"
+alwaysApply: false
+---
+
+# Testing
+
+- Use Vitest. Tests live under `test/`: `test/unit/` (unit), `test/nuxt/` (Nuxt), `test/e2e/` (e2e). Config in `vitest.config.ts`.
+- In tests that touch code using consola, mock `consola` (e.g. `vi.mock("consola", () => ({ ... }))`). Prefer existing patterns under `test/`.

@@ -4,6 +4,7 @@ import { createError, defineEventHandler, readBody } from "h3";
 
 import { createIntegrationService, integrationRegistry } from "~/types/integrations";
 
+import { normalizeWebcalUrl } from "../../utils/icalUrl";
 import { sanitizeIntegration } from "../../utils/sanitizeIntegration";
 
 const prisma = new PrismaClient();
@@ -11,7 +12,11 @@ const prisma = new PrismaClient();
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const { name, type, service, apiKey, baseUrl, icon, enabled, settings } = body;
+    const { name, type, service, apiKey, icon, enabled, settings } = body;
+    let baseUrl = body.baseUrl;
+    if (baseUrl && typeof baseUrl === "string") {
+      baseUrl = normalizeWebcalUrl(baseUrl);
+    }
 
     const integrationKey = `${type}:${service}`;
 

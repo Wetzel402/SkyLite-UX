@@ -3,3 +3,8 @@ description: This is a nuxt4 project
 globs:
 alwaysApply: true
 ---
+
+# Nuxt 4
+
+- Use `#app` for app imports. Use `defineNuxtPlugin`, `useRuntimeConfig`, and composables in `composables/`. Server routes live under `server/api/`.
+- Do not use `process.env` in app or server code; use Nuxt runtime config. Prefer `@nuxt/ui` components where they fit.

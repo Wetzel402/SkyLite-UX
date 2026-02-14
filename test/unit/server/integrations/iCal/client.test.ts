@@ -95,6 +95,40 @@ describe("ICalServerService", () => {
     expect(parsed).toBeDefined();
   });
 
+  it("should set dtend to start of next day when all-day event has no DTEND (RFC 5545)", () => {
+    const vevent = new ical.Component(["vevent", [], []]);
+    vevent.addPropertyWithValue("uid", "test-event-all-day-no-dtend");
+    vevent.addPropertyWithValue("summary", "Weather Forecast Feb 5");
+    vevent.addPropertyWithValue("dtstart", ical.Time.fromData({
+      year: 2026,
+      month: 2,
+      day: 5,
+      isDate: true,
+    }));
+
+    const parsed = service["parseICalEvent"](vevent);
+    expect(parsed).toBeDefined();
+    expect(parsed.dtstart).toBeDefined();
+    expect(parsed.dtend).toBeDefined();
+
+    const startDate = new Date(parsed.dtstart);
+    const endDate = new Date(parsed.dtend);
+
+    expect(startDate.getUTCFullYear()).toBe(2026);
+    expect(startDate.getUTCMonth()).toBe(1);
+    expect(startDate.getUTCDate()).toBe(5);
+    expect(startDate.getUTCHours()).toBe(0);
+    expect(startDate.getUTCMinutes()).toBe(0);
+    expect(startDate.getUTCSeconds()).toBe(0);
+
+    expect(endDate.getUTCFullYear()).toBe(2026);
+    expect(endDate.getUTCMonth()).toBe(1);
+    expect(endDate.getUTCDate()).toBe(6);
+    expect(endDate.getUTCHours()).toBe(0);
+    expect(endDate.getUTCMinutes()).toBe(0);
+    expect(endDate.getUTCSeconds()).toBe(0);
+  });
+
   it("should detect midnight-to-midnight boundary for all-day events", () => {
     const vevent = new ical.Component(["vevent", [], []]);
     vevent.addPropertyWithValue("uid", "test-event-4");

@@ -17,7 +17,7 @@ permalink: /installation/docker/
 
 - **latest** (not currently implemented) - The default most recent release
 - **beta** - Get a preview of the most recent features and bug fixes
-- **YYYY.MM.Micro** - If you need a specific version you can specify the version number.
+- **YYYY.M.MICRO** - If you need a specific version you can specify the version number.
 
 ## Docker CLI
 
@@ -102,3 +102,7 @@ Make sure to update the following environment variables in your `docker-compose.
 - `NUXT_PUBLIC_TZ` - Your timezone (e.g., America/Chicago, Europe/London)
 - `NUXT_PUBLIC_LOG_LEVEL` - Logging level (debug, info, warn, error)
 - `POSTGRES_PASSWORD` - Choose a strong password for your database
+
+## Access the app
+
+After the script completes, open the Skylite UX Web UI at `http://<host>:3000` (or the port you configured).

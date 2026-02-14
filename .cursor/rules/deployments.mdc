@@ -1,0 +1,14 @@
+---
+description: Consider Docker, Proxmox, and HA when changing build/config/runtime
+globs: ["ha-app/**", "**/Dockerfile*", "**/docker-compose*.yml", "repository.yaml", "nuxt.config.ts", "docs/installation/**"]
+alwaysApply: false
+---
+
+# Deployments
+
+- We deploy via Docker, Proxmox, and Home Assistant (HA). When changing runtime behavior, build, or config, consider all three.
+- Docker: `ha-app/Dockerfile` (multi-stage, repo root as context); `docs/installation/docker.md` for compose/standalone.
+- Proxmox: See `docs/installation/proxmox.md`; env/options align with Docker.
+- HA: `ha-app/config.yaml` (options, schema, image), `ha-app/run.sh` (entrypoint, options from `/data/options.json`, Postgres, migrations), `repository.yaml`. See `docs/contributing/haos.md`.
+- Avoid breaking one deployment path when editing another (e.g. changing an env name only in one place).
+- Base path: `app.baseURL` (default `"/"`). Override at runtime with `NUXT_APP_BASE_URL` when serving under a subpath (see [Nuxt app config](https://nuxt.com/docs/4.x/api/nuxt-config#app)).

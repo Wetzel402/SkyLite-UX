@@ -3,3 +3,7 @@ description: This project uses consola for logging with a globally configured lo
 globs:
 alwaysApply: true
 ---
+
+# Logging
+
+- Use `consola` (from `consola`), not `console`. Log level is set from runtime config in `app/plugins/01.logging.ts`. In tests that touch code using consola, mock `consola` (see `test/nuxt/app/plugins/01.logging.test.ts`).

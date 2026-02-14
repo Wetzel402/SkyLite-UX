@@ -38,6 +38,9 @@ There are many ways to contribute to Skylite UX:
 - Improve performance
 - Refactor code
 
+### Home Assistant App (formerly add-on)
+- Build, test, and contribute to the [HA app]({{ '/contributing/haos/' | relative_url }}). 
+
 ### Testing
 
 - Write unit tests

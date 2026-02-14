@@ -41,6 +41,7 @@ export default defineNuxtConfig({
   },
 
   app: {
+    baseURL: "/",
     head: {
       htmlAttrs: {
         lang: "en",
