@@ -46,6 +46,10 @@ permalink: /
   <a href="https://cursor.com/home">
     <img src="https://img.shields.io/badge/Cursor-black?style=for-the-badge&logo=cursor" alt="Cursor" />
   </a>
+  <a href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FWetzel402%2FSkylite-UX">
+    <img src="https://img.shields.io/badge/Home_Assistant-App-blue?style=for-the-badge&logo=homeassistant&color=%2318BCF2" alt="Add Skylite-UX repository to Home Assistant" />
+  </a>
+
 </div>
 
 ## About

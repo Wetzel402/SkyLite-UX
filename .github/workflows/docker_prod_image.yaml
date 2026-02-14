@@ -3,6 +3,11 @@ name: Docker prod image
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag/version for the image (e.g. 2026.2.2 or dev)"
+        required: true
 
 jobs:
   push_to_registry:
@@ -16,6 +21,23 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v5
+
+      - name: Check tag matches package.json version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ github.event.inputs.tag || 'dev' }}"
+          fi
+          if [[ "${TAG}" == "dev" ]]; then
+            exit 0
+          fi
+          VERSION="${TAG#v}"
+          FILE_VERSION=$(node -p "require('./package.json').version")
+          if [[ "${VERSION}" != "${FILE_VERSION}" ]]; then
+            echo "Tag ${TAG} (normalized: ${VERSION}) does not match package.json version ${FILE_VERSION}" >&2
+            exit 1
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -45,11 +67,18 @@ jobs:
       - name: Prepare tags
         id: tags
         run: |
-          TAGS="${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.event.release.tag_name }}"
-          if [[ "${{ github.event.release.prerelease }}" == "true" ]] || [[ "${{ github.event.release.tag_name }}" == *"b"* ]]; then
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            TAG="${{ github.event.release.tag_name }}"
+            PRERELEASE="${{ github.event.release.prerelease }}"
+          else
+            TAG="${{ github.event.inputs.tag || 'dev' }}"
+            PRERELEASE="false"
+          fi
+          TAGS="${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:${TAG}"
+          if [[ "${PRERELEASE}" == "true" ]] || [[ "${TAG}" == *"b"* ]]; then
             TAGS="${TAGS},${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:beta"
           fi
-          if [[ "${{ github.event.release.prerelease }}" != "true" ]] && [[ "${{ github.event.release.tag_name }}" != *"b"* ]]; then
+          if [[ "${PRERELEASE}" != "true" ]] && [[ "${TAG}" != *"b"* ]]; then
             TAGS="${TAGS},${{ secrets.DOCKER_NAMESPACE }}/${{ secrets.DOCKER_REPOSITORY }}:latest"
           fi
           echo "tags=${TAGS}" >> $GITHUB_OUTPUT

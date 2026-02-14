@@ -1,0 +1,10 @@
+---
+description: Server routes in server/api/; file-based naming; h3 event and typed responses
+globs: "server/**/*.ts"
+alwaysApply: false
+---
+
+# Server API
+
+- Server routes live in `server/api/` with file-based naming. Use h3 event and typed responses.
+- Do not use `process.env` in server code; use Nuxt runtime config.
