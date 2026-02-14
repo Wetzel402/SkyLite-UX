@@ -32,7 +32,7 @@ describe("holiday Countries API", () => {
       vi.mocked(getAvailableCountries).mockResolvedValue(mockCountries);
 
       const event = { context: {} };
-      const handler = await import("../../../../server/api/settings/holidayCountries.get");
+      const handler = await import("../../../../server/api/settings/holiday-countries.get");
       const result = await handler.default(event);
 
       expect(result).toEqual(mockCountries);
@@ -44,7 +44,7 @@ describe("holiday Countries API", () => {
       vi.mocked(getAvailableCountries).mockRejectedValue(new Error("API failure"));
 
       const event = { context: {} };
-      const handler = await import("../../../../server/api/settings/holidayCountries.get");
+      const handler = await import("../../../../server/api/settings/holiday-countries.get");
 
       await expect(handler.default(event)).rejects.toThrow();
     });
