@@ -22,26 +22,23 @@ vi.mock('~/server/utils/holidayCache', () => ({
   invalidateHolidayCache: mockInvalidateHolidayCache,
 }))
 
+// Create shared prisma mock
+const mockPrisma = {
+  appSettings: {
+    findFirst: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  },
+}
+
 // Mock the actual prisma module
 vi.mock('../../../app/lib/prisma', () => ({
-  default: {
-    appSettings: {
-      findFirst: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-  },
+  default: mockPrisma,
 }))
 
 // Mock the aliased import path used in the handler
 vi.mock('~/lib/prisma', () => ({
-  default: {
-    appSettings: {
-      findFirst: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-  },
+  default: mockPrisma,
 }))
 
 describe('App Settings API - Holiday Settings', () => {
@@ -51,11 +48,9 @@ describe('App Settings API - Holiday Settings', () => {
 
   describe('PUT /api/app-settings', () => {
     it('should update holiday settings and invalidate cache', async () => {
-      const prisma = (await import('../../../app/lib/prisma')).default
-      const { invalidateHolidayCache } = await import('../../../server/utils/holidayCache')
 
       // Current settings in DB
-      vi.mocked(prisma.appSettings.findFirst).mockResolvedValue({
+      mockPrisma.appSettings.findFirst.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'CA',
@@ -64,7 +59,7 @@ describe('App Settings API - Holiday Settings', () => {
       })
 
       // Updated settings
-      vi.mocked(prisma.appSettings.update).mockResolvedValue({
+      mockPrisma.appSettings.update.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'US',
@@ -85,10 +80,10 @@ describe('App Settings API - Holiday Settings', () => {
       await handler.default(event)
 
       // Should invalidate cache for old country/subdivision
-      expect(invalidateHolidayCache).toHaveBeenCalledWith('CA', 'ON')
+      expect(mockInvalidateHolidayCache).toHaveBeenCalledWith('CA', 'ON')
 
       // Should update settings
-      expect(prisma.appSettings.update).toHaveBeenCalledWith({
+      expect(mockPrisma.appSettings.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: expect.objectContaining({
           holidayCountryCode: 'US',
@@ -98,10 +93,8 @@ describe('App Settings API - Holiday Settings', () => {
     })
 
     it('should invalidate cache when changing country only', async () => {
-      const prisma = (await import('../../../app/lib/prisma')).default
-      const { invalidateHolidayCache } = await import('../../../server/utils/holidayCache')
 
-      vi.mocked(prisma.appSettings.findFirst).mockResolvedValue({
+      mockPrisma.appSettings.findFirst.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'CA',
@@ -109,7 +102,7 @@ describe('App Settings API - Holiday Settings', () => {
         enableHolidayCountdowns: true,
       })
 
-      vi.mocked(prisma.appSettings.update).mockResolvedValue({
+      mockPrisma.appSettings.update.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'US',
@@ -128,14 +121,12 @@ describe('App Settings API - Holiday Settings', () => {
       const handler = await import('../../../server/api/app-settings/index.put')
       await handler.default(event)
 
-      expect(invalidateHolidayCache).toHaveBeenCalledWith('CA', null)
+      expect(mockInvalidateHolidayCache).toHaveBeenCalledWith('CA', undefined)
     })
 
     it('should invalidate cache when changing subdivision only', async () => {
-      const prisma = (await import('../../../app/lib/prisma')).default
-      const { invalidateHolidayCache } = await import('../../../server/utils/holidayCache')
 
-      vi.mocked(prisma.appSettings.findFirst).mockResolvedValue({
+      mockPrisma.appSettings.findFirst.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'US',
@@ -143,7 +134,7 @@ describe('App Settings API - Holiday Settings', () => {
         enableHolidayCountdowns: true,
       })
 
-      vi.mocked(prisma.appSettings.update).mockResolvedValue({
+      mockPrisma.appSettings.update.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'US',
@@ -162,14 +153,12 @@ describe('App Settings API - Holiday Settings', () => {
       const handler = await import('../../../server/api/app-settings/index.put')
       await handler.default(event)
 
-      expect(invalidateHolidayCache).toHaveBeenCalledWith('US', 'CA')
+      expect(mockInvalidateHolidayCache).toHaveBeenCalledWith('US', 'CA')
     })
 
     it('should not invalidate cache if holiday settings unchanged', async () => {
-      const prisma = (await import('../../../app/lib/prisma')).default
-      const { invalidateHolidayCache } = await import('../../../server/utils/holidayCache')
 
-      vi.mocked(prisma.appSettings.findFirst).mockResolvedValue({
+      mockPrisma.appSettings.findFirst.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'CA',
@@ -177,7 +166,7 @@ describe('App Settings API - Holiday Settings', () => {
         enableHolidayCountdowns: true,
       })
 
-      vi.mocked(prisma.appSettings.update).mockResolvedValue({
+      mockPrisma.appSettings.update.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: true,
         holidayCountryCode: 'CA',
@@ -198,14 +187,12 @@ describe('App Settings API - Holiday Settings', () => {
       await handler.default(event)
 
       // Should NOT invalidate cache if country/subdivision unchanged
-      expect(invalidateHolidayCache).not.toHaveBeenCalled()
+      expect(mockInvalidateHolidayCache).not.toHaveBeenCalled()
     })
 
     it('should handle clearing subdivision (setting to null)', async () => {
-      const prisma = (await import('../../../app/lib/prisma')).default
-      const { invalidateHolidayCache } = await import('../../../server/utils/holidayCache')
 
-      vi.mocked(prisma.appSettings.findFirst).mockResolvedValue({
+      mockPrisma.appSettings.findFirst.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'CA',
@@ -213,7 +200,7 @@ describe('App Settings API - Holiday Settings', () => {
         enableHolidayCountdowns: true,
       })
 
-      vi.mocked(prisma.appSettings.update).mockResolvedValue({
+      mockPrisma.appSettings.update.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'CA',
@@ -233,14 +220,12 @@ describe('App Settings API - Holiday Settings', () => {
       await handler.default(event)
 
       // Should invalidate cache for old subdivision
-      expect(invalidateHolidayCache).toHaveBeenCalledWith('CA', 'ON')
+      expect(mockInvalidateHolidayCache).toHaveBeenCalledWith('CA', 'ON')
     })
 
     it('should preserve existing app settings functionality', async () => {
-      const prisma = (await import('../../../app/lib/prisma')).default
-      const { invalidateHolidayCache } = await import('../../../server/utils/holidayCache')
 
-      vi.mocked(prisma.appSettings.findFirst).mockResolvedValue({
+      mockPrisma.appSettings.findFirst.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: false,
         holidayCountryCode: 'CA',
@@ -248,7 +233,7 @@ describe('App Settings API - Holiday Settings', () => {
         enableHolidayCountdowns: true,
       })
 
-      vi.mocked(prisma.appSettings.update).mockResolvedValue({
+      mockPrisma.appSettings.update.mockResolvedValue({
         id: '1',
         showMealsOnCalendar: true,
         holidayCountryCode: 'CA',
@@ -268,7 +253,7 @@ describe('App Settings API - Holiday Settings', () => {
       const result = await handler.default(event)
 
       // Should update showMealsOnCalendar
-      expect(prisma.appSettings.update).toHaveBeenCalledWith({
+      expect(mockPrisma.appSettings.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: expect.objectContaining({
           showMealsOnCalendar: true,
@@ -276,7 +261,7 @@ describe('App Settings API - Holiday Settings', () => {
       })
 
       // Should not invalidate cache
-      expect(invalidateHolidayCache).not.toHaveBeenCalled()
+      expect(mockInvalidateHolidayCache).not.toHaveBeenCalled()
 
       // Should return updated settings
       expect(result).toEqual(expect.objectContaining({

@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
       // Invalidate old cache before updating
       await invalidateHolidayCache(
         settings.holidayCountryCode || "CA",
-        settings.holidaySubdivisionCode || undefined,
+        settings.holidaySubdivisionCode ?? undefined,
       );
     }
 
