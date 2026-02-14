@@ -58,6 +58,7 @@
     "@typescript-eslint/parser": "^8.25.0",
     "@vite-pwa/nuxt": "^1.1.0",
     "@vitejs/plugin-vue": "^5.0.4",
+    "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
     "@vue/eslint-config-prettier": "^8.0.0",
     "@vue/eslint-config-typescript": "^14.5.0",
