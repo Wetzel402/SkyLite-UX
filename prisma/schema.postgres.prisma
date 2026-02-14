@@ -208,9 +208,10 @@ model HolidayCache {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@unique([countryCode, subdivisionCode, holidayDate])
+  @@unique([countryCode, subdivisionCode, holidayDate, holidayName])
   @@index([countryCode, subdivisionCode])
   @@index([cachedUntil])
+  @@index([createdAt])
   @@map("holiday_cache")
 }
 

@@ -10,6 +10,16 @@ vi.mock("../../../../server/utils/prisma", () => ({
       create: vi.fn(),
       deleteMany: vi.fn(),
     },
+    $transaction: vi.fn((callback) => {
+      // Execute the callback with the mocked prisma object
+      return callback({
+        holidayCache: {
+          findFirst: vi.fn(),
+          create: vi.fn(),
+          deleteMany: vi.fn(),
+        },
+      });
+    }),
   },
 }));
 
@@ -82,8 +92,7 @@ describe("holidayCache", () => {
         cachedUntil: new Date("2026-07-01"),
       };
 
-      const { prisma } = await import("../../../../server/utils/prisma");
-      vi.mocked(prisma.holidayCache.create).mockResolvedValue({
+      const mockCreate = vi.fn().mockResolvedValue({
         id: "123",
         ...holidayData,
         fetchedAt: new Date(),
@@ -91,9 +100,28 @@ describe("holidayCache", () => {
         updatedAt: new Date(),
       });
 
+      const mockDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
+
+      const { prisma } = await import("../../../../server/utils/prisma");
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+        return callback({
+          holidayCache: {
+            create: mockCreate,
+            deleteMany: mockDeleteMany,
+          },
+        });
+      });
+
       await saveHolidayCache(holidayData);
 
-      expect(prisma.holidayCache.create).toHaveBeenCalledWith({
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(mockDeleteMany).toHaveBeenCalledWith({
+        where: {
+          countryCode: "CA",
+          subdivisionCode: "ON",
+        },
+      });
+      expect(mockCreate).toHaveBeenCalledWith({
         data: holidayData,
       });
     });

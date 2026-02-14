@@ -85,10 +85,10 @@ export async function getNextUpcomingHoliday(
   today.setHours(0, 0, 0, 0);
 
   // Fetch holidays for current year
-  const holidays = await getPublicHolidays(currentYear, countryCode);
+  let holidays = await getPublicHolidays(currentYear, countryCode);
 
   // Filter to upcoming holidays
-  const upcomingHolidays = holidays.filter((holiday) => {
+  let upcomingHolidays = holidays.filter((holiday) => {
     const holidayDate = new Date(holiday.date);
     holidayDate.setHours(0, 0, 0, 0);
 
@@ -99,15 +99,35 @@ export async function getNextUpcomingHoliday(
 
     // If subdivision specified, filter by counties
     if (subdivisionCode) {
+      const fullIsoSubdivision = `${countryCode}-${subdivisionCode}`;
       // Holiday applies if counties is null (national) or includes subdivision
       return (
-        holiday.counties === null || holiday.counties.includes(subdivisionCode)
+        holiday.counties === null || holiday.counties.includes(fullIsoSubdivision)
       );
     }
 
     // No subdivision filter - include all holidays
     return true;
   });
+
+  // If no upcoming holidays this year, try next year
+  if (upcomingHolidays.length === 0) {
+    holidays = await getPublicHolidays(currentYear + 1, countryCode);
+    upcomingHolidays = holidays.filter((holiday) => {
+      const holidayDate = new Date(holiday.date);
+      holidayDate.setHours(0, 0, 0, 0);
+
+      // If subdivision specified, filter by counties
+      if (subdivisionCode) {
+        const fullIsoSubdivision = `${countryCode}-${subdivisionCode}`;
+        return (
+          holiday.counties === null || holiday.counties.includes(fullIsoSubdivision)
+        );
+      }
+
+      return true;
+    });
+  }
 
   // Return earliest upcoming holiday
   return upcomingHolidays.length > 0 ? upcomingHolidays[0]! : null;

@@ -20,7 +20,7 @@ describe("holiday Countries API", () => {
     vi.clearAllMocks();
   });
 
-  describe("gET /api/settings/holiday-countries", () => {
+  describe("GET /api/settings/holiday-countries", () => {
     it("should return list of available countries", async () => {
       const mockCountries = [
         { countryCode: "CA", name: "Canada" },
@@ -50,7 +50,7 @@ describe("holiday Countries API", () => {
     });
   });
 
-  describe("gET /api/settings/holiday-countries/:code", () => {
+  describe("GET /api/settings/holiday-countries/:code", () => {
     it("should return country info with subdivisions", async () => {
       const mockInfo = {
         countryCode: "CA",

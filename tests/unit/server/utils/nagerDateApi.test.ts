@@ -130,6 +130,7 @@ describe("nagerDateApi", () => {
       } as Response);
 
       // Mock current date as Feb 14, 2026
+      vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-02-14"));
 
       const result = await getNextUpcomingHoliday("CA", undefined);
@@ -175,9 +176,10 @@ describe("nagerDateApi", () => {
         json: async () => mockHolidays,
       } as Response);
 
+      vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-02-14"));
 
-      const result = await getNextUpcomingHoliday("CA", "CA-ON");
+      const result = await getNextUpcomingHoliday("CA", "ON");
 
       // Should return first ON-specific or national holiday
       expect(result?.name).toBe("Canada Day");

@@ -29,7 +29,7 @@ vi.mock("../../../../app/lib/prisma", () => ({
   },
 }));
 
-describe("gET /api/todos/countdowns", () => {
+describe("GET /api/todos/countdowns", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -180,7 +180,48 @@ Country list is fetched dynamically from Nager.Date API - no manual updates need
 Nager.Date API is maintained by the community. New countries are added upstream.
 
 ### Subdivision Codes
-Subdivision codes follow ISO 3166-2 standard (e.g., "CA-ON" for Ontario, Canada).
+
+Subdivision codes use short format for input but are converted to ISO 3166-2 format internally:
+
+- **Input Format**: Short codes ("ON", "BC", "NY", "CA")
+- **Internal Format**: ISO 3166-2 ("CA-ON", "CA-BC", "US-NY", "US-CA")
+- **Conversion**: The system automatically converts short codes to full ISO format by prepending the country code
+
+**Examples:**
+- Canada, Ontario: Enter "ON" → Stored as "CA-ON"
+- Canada, British Columbia: Enter "BC" → Stored as "CA-BC"
+- United States, New York: Enter "NY" → Stored as "US-NY"
+- United States, California: Enter "CA" → Stored as "US-CA"
+
+The Nager.Date API uses ISO 3166-2 format in the `counties` field of holiday responses, but accepts short codes as the subdivision parameter.
+
+## Deployment
+
+### Database Migration
+
+Run Prisma migration to create HolidayCache table and AppSettings columns:
+
+```bash
+npx prisma migrate deploy
+```
+
+### Configuration
+
+Default settings after migration:
+- Feature: Enabled
+- Country: Canada (CA)
+- Subdivision: None (national holidays)
+
+Users can configure these settings in the Settings page under "Holiday Countdowns".
+
+### External Dependencies
+
+- **Nager.Date API**: Free public holiday API (https://date.nager.at)
+  - No authentication required
+  - Rate limits: Reasonable use for personal applications
+  - Availability: Public service, community-maintained
+- **Graceful Degradation**: If API unavailable, feature returns no countdown (widget hidden)
+- **No API Key**: No setup or API key management required
 
 ## Future Enhancements
 

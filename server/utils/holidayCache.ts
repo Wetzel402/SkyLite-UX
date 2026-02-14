@@ -35,15 +35,26 @@ export async function getHolidayCache(
 }
 
 /**
- * Save holiday to cache
+ * Save holiday to cache using transaction for atomicity
  */
 export async function saveHolidayCache(data: HolidayCacheData) {
   try {
-    return await prisma.holidayCache.create({
-      data: {
-        ...data,
-        subdivisionCode: data.subdivisionCode ?? null,
-      },
+    return await prisma.$transaction(async (tx) => {
+      // Delete old cache entries for this location
+      await tx.holidayCache.deleteMany({
+        where: {
+          countryCode: data.countryCode,
+          subdivisionCode: data.subdivisionCode ?? null,
+        },
+      });
+
+      // Create new cache entry
+      return await tx.holidayCache.create({
+        data: {
+          ...data,
+          subdivisionCode: data.subdivisionCode ?? null,
+        },
+      });
     });
   }
   catch (error) {

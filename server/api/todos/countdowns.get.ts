@@ -79,7 +79,7 @@ export default defineEventHandler(async (_event) => {
       // Save to cache
       const holidayDate = new Date(apiHoliday.date);
       const cachedUntil = new Date(holidayDate);
-      cachedUntil.setHours(0, 0, 0, 0); // Cache until the holiday date
+      cachedUntil.setHours(23, 59, 59, 999); // End of holiday day
 
       holiday = await saveHolidayCache({
         countryCode: holidayCountryCode,

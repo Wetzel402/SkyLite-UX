@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDebounceFn } from "@vueuse/core";
 import { consola } from "consola";
 
 import type { AppSettings, CreateIntegrationInput, CreateUserInput, Integration, User } from "~/types/database";
@@ -43,6 +44,7 @@ const countriesLoading = ref(false);
 const selectedCountry = ref<{ countryCode: string; name: string } | null>(null);
 const subdivisionCode = ref<string>("");
 let countryUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+let isInitialMount = true;
 
 // Photo management state
 const selectedPhotoIds = ref<Set<string>>(new Set());
@@ -706,9 +708,20 @@ async function fetchHolidayCountries() {
   }
 }
 
+// Add debounced save function
+const debouncedSave = useDebounceFn(async (updates: Partial<AppSettings>) => {
+  try {
+    await updateSettings(updates);
+  }
+  catch (error) {
+    consola.error("Settings: Failed to save:", error);
+    showError("Update Failed", "Failed to save settings");
+  }
+}, 500);
+
 async function handleSubdivisionChange() {
   try {
-    await updateSettings({
+    await debouncedSave({
       holidaySubdivisionCode: subdivisionCode.value.trim() || null,
     });
   }
@@ -719,9 +732,20 @@ async function handleSubdivisionChange() {
 }
 
 // Watch for country selection changes with debouncing
-watch(selectedCountry, (newCountry) => {
+watch(selectedCountry, (newCountry, oldCountry) => {
   if (!newCountry)
     return;
+
+  // Skip if this is the initial programmatic set
+  if (isInitialMount) {
+    isInitialMount = false;
+    return;
+  }
+
+  // Skip if country didn't actually change
+  if (oldCountry && newCountry.countryCode === oldCountry.countryCode) {
+    return;
+  }
 
   // Clear existing timeout
   if (countryUpdateTimeout) {
@@ -1075,15 +1099,13 @@ watch(selectedCountry, (newCountry) => {
 
               <div>
                 <label class="text-sm font-medium text-highlighted mb-2 block">Region/Subdivision (Optional)</label>
-                <input
+                <UInput
                   v-model="subdivisionCode"
-                  type="text"
                   placeholder="e.g., ON for Ontario"
-                  class="w-full px-3 py-2 bg-muted border border-default rounded-md text-highlighted"
                   @blur="handleSubdivisionChange"
-                >
+                />
                 <p class="text-xs text-muted mt-1">
-                  Optional. If not specified, national holidays will be used. Enter subdivision code (e.g., ON, BC, QC for Canadian provinces)
+                  Optional. Enter subdivision code (e.g., ON, BC, NY). If not specified, national holidays will be used.
                 </p>
               </div>
             </div>

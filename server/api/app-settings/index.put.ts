@@ -19,19 +19,28 @@ export default defineEventHandler(async (event) => {
     // Get or create the single settings record
     let settings = await prisma.appSettings.findFirst();
 
-    // Check if holiday location changed to invalidate cache
-    const countryChanged = body.holidayCountryCode !== undefined
-      && body.holidayCountryCode !== settings?.holidayCountryCode;
-    const subdivisionChanged = "holidaySubdivisionCode" in body
-      && body.holidaySubdivisionCode !== settings?.holidaySubdivisionCode;
+    // Fetch current settings BEFORE update to detect actual changes
+    const currentSettings = settings;
 
-    if (settings && (countryChanged || subdivisionChanged)) {
-      // Only invalidate if a country was previously configured
-      if (settings.holidayCountryCode) {
-        await invalidateHolidayCache(
-          settings.holidayCountryCode,
-          settings.holidaySubdivisionCode ?? undefined,
-        );
+    // Detect actual changes
+    const locationChanged
+      = ("holidayCountryCode" in body && body.holidayCountryCode !== currentSettings?.holidayCountryCode)
+        || ("holidaySubdivisionCode" in body && body.holidaySubdivisionCode !== currentSettings?.holidaySubdivisionCode);
+
+    // Only invalidate when location actually changed
+    if (currentSettings && locationChanged) {
+      if (currentSettings.holidayCountryCode) {
+        consola.info("Invalidating holiday cache due to settings change");
+        try {
+          await invalidateHolidayCache(
+            currentSettings.holidayCountryCode,
+            currentSettings.holidaySubdivisionCode ?? undefined,
+          );
+        }
+        catch (error) {
+          consola.error("Failed to invalidate holiday cache:", error);
+          // Continue with update despite cache invalidation failure
+        }
       }
     }
 
