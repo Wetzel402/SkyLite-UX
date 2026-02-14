@@ -253,9 +253,7 @@ onMounted(async () => {
   await refreshNuxtData("integrations");
   await fetchHomeSettings();
   await fetchSelectedAlbums();
-  console.log("Settings: About to call fetchHolidayCountries");
   await fetchHolidayCountries();
-  console.log("Settings: fetchHolidayCountries completed");
 });
 
 watch(() => route.query, (query) => {
@@ -705,12 +703,9 @@ async function handleOpenPhotosPicker() {
 // Holiday countdown functions
 async function fetchHolidayCountries() {
   try {
-    console.log("Settings: Fetching holiday countries...");
     countriesLoading.value = true;
     const countries = await $fetch<Array<{ countryCode: string; name: string }>>("/api/settings/holiday-countries");
-    console.log("Settings: Fetched countries:", countries.length, "countries");
     availableCountries.value = countries;
-    console.log("Settings: availableCountries.value set to:", availableCountries.value.length);
 
     // Set initial selection from settings
     if (settings.value?.holidayCountryCode) {

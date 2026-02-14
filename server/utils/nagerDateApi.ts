@@ -31,7 +31,7 @@ export async function getPublicHolidays(
   try {
     const response = await fetch(
       `${NAGER_API_BASE}/PublicHolidays/${year}/${countryCode}`,
-      { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+      { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
     );
 
     if (!response.ok) {
@@ -41,8 +41,9 @@ export async function getPublicHolidays(
     }
 
     return await response.json();
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+  }
+  catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
       throw new Error(`Request timeout fetching holidays for ${countryCode}`);
     }
     throw error;
@@ -65,9 +66,10 @@ export async function getAvailableCountries(): Promise<NagerCountry[]> {
     }
 
     return await response.json();
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timeout fetching available countries');
+  }
+  catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timeout fetching available countries");
     }
     throw error;
   }
@@ -91,8 +93,9 @@ export async function getCountryInfo(
     }
 
     return await response.json();
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+  }
+  catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
       throw new Error(`Request timeout fetching country info for ${countryCode}`);
     }
     throw error;
