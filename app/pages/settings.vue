@@ -688,7 +688,7 @@ async function fetchHolidayCountries() {
 
     // Set initial selection from settings
     if (settings.value?.holidayCountryCode) {
-      const currentCountry = countries.find(c => c.countryCode === settings.value.holidayCountryCode);
+      const currentCountry = countries.find(c => c.countryCode === settings.value!.holidayCountryCode);
       if (currentCountry) {
         selectedCountry.value = currentCountry;
       }
@@ -1067,14 +1067,7 @@ watch(selectedCountry, (newCountry) => {
                   placeholder="Select country"
                   value-attribute="countryCode"
                   option-attribute="name"
-                >
-                  <template #label>
-                    <span v-if="selectedCountry">
-                      {{ selectedCountry.countryCode }} - {{ selectedCountry.name }}
-                    </span>
-                    <span v-else class="text-muted">Select country</span>
-                  </template>
-                </USelectMenu>
+                />
                 <p class="text-xs text-muted mt-1">
                   Select which country's holidays to display
                 </p>

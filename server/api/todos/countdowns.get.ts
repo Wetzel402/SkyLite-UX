@@ -1,8 +1,8 @@
 import consola from "consola";
 
-import prisma from "~/lib/prisma";
-import { getHolidayCache, saveHolidayCache } from "../../../server/utils/holidayCache";
-import { getNextUpcomingHoliday } from "../../../server/utils/nagerDateApi";
+import prisma from "../../../app/lib/prisma";
+import { getHolidayCache, saveHolidayCache } from "../../utils/holidayCache";
+import { getNextUpcomingHoliday } from "../../utils/nagerDateApi";
 
 export default defineEventHandler(async (_event) => {
   try {

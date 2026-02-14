@@ -1,7 +1,8 @@
 import { consola } from "consola";
 
 import prisma from "~/lib/prisma";
-import { invalidateHolidayCache } from "~/server/utils/holidayCache";
+
+import { invalidateHolidayCache } from "../../utils/holidayCache";
 
 export default defineEventHandler(async (event) => {
   try {

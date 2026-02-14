@@ -1,12 +1,12 @@
-import { prisma } from './prisma'
+import { prisma } from "./prisma";
 
-export interface HolidayCacheData {
-  countryCode: string
-  subdivisionCode?: string | null
-  holidayName: string
-  holidayDate: Date
-  cachedUntil: Date
-}
+export type HolidayCacheData = {
+  countryCode: string;
+  subdivisionCode?: string | null;
+  holidayName: string;
+  holidayDate: Date;
+  cachedUntil: Date;
+};
 
 /**
  * Get cached holiday for country/subdivision if valid (not expired)
@@ -16,7 +16,7 @@ export async function getHolidayCache(
   subdivisionCode?: string,
 ) {
   try {
-    const now = new Date()
+    const now = new Date();
 
     const cached = await prisma.holidayCache.findFirst({
       where: {
@@ -24,12 +24,13 @@ export async function getHolidayCache(
         subdivisionCode: subdivisionCode ?? null,
         cachedUntil: { gte: now },
       },
-      orderBy: { holidayDate: 'asc' },
-    })
+      orderBy: { holidayDate: "asc" },
+    });
 
-    return cached
-  } catch (error) {
-    throw new Error(`Failed to get holiday cache for ${countryCode}${subdivisionCode ? `/${subdivisionCode}` : ''}: ${error}`)
+    return cached;
+  }
+  catch (error) {
+    throw new Error(`Failed to get holiday cache for ${countryCode}${subdivisionCode ? `/${subdivisionCode}` : ""}: ${error}`);
   }
 }
 
@@ -43,9 +44,10 @@ export async function saveHolidayCache(data: HolidayCacheData) {
         ...data,
         subdivisionCode: data.subdivisionCode ?? null,
       },
-    })
-  } catch (error) {
-    throw new Error(`Failed to save holiday cache for ${data.countryCode}: ${error}`)
+    });
+  }
+  catch (error) {
+    throw new Error(`Failed to save holiday cache for ${data.countryCode}: ${error}`);
   }
 }
 
@@ -62,8 +64,9 @@ export async function invalidateHolidayCache(
         countryCode,
         subdivisionCode: subdivisionCode ?? null,
       },
-    })
-  } catch (error) {
-    throw new Error(`Failed to invalidate holiday cache for ${countryCode}${subdivisionCode ? `/${subdivisionCode}` : ''}: ${error}`)
+    });
+  }
+  catch (error) {
+    throw new Error(`Failed to invalidate holiday cache for ${countryCode}${subdivisionCode ? `/${subdivisionCode}` : ""}: ${error}`);
   }
 }
