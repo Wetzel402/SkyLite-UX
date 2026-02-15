@@ -117,13 +117,22 @@ export type ClientPreferences = {
   notifications?: boolean;
   font?: FontPreference;
   todoSortBy?: TodoSortMode;
+  defaultView?: string;
 };
+
+export const MAIN_VIEW_OPTIONS: { path: string; label: string }[] = [
+  { path: "/calendar", label: "Calendar" },
+  { path: "/toDoLists", label: "Todo Lists" },
+  { path: "/shoppingLists", label: "Shopping Lists" },
+  { path: "/mealplanner", label: "Meal Planner" },
+];
 
 export const defaultClientPreferences: ClientPreferences = {
   colorMode: "system",
   notifications: false,
   font: "system",
   todoSortBy: "date",
+  defaultView: "/calendar",
 };
 
 export const TODO_SORT_OPTIONS: { value: TodoSortMode; label: string }[] = [

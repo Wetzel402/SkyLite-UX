@@ -125,7 +125,7 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
 
   const sortMode = todoSortBy.value;
   const compare = getTodoComparator(sortMode);
-  return todoColumns.value.map(column => {
+  return todoColumns.value.map((column) => {
     const columnTodos = todos.value!.filter(todo => todo.todoColumnId === column.id);
     const sorted = [...columnTodos].sort(compare);
     return {
