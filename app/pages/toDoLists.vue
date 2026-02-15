@@ -10,12 +10,13 @@ import type {
   TodoList,
   TodoListItem,
 } from "~/types/database";
-import type { TodoListWithIntegration } from "~/types/ui";
+import type { TodoListWithIntegration, TodoSortMode } from "~/types/ui";
 
 import GlobalFloatingActionButton from "~/components/global/globalFloatingActionButton.vue";
 import GlobalList from "~/components/global/globalList.vue";
 import TodoColumnDialog from "~/components/todos/todoColumnDialog.vue";
 import TodoItemDialog from "~/components/todos/todoItemDialog.vue";
+import { useClientPreferences } from "~/composables/useClientPreferences";
 import { useStableDate } from "~/composables/useStableDate";
 import { useTodoColumns } from "~/composables/useTodoColumns";
 import { useTodos } from "~/composables/useTodos";
@@ -23,6 +24,57 @@ import { useTodos } from "~/composables/useTodos";
 import type { ICalEvent } from "../../server/integrations/iCal/types";
 
 const { parseStableDate } = useStableDate();
+const { preferences, updatePreferences } = useClientPreferences();
+
+const todoSortBy = computed<TodoSortMode>(
+  () => preferences.value?.todoSortBy ?? "date",
+);
+
+const PRIORITY_ORDER: Record<string, number> = {
+  URGENT: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+};
+
+function toTime(d: Date | string | null | undefined): number {
+  return d ? (d instanceof Date ? d.getTime() : new Date(d).getTime()) : Number.MAX_SAFE_INTEGER;
+}
+
+function compareByDate(a: Todo, b: Todo): number {
+  const aTime = toTime(a.dueDate);
+  const bTime = toTime(b.dueDate);
+  if (aTime !== bTime)
+    return aTime - bTime;
+  return (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
+}
+
+function compareByPriority(a: Todo, b: Todo): number {
+  const aP = PRIORITY_ORDER[a.priority] ?? 2;
+  const bP = PRIORITY_ORDER[b.priority] ?? 2;
+  if (aP !== bP)
+    return aP - bP;
+  const aTime = toTime(a.dueDate);
+  const bTime = toTime(b.dueDate);
+  if (aTime !== bTime)
+    return aTime - bTime;
+  return (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
+}
+
+function compareByAlpha(a: Todo, b: Todo): number {
+  const cmp = (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
+  if (cmp !== 0)
+    return cmp;
+  return toTime(a.dueDate) - toTime(b.dueDate);
+}
+
+function getTodoComparator(mode: TodoSortMode): (a: Todo, b: Todo) => number {
+  if (mode === "priority")
+    return compareByPriority;
+  if (mode === "alpha")
+    return compareByAlpha;
+  return compareByDate;
+}
 
 const { data: todoColumns } = useNuxtData<TodoColumn[]>("todo-columns");
 const { data: todos } = useNuxtData<Todo[]>("todos");
@@ -73,31 +125,36 @@ const todoLists = computed<TodoListWithIntegration[]>(() => {
   if (!todoColumns.value || !todos.value)
     return [];
 
-  return todoColumns.value.map(column => ({
-    id: column.id,
-    name: column.name,
-    order: column.order,
-    createdAt: parseStableDate(column.createdAt),
-    updatedAt: parseStableDate(column.updatedAt),
-    isDefault: column.isDefault,
-    source: "native" as const,
-    items: todos
-      .value!.filter(todo => todo.todoColumnId === column.id).sort((a, b) => (a.order || 0) - (b.order || 0)).map(todo => ({
-      id: todo.id,
-      name: todo.title,
-      checked: todo.completed,
-      order: todo.order,
-      notes: todo.description,
-      shoppingListId: todo.todoColumnId || "",
-      priority: todo.priority,
-      dueDate: todo.dueDate,
-      description: todo.description ?? "",
-      todoColumnId: todo.todoColumnId || "",
-      recurringGroupId: todo.recurringGroupId,
-      rrule: (todo.rrule as ICalEvent["rrule"] | null) ?? undefined,
-    })),
-    _count: column._count ? { items: column._count.todos } : undefined,
-  }));
+  const sortMode = todoSortBy.value;
+  const compare = getTodoComparator(sortMode);
+  return todoColumns.value.map(column => {
+    const columnTodos = todos.value!.filter(todo => todo.todoColumnId === column.id);
+    const sorted = [...columnTodos].sort(compare);
+    return {
+      id: column.id,
+      name: column.name,
+      order: column.order,
+      createdAt: parseStableDate(column.createdAt),
+      updatedAt: parseStableDate(column.updatedAt),
+      isDefault: column.isDefault,
+      source: "native" as const,
+      items: sorted.map(todo => ({
+        id: todo.id,
+        name: todo.title,
+        checked: todo.completed,
+        order: todo.order,
+        notes: todo.description,
+        shoppingListId: todo.todoColumnId || "",
+        priority: todo.priority,
+        dueDate: todo.dueDate,
+        description: todo.description ?? "",
+        todoColumnId: todo.todoColumnId || "",
+        recurringGroupId: todo.recurringGroupId,
+        rrule: (todo.rrule as ICalEvent["rrule"] | null) ?? undefined,
+      })),
+      _count: column._count ? { items: column._count.todos } : undefined,
+    };
+  });
 });
 
 function openCreateTodo(todoColumnId?: string) {
@@ -649,7 +706,11 @@ async function handleToggleTodo(itemId: string, completed: boolean) {
     <div
       class="py-5 sm:px-4 sticky top-0 z-40 bg-default border-b border-default"
     >
-      <GlobalDateHeader />
+      <GlobalDateHeader
+        show-todo-sort-selector
+        :todo-sort-by="todoSortBy"
+        @todo-sort-change="(mode) => updatePreferences({ todoSortBy: mode })"
+      />
     </div>
 
     <div class="flex flex-1 flex-col min-h-0 p-4">
@@ -659,7 +720,8 @@ async function handleToggleTodo(itemId: string, completed: boolean) {
         empty-state-icon="i-lucide-list-todo"
         empty-state-title="No todo lists found"
         empty-state-description="Create your first todo column to get started"
-        show-reorder
+        :show-reorder="false"
+        item-sort-mode="auto"
         :show-edit="(list) => ('isDefault' in list ? !list.isDefault : true)"
         show-add
         show-edit-item

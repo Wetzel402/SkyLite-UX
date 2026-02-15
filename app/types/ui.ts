@@ -110,17 +110,27 @@ const FONT_PREFERENCES = [
 
 export type FontPreference = (typeof FONT_PREFERENCES)[number]["value"];
 
+export type TodoSortMode = "date" | "priority" | "alpha";
+
 export type ClientPreferences = {
   colorMode?: "light" | "dark" | "system";
   notifications?: boolean;
   font?: FontPreference;
+  todoSortBy?: TodoSortMode;
 };
 
 export const defaultClientPreferences: ClientPreferences = {
   colorMode: "system",
   notifications: false,
   font: "system",
+  todoSortBy: "date",
 };
+
+export const TODO_SORT_OPTIONS: { value: TodoSortMode; label: string }[] = [
+  { value: "date", label: "Date" },
+  { value: "priority", label: "Priority" },
+  { value: "alpha", label: "A-Z" },
+];
 
 export const FONT_STACKS: Record<FontPreference, string> = Object.fromEntries(
   FONT_PREFERENCES.map(f => [f.value, f.stack]),
