@@ -884,7 +884,7 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   Dark Mode
                 </p>
                 <p class="text-sm text-muted">
-                  Saved for this device
+                  Toggle between light and dark themes
                 </p>
               </div>
               <USwitch
@@ -902,7 +902,7 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   Notifications
                 </p>
                 <p class="text-sm text-muted">
-                  Saved for this device
+                  Enable notifications (Coming Soon™)
                 </p>
               </div>
               <USwitch
@@ -920,7 +920,7 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   Font
                 </p>
                 <p class="text-sm text-muted">
-                  Saved for this device
+                  Change the app's font
                 </p>
               </div>
               <USelect
