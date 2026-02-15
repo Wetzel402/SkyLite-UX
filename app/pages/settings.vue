@@ -12,6 +12,7 @@ import type { ConnectionTestResult } from "~/types/ui";
 import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
 import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
+import { useClientPreferences } from "~/composables/useClientPreferences";
 import { integrationServices } from "~/plugins/02.appInit";
 import { getSlogan } from "~/types/global";
 import {
@@ -38,23 +39,30 @@ const {
   purgeCalendarEvents,
 } = useSyncManager();
 
-const colorMode = useColorMode();
+const { preferences, updatePreferences } = useClientPreferences();
+
+const effectiveDark = computed(() => {
+  const mode = preferences.value?.colorMode ?? "system";
+  if (mode === "dark")
+    return true;
+  if (mode === "light")
+    return false;
+  return typeof window !== "undefined"
+    && window.matchMedia("(prefers-color-scheme: dark)").matches;
+});
+
 const isDark = computed({
-  get() {
-    return colorMode.value === "dark";
-  },
-  set() {
-    colorMode.value = colorMode.value === "dark" ? "light" : "dark";
+  get: () => effectiveDark.value,
+  set(value: boolean) {
+    updatePreferences({ colorMode: value ? "dark" : "light" });
   },
 });
 
-onMounted(() => {
-  if (!colorMode.value) {
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    colorMode.preference = prefersDark ? "dark" : "light";
-  }
+const notificationsEnabled = computed({
+  get: () => preferences.value?.notifications ?? false,
+  set(value: boolean) {
+    updatePreferences({ notifications: value });
+  },
 });
 
 const selectedUser = ref<User | null>(null);
@@ -866,7 +874,7 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   Dark Mode
                 </p>
                 <p class="text-sm text-muted">
-                  Toggle between light and dark themes (Coming Soon™)
+                  Saved for this device
                 </p>
               </div>
               <USwitch
@@ -884,10 +892,11 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   Notifications
                 </p>
                 <p class="text-sm text-muted">
-                  Enable push notifications (Coming Soon™)
+                  Saved for this device
                 </p>
               </div>
               <USwitch
+                v-model="notificationsEnabled"
                 color="primary"
                 checked-icon="i-lucide-alarm-clock-check"
                 unchecked-icon="i-lucide-alarm-clock-off"

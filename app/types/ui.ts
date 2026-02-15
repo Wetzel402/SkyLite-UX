@@ -71,3 +71,13 @@ export type GlobalFloatingActionButtonProps = {
   position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   disabled?: boolean;
 };
+
+export type ClientPreferences = {
+  colorMode?: "light" | "dark" | "system";
+  notifications?: boolean;
+};
+
+export const defaultClientPreferences: ClientPreferences = {
+  colorMode: "system",
+  notifications: false,
+};

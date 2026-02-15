@@ -101,6 +101,7 @@ export default defineNuxtConfig({
     "~/plugins/01.logging.ts",
     "~/plugins/02.appInit.ts",
     "~/plugins/03.syncManager.client.ts",
+    "~/plugins/04.clientPreferences.client.ts",
   ],
 
   future: {
