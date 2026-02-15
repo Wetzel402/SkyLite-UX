@@ -77,6 +77,7 @@ function getPriorityColor(priority: Priority) {
           v-if="isTodoItem(item) && item.recurringGroupId"
           name="i-lucide-repeat"
           class="h-3.5 w-3.5 text-primary flex-shrink-0"
+          role="img"
           aria-label="Recurring todo"
         />
       </div>

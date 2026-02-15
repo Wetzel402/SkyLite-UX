@@ -83,7 +83,6 @@ const {
   createTodo,
   deleteTodo,
   toggleTodo,
-  reorderTodo,
   clearCompleted,
   loading: todosLoading,
 } = useTodos();
@@ -114,7 +113,6 @@ const todoItemDialog = ref(false);
 const todoColumnDialog = ref(false);
 const editingTodo = ref<TodoListItem | null>(null);
 const editingColumn = ref<TodoList | null>(null);
-const reorderingTodos = ref(new Set<string>());
 const reorderingColumns = ref(new Set<string>());
 
 const editingTodoTyped = computed<TodoListItem | undefined>(
@@ -538,97 +536,6 @@ async function handleReorderColumn(
   }
 }
 
-async function handleReorderTodo(itemId: string, direction: "up" | "down") {
-  if (reorderingTodos.value.has(itemId))
-    return;
-  reorderingTodos.value.add(itemId);
-
-  try {
-    if (!todos.value)
-      throw new Error("Todos not loaded");
-    const item = todos.value.find(t => t.id === itemId);
-    if (!item)
-      throw new Error("Todo not found");
-
-    const { data: cachedTodos } = useNuxtData("todos");
-    const previousTodos = cachedTodos.value ? [...cachedTodos.value] : [];
-
-    try {
-      await reorderTodo(itemId, direction, item.todoColumnId ?? null);
-      consola.debug("Todo Lists: Todo reordered successfully");
-
-      if (cachedTodos.value && Array.isArray(cachedTodos.value)) {
-        const sameColumnTodos = cachedTodos.value
-          .filter(
-            (t: Todo) =>
-              t.todoColumnId === item.todoColumnId
-              && t.completed === item.completed,
-          )
-          .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        const currentIndex = sameColumnTodos.findIndex(
-          (t: Todo) => t.id === itemId,
-        );
-
-        if (currentIndex !== -1) {
-          if (direction === "up" && currentIndex > 0) {
-            const todoAbove = sameColumnTodos[currentIndex - 1];
-            const currentTodo = sameColumnTodos[currentIndex];
-
-            const currentTodoIndex = cachedTodos.value.findIndex(
-              (t: Todo) => t.id === currentTodo.id,
-            );
-            const todoAboveIndex = cachedTodos.value.findIndex(
-              (t: Todo) => t.id === todoAbove.id,
-            );
-
-            if (currentTodoIndex !== -1 && todoAboveIndex !== -1) {
-              const tempOrder = cachedTodos.value[currentTodoIndex].order;
-              cachedTodos.value[currentTodoIndex].order
-                = cachedTodos.value[todoAboveIndex].order;
-              cachedTodos.value[todoAboveIndex].order = tempOrder;
-            }
-          }
-          else if (
-            direction === "down"
-            && currentIndex < sameColumnTodos.length - 1
-          ) {
-            const todoBelow = sameColumnTodos[currentIndex + 1];
-            const currentTodo = sameColumnTodos[currentIndex];
-
-            const currentTodoIndex = cachedTodos.value.findIndex(
-              (t: Todo) => t.id === currentTodo.id,
-            );
-            const todoBelowIndex = cachedTodos.value.findIndex(
-              (t: Todo) => t.id === todoBelow.id,
-            );
-
-            if (currentTodoIndex !== -1 && todoBelowIndex !== -1) {
-              const tempOrder = cachedTodos.value[currentTodoIndex].order;
-              cachedTodos.value[currentTodoIndex].order
-                = cachedTodos.value[todoBelowIndex].order;
-              cachedTodos.value[todoBelowIndex].order = tempOrder;
-            }
-          }
-        }
-      }
-    }
-    catch (error) {
-      if (cachedTodos.value && previousTodos.length > 0) {
-        cachedTodos.value.splice(0, cachedTodos.value.length, ...previousTodos);
-      }
-      throw error;
-    }
-  }
-  catch (error) {
-    consola.error("Todo Lists: Failed to reorder todo:", error);
-    useAlertToast().showError("Failed to reorder todo. Please try again.");
-  }
-  finally {
-    reorderingTodos.value.delete(itemId);
-  }
-}
-
 async function handleClearCompleted(columnId: string) {
   try {
     const { data: cachedTodos } = useNuxtData("todos");
@@ -736,7 +643,6 @@ async function handleToggleTodo(itemId: string, completed: boolean) {
         @add-item="openCreateTodo($event)"
         @edit-item="openEditTodo($event)"
         @toggle-item="handleToggleTodo"
-        @reorder-item="handleReorderTodo"
         @reorder-list="
           (listId, direction) =>
             handleReorderColumn(
