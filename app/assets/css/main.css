@@ -9,13 +9,13 @@
   --ui-text-default: var(--ui-color-neutral-700);
   --ui-text-highlighted: var(--ui-color-neutral-900);
   --ui-text-inverted: #ffffff;
-  --ui-bg-default: #ffffff;
+  --ui-bg-default: #f8fafc;
   --ui-bg-muted: var(--ui-color-neutral-50);
-  --ui-bg-elevated: var(--ui-color-neutral-100);
-  --ui-bg-accented: var(--ui-color-neutral-200);
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-accented: var(--ui-color-neutral-100);
   --ui-bg-inverted: var(--ui-color-neutral-900);
   --ui-border-default: var(--ui-color-neutral-200);
-  --ui-border-muted: var(--ui-color-neutral-200);
+  --ui-border-muted: var(--ui-color-neutral-100);
   --ui-border-accented: var(--ui-color-neutral-300);
   --ui-border-inverted: var(--ui-color-neutral-900);
   --ui-radius: 0.25rem;
