@@ -12,7 +12,7 @@ COPY prisma ./prisma/
 
 # Install system dependencies and npm packages
 RUN apt-get update -y && apt-get install -y openssl && \
-    npm ci
+    npm install
 
 # Copy source code
 COPY . .
@@ -39,7 +39,7 @@ COPY prisma ./prisma/
 
 # Install system dependencies and production npm packages
 RUN apt-get update -y && apt-get install -y openssl && \
-    npm ci --omit=dev
+    npm install --omit=dev
 
 # Copy built application from builder stage
 COPY --from=builder /app/.output ./.output
