@@ -114,8 +114,8 @@ describe("gET /api/calendar-events", () => {
       const response = await handler(event);
 
       expect(Array.isArray(response)).toBe(true);
-      expect(response.length).toBe(1);
-      expect(response[0].id).toBe("event-single");
+      expect(response).toHaveLength(1);
+      expect(response[0]!.id).toBe("event-single");
     });
 
     it("expands recurring events within date range", async () => {

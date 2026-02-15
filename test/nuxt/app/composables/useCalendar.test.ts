@@ -265,7 +265,7 @@ describe("useCalendar", () => {
       expect(computedEventHeight("month", 100)).toBe(100);
     });
 
-    it("should return true when date and selectedDate are same UTC day in isSelectedDate", () => {
+    it("should return true when date and selectedDate are same local day in isSelectedDate", () => {
       const { isSelectedDate } = useCalendar();
       const d = new Date("2025-01-15T12:00:00Z");
       const sel = new Date("2025-01-15T08:00:00Z");
@@ -273,12 +273,20 @@ describe("useCalendar", () => {
       expect(isSelectedDate(d, sel)).toBe(true);
     });
 
-    it("should return false when date and selectedDate differ in isSelectedDate", () => {
+    it("should return false when date and selectedDate differ in local day in isSelectedDate", () => {
+      const { isSelectedDate } = useCalendar();
+      const d = new Date("2025-01-16T05:59:59Z");
+      const sel = new Date("2025-01-16T06:00:00Z");
+
+      expect(isSelectedDate(d, sel)).toBe(false);
+    });
+
+    it("should return true for same local day across UTC midnight in isSelectedDate", () => {
       const { isSelectedDate } = useCalendar();
       const d = new Date("2025-01-15T23:59:59Z");
       const sel = new Date("2025-01-16T00:00:00Z");
 
-      expect(isSelectedDate(d, sel)).toBe(false);
+      expect(isSelectedDate(d, sel)).toBe(true);
     });
 
     it("should sort events by start time without mutating input", () => {
