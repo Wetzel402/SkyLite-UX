@@ -18,6 +18,7 @@ const props = defineProps<{
   showEditItem?: boolean | ((list: AnyListWithIntegration) => boolean);
   showCompleted?: boolean | ((list: AnyListWithIntegration) => boolean);
   showIntegrationIcons?: boolean;
+  itemSortMode?: "manual" | "auto";
 }>();
 
 const _emit = defineEmits<{
@@ -36,9 +37,12 @@ const sortedLists = computed(() => {
     .sort((a, b) => (a.order || 0) - (b.order || 0))
     .map(list => ({
       ...list,
-      sortedItems: list.items
-        ? [...list.items].sort((a, b) => (a.order || 0) - (b.order || 0))
-        : [],
+      sortedItems:
+        list.items && props.itemSortMode === "auto"
+          ? [...list.items]
+          : list.items
+            ? [...list.items].sort((a, b) => (a.order || 0) - (b.order || 0))
+            : [],
       completedItems: list.items
         ? list.items.filter((item: BaseListItem) => item.checked)
         : [],

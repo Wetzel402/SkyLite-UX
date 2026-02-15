@@ -19,7 +19,7 @@ import {
   createIntegrationService,
   integrationRegistry,
 } from "~/types/integrations";
-import { FONT_OPTIONS, getFontStack } from "~/types/ui";
+import { FONT_OPTIONS, getFontStack, MAIN_VIEW_OPTIONS } from "~/types/ui";
 
 const { users, loading, error, createUser, deleteUser, updateUser }
   = useUsers();
@@ -72,6 +72,13 @@ const selectedFont = computed({
   get: () => preferences.value?.font ?? "system",
   set(value: FontPreference) {
     updatePreferences({ font: value });
+  },
+});
+
+const selectedDefaultView = computed({
+  get: () => preferences.value?.defaultView ?? "/calendar",
+  set(value: string) {
+    updatePreferences({ defaultView: value });
   },
 });
 
@@ -944,6 +951,28 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   <span :style="{ fontFamily: getFontStack(item.value) }">
                     {{ item.label }}
                   </span>
+                </template>
+              </USelect>
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Default view
+                </p>
+                <p class="text-sm text-muted">
+                  The view that will be shown when you open the app
+                </p>
+              </div>
+              <USelect
+                v-model="selectedDefaultView"
+                :items="MAIN_VIEW_OPTIONS"
+                value-key="path"
+                label-key="label"
+                :ui="{ content: 'min-w-fit' }"
+                aria-label="Select default view"
+              >
+                <template #default>
+                  {{ MAIN_VIEW_OPTIONS.find(o => o.path === selectedDefaultView)?.label ?? "Calendar" }}
                 </template>
               </USelect>
             </div>

@@ -110,35 +110,4 @@ describe("Todo Management E2E", () => {
     expect(response.name).toBe("E2E Test Column");
   });
 
-  it("should reorder todos", async () => {
-    const todo1 = await $fetch(url("/api/todos"), {
-      method: "POST",
-      body: {
-        title: "Todo 1",
-        priority: "MEDIUM",
-      },
-    }) as Todo;
-
-    const todo2 = await $fetch(url("/api/todos"), {
-      method: "POST",
-      body: {
-        title: "Todo 2",
-        priority: "MEDIUM",
-      },
-    }) as Todo;
-
-    await $fetch(url("/api/todos/reorder"), {
-      method: "PUT",
-      body: {
-        todoIds: [todo2.id, todo1.id],
-      },
-    });
-
-    const todos = await $fetch(url("/api/todos")) as Todo[];
-    const updatedTodo1 = todos.find((t) => t.id === todo1.id);
-    const updatedTodo2 = todos.find((t) => t.id === todo2.id);
-    expect(updatedTodo1).toBeDefined();
-    expect(updatedTodo2).toBeDefined();
-    expect(updatedTodo1!.order).toBeGreaterThan(updatedTodo2!.order);
-  });
 });

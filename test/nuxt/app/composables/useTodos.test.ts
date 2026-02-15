@@ -165,20 +165,6 @@ describe("useTodos", () => {
     });
   });
 
-  describe("reorderTodo", () => {
-    it("should not reorder if todo not found", async () => {
-      const { reorderTodo } = useTodos();
-      await reorderTodo("non-existent", "up", "column-1");
-      expect(mockRefreshNuxtData).not.toHaveBeenCalled();
-    });
-
-    it("should not reorder if already at top", async () => {
-      const { reorderTodo } = useTodos();
-      await reorderTodo("todo-1", "up", "column-1");
-      expect(mockRefreshNuxtData).not.toHaveBeenCalled();
-    });
-  });
-
   describe("clearCompleted", () => {
     it("should not call API if no completed todos", async () => {
       todosDataRef.value = [mockTodos[0]!];

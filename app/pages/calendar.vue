@@ -17,6 +17,10 @@ const { allEvents, getEventUserColors } = useCalendar();
 const { showError, showSuccess } = useAlertToast();
 const { addCalendarEvent, updateCalendarEvent, getCalendarAccessRole }
   = useCalendarIntegrations();
+const { preferences, updatePreferences } = useClientPreferences();
+const initialCalendarView = computed(
+  () => preferences.value?.calendarView ?? "week",
+);
 
 const nuxtApp = useNuxtApp();
 function updateIntegrationCache(integrationId: string, data: CalendarEvent[]) {
@@ -838,17 +842,17 @@ function getEventIntegrationCapabilities(
 }
 </script>
 
-<!-- TODO: allow user to choose initial view -->
 <template>
   <div>
     <CalendarMainView
       :events="allEvents as CalendarEvent[]"
-      initial-view="week"
+      :initial-view="initialCalendarView"
       class="h-[calc(100vh-2rem)]"
       :get-integration-capabilities="getEventIntegrationCapabilities"
       @event-add="handleEventAdd"
       @event-update="handleEventUpdate"
       @event-delete="handleEventDelete"
+      @view-change="(v) => updatePreferences({ calendarView: v })"
     />
   </div>
 </template>

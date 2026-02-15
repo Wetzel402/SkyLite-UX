@@ -1,11 +1,18 @@
 <script setup lang="ts">
+import { MAIN_VIEW_OPTIONS } from "~/types/ui";
+
 // TODO: Authenticate user or route to login page
-// TODO: Choose default page based on user preference
-await navigateTo("/calendar");
+const { preferences } = useClientPreferences();
+const allowedPaths = MAIN_VIEW_OPTIONS.map(o => o.path);
+const target = preferences.value?.defaultView ?? "/calendar";
+const resolved = allowedPaths.includes(target) ? target : "/calendar";
+if (import.meta.client) {
+  await navigateTo(resolved);
+}
 </script>
 
 <template>
   <div>
-    <p>Redirecting to calendar...</p>
+    <p>Redirecting...</p>
   </div>
 </template>
