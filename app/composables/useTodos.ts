@@ -117,60 +117,6 @@ export function useTodos() {
     }
   };
 
-  const reorderTodo = async (
-    todoId: string,
-    direction: "up" | "down",
-    todoColumnId: string | null,
-  ) => {
-    try {
-      const currentTodo = currentTodos.value.find(t => t.id === todoId);
-      if (!currentTodo)
-        return;
-
-      const sameSectionTodos = currentTodos.value
-        .filter(
-          t =>
-            t.todoColumnId === todoColumnId
-            && t.completed === currentTodo.completed,
-        )
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-      const currentIndex = sameSectionTodos.findIndex(t => t.id === todoId);
-      if (currentIndex === -1)
-        return;
-
-      let targetIndex;
-      if (direction === "up" && currentIndex > 0) {
-        targetIndex = currentIndex - 1;
-      }
-      else if (
-        direction === "down"
-        && currentIndex < sameSectionTodos.length - 1
-      ) {
-        targetIndex = currentIndex + 1;
-      }
-      else {
-        return;
-      }
-
-      const targetTodo = sameSectionTodos[targetIndex];
-      if (!targetTodo)
-        return;
-
-      await $fetch("/api/todos/reorder", {
-        method: "POST",
-        body: { todoId, direction, todoColumnId },
-      });
-
-      await refreshNuxtData("todos");
-    }
-    catch (err) {
-      error.value = "Failed to reorder todo";
-      consola.error("Use Todos: Error reordering todo:", err);
-      throw err;
-    }
-  };
-
   const clearCompleted = async (
     columnId: string,
     completedTodos?: TodoWithOrder[],
@@ -213,7 +159,6 @@ export function useTodos() {
     updateTodo,
     toggleTodo,
     deleteTodo,
-    reorderTodo,
     clearCompleted,
   };
 }

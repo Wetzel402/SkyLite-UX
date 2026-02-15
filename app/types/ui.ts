@@ -1,3 +1,4 @@
+import type { CalendarView } from "~/types/calendar";
 import type { ShoppingList, TodoList } from "~/types/database";
 
 export type ConnectionTestResult = {
@@ -110,17 +111,38 @@ const FONT_PREFERENCES = [
 
 export type FontPreference = (typeof FONT_PREFERENCES)[number]["value"];
 
+export type TodoSortMode = "date" | "priority" | "alpha";
+
 export type ClientPreferences = {
   colorMode?: "light" | "dark" | "system";
   notifications?: boolean;
   font?: FontPreference;
+  todoSortBy?: TodoSortMode;
+  defaultView?: string;
+  calendarView?: CalendarView;
 };
+
+export const MAIN_VIEW_OPTIONS: { path: string; label: string }[] = [
+  { path: "/calendar", label: "Calendar" },
+  { path: "/toDoLists", label: "Todo Lists" },
+  { path: "/shoppingLists", label: "Shopping Lists" },
+  { path: "/mealplanner", label: "Meal Planner" },
+];
 
 export const defaultClientPreferences: ClientPreferences = {
   colorMode: "system",
   notifications: false,
   font: "system",
+  todoSortBy: "date",
+  defaultView: "/calendar",
+  calendarView: "week",
 };
+
+export const TODO_SORT_OPTIONS: { value: TodoSortMode; label: string }[] = [
+  { value: "date", label: "Date" },
+  { value: "priority", label: "Priority" },
+  { value: "alpha", label: "A-Z" },
+];
 
 export const FONT_STACKS: Record<FontPreference, string> = Object.fromEntries(
   FONT_PREFERENCES.map(f => [f.value, f.stack]),

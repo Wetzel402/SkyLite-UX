@@ -4,14 +4,18 @@ import type { DropdownMenuItem } from "@nuxt/ui";
 import { addDays, endOfWeek, isSameMonth, startOfWeek } from "date-fns";
 
 import type { CalendarView } from "~/types/calendar";
+import type { TodoSortMode } from "~/types/ui";
 
 import { useStableDate } from "~/composables/useStableDate";
+import { TODO_SORT_OPTIONS } from "~/types/ui";
 
 const props = defineProps<{
   showNavigation?: boolean;
   showViewSelector?: boolean;
+  showTodoSortSelector?: boolean;
   currentDate?: Date;
   view?: CalendarView;
+  todoSortBy?: TodoSortMode;
   className?: string;
 }>();
 
@@ -21,6 +25,7 @@ const emit = defineEmits<{
   (e: "today"): void;
   (e: "viewChange", view: CalendarView): void;
   (e: "dateChange", date: Date): void;
+  (e: "todoSortChange", mode: TodoSortMode): void;
 }>();
 
 const { getStableDate } = useStableDate();
@@ -97,6 +102,17 @@ const items: DropdownMenuItem[][] = [
     },
   ],
 ];
+
+const todoSortItems: DropdownMenuItem[][] = [
+  TODO_SORT_OPTIONS.map(opt => ({
+    label: opt.label,
+    onSelect: () => emit("todoSortChange", opt.value),
+  })),
+];
+
+const todoSortLabel = computed(() =>
+  TODO_SORT_OPTIONS.find(o => o.value === (props.todoSortBy ?? "date"))?.label ?? "Date",
+);
 
 function handlePrevious() {
   emit("previous");
@@ -193,8 +209,14 @@ function handleToday() {
       </h2>
     </div>
 
-    <div v-if="showNavigation" class="flex items-center justify-between gap-2">
-      <div class="flex items-center justify-between gap-2">
+    <div
+      v-if="showNavigation || showTodoSortSelector"
+      class="flex items-center justify-between gap-2"
+    >
+      <div
+        v-if="showNavigation"
+        class="flex items-center justify-between gap-2"
+      >
         <div class="flex items-center sm:gap-2 max-sm:order-1">
           <UButton
             icon="i-lucide-chevron-left"
@@ -233,6 +255,21 @@ function handleToday() {
             trailing-icon="i-lucide-chevron-down"
           >
             <span class="capitalize">{{ view }}</span>
+          </UButton>
+        </UDropdownMenu>
+      </div>
+      <div
+        v-if="showTodoSortSelector"
+        class="flex items-center justify-between gap-2"
+      >
+        <UDropdownMenu :items="todoSortItems">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="xl"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            {{ todoSortLabel }}
           </UButton>
         </UDropdownMenu>
       </div>
