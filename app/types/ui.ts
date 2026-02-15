@@ -1,3 +1,4 @@
+import type { CalendarView } from "~/types/calendar";
 import type { ShoppingList, TodoList } from "~/types/database";
 
 export type ConnectionTestResult = {
@@ -118,6 +119,7 @@ export type ClientPreferences = {
   font?: FontPreference;
   todoSortBy?: TodoSortMode;
   defaultView?: string;
+  calendarView?: CalendarView;
 };
 
 export const MAIN_VIEW_OPTIONS: { path: string; label: string }[] = [
@@ -133,6 +135,7 @@ export const defaultClientPreferences: ClientPreferences = {
   font: "system",
   todoSortBy: "date",
   defaultView: "/calendar",
+  calendarView: "week",
 };
 
 export const TODO_SORT_OPTIONS: { value: TodoSortMode; label: string }[] = [

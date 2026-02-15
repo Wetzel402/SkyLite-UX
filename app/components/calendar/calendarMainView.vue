@@ -29,10 +29,11 @@ const props = defineProps<{
   ) => { capabilities: string[]; serviceName?: string } | undefined;
 }>();
 
-const _emit = defineEmits<{
+const emit = defineEmits<{
   (e: "eventAdd", event: CalendarEvent): void;
   (e: "eventUpdate", event: CalendarEvent): void;
   (e: "eventDelete", eventId: string): void;
+  (e: "viewChange", view: CalendarView): void;
 }>();
 
 const { getStableDate, stableDate } = useStableDate();
@@ -58,15 +59,19 @@ onMounted(() => {
     switch (e.key.toLowerCase()) {
       case "m":
         view.value = "month";
+        emit("viewChange", view.value);
         break;
       case "w":
         view.value = "week";
+        emit("viewChange", view.value);
         break;
       case "d":
         view.value = "day";
+        emit("viewChange", view.value);
         break;
       case "a":
         view.value = "agenda";
+        emit("viewChange", view.value);
         break;
     }
   };
@@ -164,17 +169,17 @@ function handleEventCreate(date: Date) {
 
 function handleEventSave(event: CalendarEvent) {
   if (event.id) {
-    _emit("eventUpdate", event);
+    emit("eventUpdate", event);
   }
   else {
-    _emit("eventAdd", event);
+    emit("eventAdd", event);
   }
   isEventDialogOpen.value = false;
   selectedEvent.value = null;
 }
 
 function handleEventDelete(eventId: string) {
-  _emit("eventDelete", eventId);
+  emit("eventDelete", eventId);
   isEventDialogOpen.value = false;
   selectedEvent.value = null;
 }
@@ -261,7 +266,7 @@ function getDaysForAgenda(date: Date) {
         @previous="handlePrevious"
         @next="handleNext"
         @today="handleToday"
-        @view-change="(newView) => (view = newView)"
+        @view-change="(newView) => { view = newView; emit('viewChange', newView); }"
         @date-change="(newDate) => (currentDate = newDate)"
       />
     </div>
