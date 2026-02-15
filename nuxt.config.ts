@@ -19,10 +19,46 @@ export default defineNuxtConfig({
 
   modules: [
     "@nuxt/ui",
+    "@nuxt/fonts",
     "@nuxt/eslint",
     "@nuxtjs/html-validator",
     "@nuxt/test-utils/module",
   ],
+
+  fonts: {
+    families: [
+      {
+        name: "Inclusive Sans",
+        provider: "google",
+        global: true,
+      },
+      {
+        name: "Noto Sans",
+        provider: "google",
+        global: true,
+      },
+      {
+        name: "EB Garamond",
+        provider: "google",
+        global: true,
+      },
+      {
+        name: "IBM Plex Mono",
+        provider: "google",
+        global: true,
+      },
+      {
+        name: "Ovo",
+        provider: "google",
+        global: true,
+      },
+      {
+        name: "Handlee",
+        provider: "google",
+        global: true,
+      },
+    ],
+  },
 
   components: {
     dirs: [
@@ -65,6 +101,7 @@ export default defineNuxtConfig({
         "element-required-attributes": "off",
         "element-required-content": "off",
         "valid-id": "off",
+        "no-missing-references": "off",
         "prefer-native-element": "off",
         "void-style": "off",
         "no-trailing-whitespace": "off",
@@ -101,6 +138,7 @@ export default defineNuxtConfig({
     "~/plugins/01.logging.ts",
     "~/plugins/02.appInit.ts",
     "~/plugins/03.syncManager.client.ts",
+    "~/plugins/04.clientPreferences.client.ts",
   ],
 
   future: {
