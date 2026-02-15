@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 
 import { consola } from "consola";
+import type { Integration } from "~/types/database";
 
 vi.mock("consola", () => ({
   consola: {
@@ -54,6 +55,22 @@ mockNuxtImport("useState", () => mockUseState);
 mockNuxtImport("useNuxtApp", () => mockUseNuxtApp);
 
 import { useSyncManager } from "../../../../app/composables/useSyncManager";
+
+function createTestIntegration(overrides: { id: string; type: string }): Integration {
+  return {
+    id: overrides.id,
+    type: overrides.type,
+    name: "",
+    service: "",
+    apiKey: null,
+    baseUrl: null,
+    icon: null,
+    enabled: true,
+    settings: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
 
 describe("useSyncManager", () => {
   beforeEach(() => {
@@ -148,6 +165,7 @@ describe("useSyncManager", () => {
   });
 
   it("should not throw or call reconnect when $reconnectSync is missing", () => {
+    // @ts-expect-error - intentionally missing $reconnectSync to test fallback
     mockUseNuxtApp.mockReturnValueOnce({ payload: { data: {} } });
     const { reconnect } = useSyncManager();
     expect(() => reconnect()).not.toThrow();
@@ -155,10 +173,8 @@ describe("useSyncManager", () => {
   });
 
   it("should not throw or call reconnect when $reconnectSync is not a function", () => {
-    mockUseNuxtApp.mockReturnValueOnce({
-      payload: { data: {} },
-      $reconnectSync: "not-a-function",
-    });
+    // @ts-expect-error - intentionally invalid type to test runtime check
+    mockUseNuxtApp.mockReturnValueOnce({ payload: { data: {} }, $reconnectSync: "not-a-function" });
     const { reconnect } = useSyncManager();
     expect(() => reconnect()).not.toThrow();
     expect(mockReconnect).not.toHaveBeenCalled();
@@ -250,9 +266,9 @@ describe("useSyncManager", () => {
     payloadData["calendar-events-c1"] = [];
     payloadData["shopping-lists-s1"] = [];
     const integrations = [
-      { id: "c1", type: "calendar" },
-      { id: "s1", type: "shopping" },
-      { id: "t1", type: "todo" },
+      createTestIntegration({ id: "c1", type: "calendar" }),
+      createTestIntegration({ id: "s1", type: "shopping" }),
+      createTestIntegration({ id: "t1", type: "todo" }),
     ];
     const { getSyncDataByType } = useSyncManager();
 
@@ -286,9 +302,9 @@ describe("useSyncManager", () => {
     payloadData["calendar-events-c1"] = [];
     payloadData["shopping-lists-s1"] = [];
     const integrations = [
-      { id: "c1", type: "calendar" },
-      { id: "s1", type: "shopping" },
-      { id: "t1", type: "todo" },
+      createTestIntegration({ id: "c1", type: "calendar" }),
+      createTestIntegration({ id: "s1", type: "shopping" }),
+      createTestIntegration({ id: "t1", type: "todo" }),
     ];
     const { getCalendarSyncData, getTodoSyncData, getShoppingSyncData } =
       useSyncManager();

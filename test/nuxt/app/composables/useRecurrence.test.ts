@@ -261,7 +261,7 @@ describe("useRecurrence", () => {
       state.isRecurring.value = true;
       const icalData = {
         type: "VEVENT",
-        rrule: { until: "invalid-ical-time" },
+        rrule: { freq: "DAILY", until: "invalid-ical-time" },
       };
 
       expect(() => parseRecurrenceFromICal(icalData, state)).not.toThrow();

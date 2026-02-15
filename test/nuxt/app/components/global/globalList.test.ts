@@ -1,20 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 
-import type { AnyListWithIntegration } from "~/types/ui";
+import type { ShoppingListWithIntegration } from "~/types/ui";
+import type { ShoppingListItem } from "~/types/database";
 
-import GlobalList from "../../../../app/components/global/globalList.vue";
+import GlobalList from "../../../../../app/components/global/globalList.vue";
 
-const baseList = (
-  overrides: Partial<AnyListWithIntegration> & { id: string; name: string; order: number },
-): AnyListWithIntegration =>
-  ({
-    id: "list-1",
-    name: "List",
-    order: 1,
+function baseShoppingList(
+  overrides: Partial<ShoppingListWithIntegration> & { id: string; name: string; order: number },
+): ShoppingListWithIntegration {
+  return {
     items: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
-  }) as AnyListWithIntegration;
+  } as ShoppingListWithIntegration;
+}
 
 describe("GlobalList", () => {
   it("renders empty state when lists are empty", async () => {
@@ -49,7 +50,7 @@ describe("GlobalList", () => {
   });
 
   it("renders with showEditItem as function and lists with items", async () => {
-    const list = baseList({
+    const list = baseShoppingList({
       id: "list-1",
       name: "Groceries",
       order: 1,
@@ -65,7 +66,7 @@ describe("GlobalList", () => {
           label: null,
           food: null,
         },
-      ] as AnyListWithIntegration["items"],
+      ] as ShoppingListItem[],
     });
     const showEditItemFn = () => true;
     const wrapper = await mountSuspended(GlobalList, {
@@ -80,14 +81,14 @@ describe("GlobalList", () => {
   });
 
   it("shows progress when showProgress and list has mixed completed and active items", async () => {
-    const list = baseList({
+    const list = baseShoppingList({
       id: "list-1",
       name: "Tasks",
       order: 1,
       items: [
-        { id: "i1", name: "A", checked: true, order: 1, notes: null },
-        { id: "i2", name: "B", checked: false, order: 2, notes: null },
-      ] as AnyListWithIntegration["items"],
+        { id: "i1", name: "A", checked: true, order: 1, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i2", name: "B", checked: false, order: 2, notes: null, quantity: 1, unit: null, label: null, food: null },
+      ] as ShoppingListItem[],
     });
     const wrapper = await mountSuspended(GlobalList, {
       props: {
@@ -100,14 +101,14 @@ describe("GlobalList", () => {
   });
 
   it("shows 0% progress when all items unchecked", async () => {
-    const list = baseList({
+    const list = baseShoppingList({
       id: "list-1",
       name: "Tasks",
       order: 1,
       items: [
-        { id: "i1", name: "A", checked: false, order: 1, notes: null },
-        { id: "i2", name: "B", checked: false, order: 2, notes: null },
-      ] as AnyListWithIntegration["items"],
+        { id: "i1", name: "A", checked: false, order: 1, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i2", name: "B", checked: false, order: 2, notes: null, quantity: 1, unit: null, label: null, food: null },
+      ] as ShoppingListItem[],
     });
     const wrapper = await mountSuspended(GlobalList, {
       props: { lists: [list], loading: false, showProgress: true },
@@ -116,16 +117,16 @@ describe("GlobalList", () => {
   });
 
   it("shows 25% progress when one of four items checked", async () => {
-    const list = baseList({
+    const list = baseShoppingList({
       id: "list-1",
       name: "Tasks",
       order: 1,
       items: [
-        { id: "i1", name: "A", checked: true, order: 1, notes: null },
-        { id: "i2", name: "B", checked: false, order: 2, notes: null },
-        { id: "i3", name: "C", checked: false, order: 3, notes: null },
-        { id: "i4", name: "D", checked: false, order: 4, notes: null },
-      ] as AnyListWithIntegration["items"],
+        { id: "i1", name: "A", checked: true, order: 1, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i2", name: "B", checked: false, order: 2, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i3", name: "C", checked: false, order: 3, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i4", name: "D", checked: false, order: 4, notes: null, quantity: 1, unit: null, label: null, food: null },
+      ] as ShoppingListItem[],
     });
     const wrapper = await mountSuspended(GlobalList, {
       props: { lists: [list], loading: false, showProgress: true },
@@ -134,16 +135,16 @@ describe("GlobalList", () => {
   });
 
   it("shows 75% progress when three of four items checked", async () => {
-    const list = baseList({
+    const list = baseShoppingList({
       id: "list-1",
       name: "Tasks",
       order: 1,
       items: [
-        { id: "i1", name: "A", checked: true, order: 1, notes: null },
-        { id: "i2", name: "B", checked: true, order: 2, notes: null },
-        { id: "i3", name: "C", checked: true, order: 3, notes: null },
-        { id: "i4", name: "D", checked: false, order: 4, notes: null },
-      ] as AnyListWithIntegration["items"],
+        { id: "i1", name: "A", checked: true, order: 1, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i2", name: "B", checked: true, order: 2, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i3", name: "C", checked: true, order: 3, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i4", name: "D", checked: false, order: 4, notes: null, quantity: 1, unit: null, label: null, food: null },
+      ] as ShoppingListItem[],
     });
     const wrapper = await mountSuspended(GlobalList, {
       props: { lists: [list], loading: false, showProgress: true },
@@ -152,14 +153,14 @@ describe("GlobalList", () => {
   });
 
   it("shows 100% progress when all items checked", async () => {
-    const list = baseList({
+    const list = baseShoppingList({
       id: "list-1",
       name: "Tasks",
       order: 1,
       items: [
-        { id: "i1", name: "A", checked: true, order: 1, notes: null },
-        { id: "i2", name: "B", checked: true, order: 2, notes: null },
-      ] as AnyListWithIntegration["items"],
+        { id: "i1", name: "A", checked: true, order: 1, notes: null, quantity: 1, unit: null, label: null, food: null },
+        { id: "i2", name: "B", checked: true, order: 2, notes: null, quantity: 1, unit: null, label: null, food: null },
+      ] as ShoppingListItem[],
     });
     const wrapper = await mountSuspended(GlobalList, {
       props: { lists: [list], loading: false, showProgress: true },
@@ -168,13 +169,13 @@ describe("GlobalList", () => {
   });
 
   it("renders lists with source native and integration when showIntegrationIcons", async () => {
-    const nativeList = baseList({
+    const nativeList = baseShoppingList({
       id: "n1",
       name: "Native",
       order: 1,
       source: "native",
     });
-    const integrationList = baseList({
+    const integrationList = baseShoppingList({
       id: "i1",
       name: "Integration",
       order: 2,
