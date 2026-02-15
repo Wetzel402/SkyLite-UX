@@ -72,12 +72,65 @@ export type GlobalFloatingActionButtonProps = {
   disabled?: boolean;
 };
 
+const SYSTEM_FONT_STACK = "ui-sans-serif, system-ui, sans-serif";
+
+const FONT_PREFERENCES = [
+  { value: "system", label: "System", stack: SYSTEM_FONT_STACK },
+  {
+    value: "inclusiveSans",
+    label: "Inclusive Sans",
+    stack: `"Inclusive Sans", ${SYSTEM_FONT_STACK}`,
+  },
+  {
+    value: "notoSans",
+    label: "Noto Sans",
+    stack: `"Noto Sans", ${SYSTEM_FONT_STACK}`,
+  },
+  {
+    value: "ebGaramond",
+    label: "EB Garamond",
+    stack: `"EB Garamond", ${SYSTEM_FONT_STACK}`,
+  },
+  {
+    value: "ibmPlexMono",
+    label: "IBM Plex Mono",
+    stack: `"IBM Plex Mono", ${SYSTEM_FONT_STACK}`,
+  },
+  {
+    value: "ovo",
+    label: "Ovo",
+    stack: `"Ovo", ${SYSTEM_FONT_STACK}`,
+  },
+  {
+    value: "handlee",
+    label: "Handlee",
+    stack: `"Handlee", ${SYSTEM_FONT_STACK}`,
+  },
+] as const;
+
+export type FontPreference = (typeof FONT_PREFERENCES)[number]["value"];
+
 export type ClientPreferences = {
   colorMode?: "light" | "dark" | "system";
   notifications?: boolean;
+  font?: FontPreference;
 };
 
 export const defaultClientPreferences: ClientPreferences = {
   colorMode: "system",
   notifications: false,
+  font: "system",
 };
+
+export const FONT_STACKS: Record<FontPreference, string> = Object.fromEntries(
+  FONT_PREFERENCES.map(f => [f.value, f.stack]),
+) as Record<FontPreference, string>;
+
+export const FONT_OPTIONS: { label: string; value: FontPreference }[]
+  = FONT_PREFERENCES.map(({ value, label }) => ({ value, label }));
+
+export function getFontStack(font: FontPreference | undefined): string {
+  if (!font || font === "system")
+    return SYSTEM_FONT_STACK;
+  return FONT_STACKS[font] ?? SYSTEM_FONT_STACK;
+}

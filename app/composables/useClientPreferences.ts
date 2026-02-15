@@ -2,10 +2,7 @@ import { useStorage } from "@vueuse/core";
 
 import type { ClientPreferences } from "~/types/ui";
 
-import {
-
-  defaultClientPreferences,
-} from "~/types/ui";
+import { defaultClientPreferences, getFontStack } from "~/types/ui";
 
 const STORAGE_KEY = "skylite-client-preferences";
 
@@ -37,6 +34,19 @@ export function useClientPreferences() {
       resolved,
       (value) => {
         colorMode.preference = value;
+      },
+      { immediate: true },
+    );
+    const font = computed(
+      () => preferences.value?.font ?? ("system" as const),
+    );
+    watch(
+      font,
+      (value) => {
+        document.documentElement.style.setProperty(
+          "--app-font-sans",
+          getFontStack(value),
+        );
       },
       { immediate: true },
     );

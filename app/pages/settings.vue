@@ -7,7 +7,7 @@ import type {
   Integration,
   User,
 } from "~/types/database";
-import type { ConnectionTestResult } from "~/types/ui";
+import type { ConnectionTestResult, FontPreference } from "~/types/ui";
 
 import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
@@ -19,6 +19,7 @@ import {
   createIntegrationService,
   integrationRegistry,
 } from "~/types/integrations";
+import { FONT_OPTIONS, getFontStack } from "~/types/ui";
 
 const { users, loading, error, createUser, deleteUser, updateUser }
   = useUsers();
@@ -41,14 +42,16 @@ const {
 
 const { preferences, updatePreferences } = useClientPreferences();
 
+const isClient = ref(false);
+onMounted(() => {
+  isClient.value = true;
+});
+
+const colorMode = useColorMode();
 const effectiveDark = computed(() => {
-  const mode = preferences.value?.colorMode ?? "system";
-  if (mode === "dark")
-    return true;
-  if (mode === "light")
+  if (!isClient.value)
     return false;
-  return typeof window !== "undefined"
-    && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return colorMode.value === "dark";
 });
 
 const isDark = computed({
@@ -62,6 +65,13 @@ const notificationsEnabled = computed({
   get: () => preferences.value?.notifications ?? false,
   set(value: boolean) {
     updatePreferences({ notifications: value });
+  },
+});
+
+const selectedFont = computed({
+  get: () => preferences.value?.font ?? "system",
+  set(value: FontPreference) {
+    updatePreferences({ font: value });
   },
 });
 
@@ -903,6 +913,39 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                 size="xl"
                 aria-label="Toggle notifications"
               />
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Font
+                </p>
+                <p class="text-sm text-muted">
+                  Saved for this device
+                </p>
+              </div>
+              <USelect
+                v-model="selectedFont"
+                :items="FONT_OPTIONS"
+                value-attribute="value"
+                option-attribute="label"
+                :ui="{ content: 'min-w-fit' }"
+                aria-label="Select font"
+              >
+                <template #default>
+                  <span
+                    :style="{
+                      fontFamily: getFontStack(selectedFont),
+                    }"
+                  >
+                    {{ FONT_OPTIONS.find(o => o.value === selectedFont)?.label ?? "System" }}
+                  </span>
+                </template>
+                <template #item-label="{ item }">
+                  <span :style="{ fontFamily: getFontStack(item.value) }">
+                    {{ item.label }}
+                  </span>
+                </template>
+              </USelect>
             </div>
           </div>
         </div>

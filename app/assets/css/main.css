@@ -2,6 +2,7 @@
 @import "@nuxt/ui";
 
 :root {
+  --app-font-sans: ui-sans-serif, system-ui, sans-serif;
   --ui-text-dimmed: var(--ui-color-neutral-400);
   --ui-text-muted: var(--ui-color-neutral-500);
   --ui-text-toned: var(--ui-color-neutral-600);
@@ -18,6 +19,11 @@
   --ui-border-accented: var(--ui-color-neutral-300);
   --ui-border-inverted: var(--ui-color-neutral-900);
   --ui-radius: 0.25rem;
+}
+
+html,
+body {
+  font-family: var(--app-font-sans);
 }
 
 .dark {
