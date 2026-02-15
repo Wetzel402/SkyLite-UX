@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build stage
-FROM --platform=$BUILDPLATFORM docker.io/library/node:20 AS builder
+FROM --platform=$BUILDPLATFORM docker.io/library/node:22 AS builder
 
 # Set working directory
 WORKDIR /app
@@ -24,7 +24,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production stage
-FROM docker.io/library/node:20 AS production
+FROM docker.io/library/node:22 AS production
 
 # Set environment variables
 ENV NODE_ENV=production
