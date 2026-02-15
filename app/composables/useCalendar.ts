@@ -999,7 +999,7 @@ export function useCalendar() {
   }
 
   function isToday(date: Date) {
-    return isSameUtcDay(date, getStableDate());
+    return isSameLocalDay(date, getStableDate(), false);
   }
 
   function handleEventClick(
@@ -1066,7 +1066,7 @@ export function useCalendar() {
   }
 
   function isSelectedDate(date: Date, selectedDate: Date) {
-    return isSameUtcDay(date, selectedDate);
+    return isSameLocalDay(date, selectedDate, false);
   }
 
   function handleDateSelect(

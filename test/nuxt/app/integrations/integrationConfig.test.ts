@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 
+import type { ShoppingListItem } from "~/types/database";
+
 import {
   getIntegrationFields,
   getFieldsForItem,
@@ -49,11 +51,19 @@ describe("integrationConfig", () => {
         { key: "unit" },
         { key: "food" },
       ];
-      const result = getFieldsForItem(
-        { integrationData: { isFood: true } },
-        "mealie",
-        fields,
-      );
+      const item: ShoppingListItem = {
+        id: "x",
+        name: "",
+        checked: false,
+        order: 0,
+        notes: null,
+        quantity: 0,
+        unit: null,
+        label: null,
+        food: null,
+        integrationData: { isFood: true },
+      };
+      const result = getFieldsForItem(item, "mealie", fields);
       expect(Array.isArray(result)).toBe(true);
       expect(result.map(f => f.key)).toEqual([
         "notes",
