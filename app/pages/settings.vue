@@ -7,17 +7,19 @@ import type {
   Integration,
   User,
 } from "~/types/database";
-import type { ConnectionTestResult } from "~/types/ui";
+import type { ConnectionTestResult, FontPreference } from "~/types/ui";
 
 import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
 import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
+import { useClientPreferences } from "~/composables/useClientPreferences";
 import { integrationServices } from "~/plugins/02.appInit";
 import { getSlogan } from "~/types/global";
 import {
   createIntegrationService,
   integrationRegistry,
 } from "~/types/integrations";
+import { FONT_OPTIONS, getFontStack } from "~/types/ui";
 
 const { users, loading, error, createUser, deleteUser, updateUser }
   = useUsers();
@@ -38,23 +40,39 @@ const {
   purgeCalendarEvents,
 } = useSyncManager();
 
+const { preferences, updatePreferences } = useClientPreferences();
+
+const isClient = ref(false);
+onMounted(() => {
+  isClient.value = true;
+});
+
 const colorMode = useColorMode();
+const effectiveDark = computed(() => {
+  if (!isClient.value)
+    return false;
+  return colorMode.value === "dark";
+});
+
 const isDark = computed({
-  get() {
-    return colorMode.value === "dark";
-  },
-  set() {
-    colorMode.value = colorMode.value === "dark" ? "light" : "dark";
+  get: () => effectiveDark.value,
+  set(value: boolean) {
+    updatePreferences({ colorMode: value ? "dark" : "light" });
   },
 });
 
-onMounted(() => {
-  if (!colorMode.value) {
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    colorMode.preference = prefersDark ? "dark" : "light";
-  }
+const notificationsEnabled = computed({
+  get: () => preferences.value?.notifications ?? false,
+  set(value: boolean) {
+    updatePreferences({ notifications: value });
+  },
+});
+
+const selectedFont = computed({
+  get: () => preferences.value?.font ?? "system",
+  set(value: FontPreference) {
+    updatePreferences({ font: value });
+  },
 });
 
 const selectedUser = ref<User | null>(null);
@@ -866,7 +884,7 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   Dark Mode
                 </p>
                 <p class="text-sm text-muted">
-                  Toggle between light and dark themes (Coming Soon™)
+                  Toggle between light and dark themes
                 </p>
               </div>
               <USwitch
@@ -884,16 +902,50 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
                   Notifications
                 </p>
                 <p class="text-sm text-muted">
-                  Enable push notifications (Coming Soon™)
+                  Enable notifications (Coming Soon™)
                 </p>
               </div>
               <USwitch
+                v-model="notificationsEnabled"
                 color="primary"
                 checked-icon="i-lucide-alarm-clock-check"
                 unchecked-icon="i-lucide-alarm-clock-off"
                 size="xl"
                 aria-label="Toggle notifications"
               />
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
+                  Font
+                </p>
+                <p class="text-sm text-muted">
+                  Change the app's font
+                </p>
+              </div>
+              <USelect
+                v-model="selectedFont"
+                :items="FONT_OPTIONS"
+                value-attribute="value"
+                option-attribute="label"
+                :ui="{ content: 'min-w-fit' }"
+                aria-label="Select font"
+              >
+                <template #default>
+                  <span
+                    :style="{
+                      fontFamily: getFontStack(selectedFont),
+                    }"
+                  >
+                    {{ FONT_OPTIONS.find(o => o.value === selectedFont)?.label ?? "System" }}
+                  </span>
+                </template>
+                <template #item-label="{ item }">
+                  <span :style="{ fontFamily: getFontStack(item.value) }">
+                    {{ item.label }}
+                  </span>
+                </template>
+              </USelect>
             </div>
           </div>
         </div>
