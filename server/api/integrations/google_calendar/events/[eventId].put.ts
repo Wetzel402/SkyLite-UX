@@ -11,6 +11,7 @@ import type { ICalEvent } from "../../../../integrations/iCal/types";
 import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
 import { getGoogleOAuthConfig } from "../../../../utils/googleOAuthConfig";
 import { parseRRuleString } from "../../../../utils/rrule";
+import { parseLocalDate } from "~/utils/dateParser";
 
 function rruleObjectToString(rrule: {
   freq: string;
@@ -155,8 +156,8 @@ export default defineEventHandler(async (event) => {
 
     const updatedEvent = await service.updateEvent(calendarId as string, baseEventId as string, googleEventData);
 
-    const start = updatedEvent.start.dateTime ? new Date(updatedEvent.start.dateTime) : new Date(`${updatedEvent.start.date}T00:00:00Z`);
-    const end = updatedEvent.end.dateTime ? new Date(updatedEvent.end.dateTime) : new Date(`${updatedEvent.end.date}T00:00:00Z`);
+    const start = updatedEvent.start.dateTime ? new Date(updatedEvent.start.dateTime) : parseLocalDate(updatedEvent.start.date!);
+    const end = updatedEvent.end.dateTime ? new Date(updatedEvent.end.dateTime) : parseLocalDate(updatedEvent.end.date!);
     const isAllDay = !updatedEvent.start.dateTime;
 
     const rrule = updatedEvent.recurrence && updatedEvent.recurrence.length > 0
