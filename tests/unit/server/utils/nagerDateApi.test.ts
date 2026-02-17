@@ -134,7 +134,7 @@ describe("nagerDateApi", () => {
 
       // Mock current date as Feb 14, 2026
       vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-02-14"));
+      vi.setSystemTime(new Date(2026, 1, 14));
 
       const result = await getNextUpcomingHoliday("CA", undefined);
 
@@ -180,7 +180,7 @@ describe("nagerDateApi", () => {
       } as Response);
 
       vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-02-14"));
+      vi.setSystemTime(new Date(2026, 1, 14));
 
       const result = await getNextUpcomingHoliday("CA", "ON");
 

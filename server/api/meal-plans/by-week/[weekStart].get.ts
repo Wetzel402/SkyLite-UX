@@ -1,5 +1,4 @@
 import prisma from "~/lib/prisma";
-import { parseLocalDate } from "~/utils/dateParser";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -12,11 +11,13 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const searchDate = parseLocalDate(weekStart);
+    // Parse YYYY-MM-DD as UTC to match how meal plan dates are stored
+    const parts = weekStart.split("-").map(Number);
+    const [year, month, day] = parts as [number, number, number];
+    const searchDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
-    // Find meal plan for the week by date range (handles timezone differences)
-    const endOfDay = new Date(searchDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Find meal plan for the week by date range
+    const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
     const mealPlan = await prisma.mealPlan.findFirst({
       where: {

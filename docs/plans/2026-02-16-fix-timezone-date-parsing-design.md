@@ -37,7 +37,7 @@ export function parseLocalDate(dateStr: string): Date
 4. `server/api/integrations/google_calendar/events/index.get.ts` — lines 23-24
 5. `server/api/integrations/google_calendar/events/[eventId].get.ts` — lines 115-116
 
-**App-side:**
+**App-side (deferred to follow-up PR — these receive full datetime strings, not date-only):**
 6. `app/composables/useStableDate.ts` — lines 14-18
 7. `app/integrations/mealie/mealieShoppingLists.ts` — line 44
 8. `app/integrations/tandoor/tandoorShoppingLists.ts` — line 39

@@ -1,7 +1,5 @@
 # Fix Timezone Date Parsing Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Fix the holiday countdown showing "-1 days" and all other YYYY-MM-DD date parsing locations that suffer from the same UTC vs local timezone bug.
 
 **Architecture:** Create a shared `parseLocalDate` utility that correctly parses "YYYY-MM-DD" strings as local midnight dates. Apply it to all 7 locations where date-only strings are parsed with `new Date()`, which incorrectly creates UTC midnight (wrong day in US timezones).
@@ -9,6 +7,8 @@
 **Tech Stack:** TypeScript, Vitest, Nuxt 3 (auto-imports from `app/utils/`)
 
 ---
+
+## Tasks
 
 ### Task 1: Create `parseLocalDate` utility with tests
 
