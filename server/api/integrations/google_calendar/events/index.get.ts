@@ -12,6 +12,7 @@ import type { ICalEvent } from "../../../../integrations/iCal/types";
 import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
 import { getGoogleOAuthConfig } from "../../../../utils/googleOAuthConfig";
 import { expandRecurringEvents, parseRRuleString } from "../../../../utils/rrule";
+import { parseLocalDate } from "~/utils/dateParser";
 
 function convertToCalendarEvent(
   event: GoogleCalendarEvent,
@@ -19,10 +20,10 @@ function convertToCalendarEvent(
 ): CalendarEvent {
   const startDateTime = event.start.dateTime || event.start.date;
   const endDateTime = event.end.dateTime || event.end.date;
-
-  const start = new Date(startDateTime || "");
-  const end = new Date(endDateTime || "");
   const isAllDay = !event.start.dateTime && !!event.start.date;
+
+  const start = isAllDay ? parseLocalDate(startDateTime!) : new Date(startDateTime || "");
+  const end = isAllDay ? parseLocalDate(endDateTime!) : new Date(endDateTime || "");
 
   const rrule = event.recurrence && event.recurrence.length > 0
     ? parseRRuleString(event.recurrence[0] || "")

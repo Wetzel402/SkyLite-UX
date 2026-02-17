@@ -3,6 +3,7 @@ import consola from "consola";
 import prisma from "../../../app/lib/prisma";
 import { getHolidayCache, saveHolidayCache } from "../../utils/holidayCache";
 import { getNextUpcomingHoliday } from "../../utils/nagerDateApi";
+import { parseLocalDate } from "~/utils/dateParser";
 
 export default defineEventHandler(async (_event) => {
   try {
@@ -77,7 +78,7 @@ export default defineEventHandler(async (_event) => {
       }
 
       // Save to cache
-      const holidayDate = new Date(apiHoliday.date);
+      const holidayDate = parseLocalDate(apiHoliday.date);
       const cachedUntil = new Date(holidayDate);
       cachedUntil.setHours(23, 59, 59, 999); // End of holiday day
 

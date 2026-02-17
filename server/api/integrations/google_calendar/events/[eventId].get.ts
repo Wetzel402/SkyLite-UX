@@ -9,6 +9,7 @@ import type { ICalEvent } from "../../../../integrations/iCal/types";
 import { GoogleCalendarServerService } from "../../../../integrations/google_calendar/client";
 import { getGoogleOAuthConfig } from "../../../../utils/googleOAuthConfig";
 import { parseRRuleString } from "../../../../utils/rrule";
+import { parseLocalDate } from "~/utils/dateParser";
 
 export default defineEventHandler(async (event) => {
   const eventId = getRouterParam(event, "eventId");
@@ -111,10 +112,10 @@ export default defineEventHandler(async (event) => {
 
     const startDateTime = googleEvent.start.dateTime || googleEvent.start.date;
     const endDateTime = googleEvent.end.dateTime || googleEvent.end.date;
-
-    const start = new Date(startDateTime || "");
-    const end = new Date(endDateTime || "");
     const isAllDay = !googleEvent.start.dateTime && !!googleEvent.start.date;
+
+    const start = isAllDay ? parseLocalDate(startDateTime!) : new Date(startDateTime || "");
+    const end = isAllDay ? parseLocalDate(endDateTime!) : new Date(endDateTime || "");
 
     const rrule = googleEvent.recurrence && googleEvent.recurrence.length > 0
       ? parseRRuleString(googleEvent.recurrence[0] || "")

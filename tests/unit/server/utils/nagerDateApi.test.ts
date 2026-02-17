@@ -134,7 +134,7 @@ describe("nagerDateApi", () => {
 
       // Mock current date as Feb 14, 2026
       vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-02-14"));
+      vi.setSystemTime(new Date(2026, 1, 14));
 
       const result = await getNextUpcomingHoliday("CA", undefined);
 
@@ -180,12 +180,47 @@ describe("nagerDateApi", () => {
       } as Response);
 
       vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-02-14"));
+      vi.setSystemTime(new Date(2026, 1, 14));
 
       const result = await getNextUpcomingHoliday("CA", "ON");
 
       // Should return first ON-specific or national holiday
       expect(result?.name).toBe("Canada Day");
+
+      vi.useRealTimers();
+    });
+
+    it("should not return a past holiday due to timezone parsing", async () => {
+      const mockHolidays = [
+        {
+          date: "2026-02-16",
+          localName: "Test Holiday",
+          name: "Test Holiday",
+          countryCode: "US",
+          counties: null,
+        },
+        {
+          date: "2026-07-04",
+          localName: "Independence Day",
+          name: "Independence Day",
+          countryCode: "US",
+          counties: null,
+        },
+      ];
+
+      vi.mocked(globalThis.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => mockHolidays,
+      } as Response);
+
+      // Set time to Feb 17 — the Feb 16 holiday is in the past
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 1, 17, 10, 0, 0)); // Feb 17, 10 AM local
+
+      const result = await getNextUpcomingHoliday("US", undefined);
+
+      // Should skip the past holiday and return Independence Day
+      expect(result?.name).toBe("Independence Day");
 
       vi.useRealTimers();
     });
