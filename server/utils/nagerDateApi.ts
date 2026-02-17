@@ -145,8 +145,6 @@ export async function getNextUpcomingHoliday(
   if (upcomingHolidays.length === 0) {
     holidays = await getPublicHolidays(currentYear + 1, countryCode);
     upcomingHolidays = holidays.filter((holiday) => {
-      const holidayDate = parseLocalDate(holiday.date);
-
       // If subdivision specified, filter by counties
       if (subdivisionCode) {
         const fullIsoSubdivision = `${countryCode}-${subdivisionCode}`;
