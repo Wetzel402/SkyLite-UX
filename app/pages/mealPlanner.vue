@@ -56,14 +56,17 @@ const isCurrentWeek = computed(() => {
   return currentWeekStart.value.getTime() === todayWeekStart.getTime();
 });
 
-// Load meal plan for current week
-async function loadWeekMealPlan() {
-  loading.value = true;
+// Core fetch logic for meal plan data.
+// When showLoading is true (initial load, week navigation), sets loading.value
+// which triggers v-if="loading" and unmounts/remounts WeeklyMealGrid.
+// When false (CRUD operations), keeps the grid mounted so accordion state is preserved.
+async function fetchMealPlan({ showLoading = false } = {}) {
+  if (showLoading)
+    loading.value = true;
   try {
     const plan = await getMealPlanByWeek(currentWeekStart.value);
 
     if (!plan) {
-      // Create a new meal plan for this week
       const newPlan = await createMealPlan({
         weekStart: currentWeekStart.value,
         order: 0,
@@ -75,19 +78,21 @@ async function loadWeekMealPlan() {
     }
   }
   catch (error) {
-    // Provide different error messages based on online status
     if (!isOnline.value) {
       showError("Offline", "Cannot load meal plan while offline. Please check your connection.");
-      // Set empty plan so UI still renders
-      currentPlan.value = {
-        id: "",
-        weekStart: currentWeekStart.value,
-        order: 0,
-        meals: [],
-        _count: { meals: 0 },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      // Only set empty plan on initial load when there's nothing to show.
+      // On reload, keep existing data visible rather than wiping the grid.
+      if (showLoading) {
+        currentPlan.value = {
+          id: "",
+          weekStart: currentWeekStart.value,
+          order: 0,
+          meals: [],
+          _count: { meals: 0 },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
     }
     else {
       showError("Load Failed", "Failed to load meal plan. Please try again.");
@@ -95,8 +100,19 @@ async function loadWeekMealPlan() {
     consola.error("Failed to load meal plan:", error);
   }
   finally {
-    loading.value = false;
+    if (showLoading)
+      loading.value = false;
   }
+}
+
+// Initial load / week navigation — shows spinner
+function loadWeekMealPlan() {
+  return fetchMealPlan({ showLoading: true });
+}
+
+// Silent reload after CRUD — no spinner, preserves accordion state on mobile
+function reloadMealPlan() {
+  return fetchMealPlan({ showLoading: false });
 }
 
 // Load upcoming preparation meals
@@ -169,7 +185,7 @@ async function handleMealSaveFromInline(dayOfWeek: number, mealType: MealType, d
     showSuccess("Meal Added", "Meal has been added successfully.");
 
     // Reload the meal plan
-    await loadWeekMealPlan();
+    await reloadMealPlan();
     await loadUpcomingPrepMeals();
   }
   catch (error) {
@@ -197,7 +213,7 @@ async function handleMealSave(mealData: CreateMealInput) {
     }
 
     // Reload the meal plan
-    await loadWeekMealPlan();
+    await reloadMealPlan();
     await loadUpcomingPrepMeals();
 
     mealDialog.value = false;
@@ -218,7 +234,7 @@ async function handleMealDelete() {
     showSuccess("Meal Deleted", "Meal has been deleted successfully.");
 
     // Reload the meal plan
-    await loadWeekMealPlan();
+    await reloadMealPlan();
     await loadUpcomingPrepMeals();
 
     mealDialog.value = false;
@@ -239,7 +255,7 @@ async function handleMealDeleteFromInline(meal: Meal) {
     showSuccess("Meal Deleted", "Meal has been deleted successfully.");
 
     // Reload the meal plan
-    await loadWeekMealPlan();
+    await reloadMealPlan();
     await loadUpcomingPrepMeals();
   }
   catch (error) {
@@ -289,7 +305,7 @@ async function handleMoveMeal(event: { mealId: string; newDayOfWeek: number; new
     showSuccess("Meal Moved", "Meal has been moved successfully.");
 
     // Reload the meal plan
-    await loadWeekMealPlan();
+    await reloadMealPlan();
     await loadUpcomingPrepMeals();
   }
   catch (error) {
