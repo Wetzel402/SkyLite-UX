@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import type { GoogleCalendarListItem } from "~~/server/integrations/google_calendar/types";
-
 import { consola } from "consola";
 
 import type { Integration } from "~/types/database";
-import type { CalendarConfig } from "~/types/integrations";
+import type { CalendarConfig, CalendarListItem } from "~/types/integrations";
 
 const props = defineProps<{
   integration: Integration | null;
@@ -20,7 +18,7 @@ const emit = defineEmits<{
 const { users, fetchUsers } = useUsers();
 
 const pending = ref(false);
-const availableCalendars = ref<GoogleCalendarListItem[]>([]);
+const availableCalendars = ref<CalendarListItem[]>([]);
 const calendarConfigs = ref<CalendarConfig[]>([]);
 const originalCalendarConfigs = ref<CalendarConfig[]>([]);
 const error = ref<string | null>(null);
@@ -76,9 +74,8 @@ async function loadCalendars() {
     pending.value = true;
     error.value = null;
 
-    const result = await $fetch<{ calendars: GoogleCalendarListItem[] }>(
-      `/api/integrations/google_calendar/calendars`,
-      { query: { integrationId: props.integration.id } },
+    const result = await $fetch<{ calendars: CalendarListItem[] }>(
+      `/api/integrations/${props.integration.id}/calendars`,
     );
 
     availableCalendars.value = result.calendars || [];

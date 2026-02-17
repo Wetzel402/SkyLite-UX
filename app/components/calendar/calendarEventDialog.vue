@@ -916,28 +916,26 @@ watch(
       if (isExpandedEvent && newEvent.integrationId) {
         const originalId = newEvent.id.split("-")[0];
         try {
-          if (currentIntegration.value?.service === "google") {
-            const { getCalendarEvent } = useCalendarIntegrations();
-            const fetchedEvent = await getCalendarEvent(
-              newEvent.integrationId,
-              originalId || "",
-              newEvent.calendarId,
-            );
+          const { getCalendarEvent } = useCalendarIntegrations();
+          const fetchedEvent = await getCalendarEvent(
+            newEvent.integrationId,
+            originalId || "",
+            newEvent.calendarId,
+          );
 
-            if (fetchedEvent) {
-              originalEvent = {
-                ...fetchedEvent,
-                start: newEvent.start,
-                end: newEvent.end,
-                ical_event: newEvent.ical_event
-                  ? {
-                      ...fetchedEvent.ical_event,
-                      dtstart: newEvent.ical_event.dtstart,
-                      dtend: newEvent.ical_event.dtend,
-                    }
-                  : null,
-              } as CalendarEvent;
-            }
+          if (fetchedEvent) {
+            originalEvent = {
+              ...fetchedEvent,
+              start: newEvent.start,
+              end: newEvent.end,
+              ical_event: newEvent.ical_event
+                ? {
+                    ...fetchedEvent.ical_event,
+                    dtstart: newEvent.ical_event.dtstart,
+                    dtend: newEvent.ical_event.dtend,
+                  }
+                : null,
+            } as CalendarEvent;
           }
         }
         catch {}

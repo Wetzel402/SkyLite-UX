@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 
-import { addDays, endOfWeek, isSameMonth, startOfWeek } from "date-fns";
+import { addDays, endOfWeek, getISOWeek, isSameMonth, startOfWeek } from "date-fns";
 
 import type { CalendarView } from "~/types/calendar";
 import type { TodoSortMode } from "~/types/ui";
@@ -13,6 +13,7 @@ const props = defineProps<{
   showNavigation?: boolean;
   showViewSelector?: boolean;
   showTodoSortSelector?: boolean;
+  showWeekNumbers?: boolean;
   currentDate?: Date;
   view?: CalendarView;
   todoSortBy?: TodoSortMode;
@@ -114,6 +115,12 @@ const todoSortLabel = computed(() =>
   TODO_SORT_OPTIONS.find(o => o.value === (props.todoSortBy ?? "date"))?.label ?? "Date",
 );
 
+const isoWeekNumber = computed(() => {
+  if (!props.showWeekNumbers || view.value !== "week")
+    return null;
+  return getISOWeek(currentDate.value);
+});
+
 function handlePrevious() {
   emit("previous");
 }
@@ -155,57 +162,80 @@ function handleToday() {
 
     <div v-if="showNavigation" class="flex items-center justify-center flex-1">
       <h2 class="font-semibold text-lg text-highlighted">
-        <NuxtTime
-          v-if="viewTitle === 'month'"
-          :datetime="currentDate"
-          month="long"
-          year="numeric"
-        />
-        <NuxtTime
-          v-else-if="viewTitle === 'week-same-month'"
-          :datetime="startOfWeek(currentDate, { weekStartsOn: 0 })"
-          month="long"
-          year="numeric"
-        />
-        <span v-else-if="viewTitle === 'week-different-months'">
+        <template v-if="isoWeekNumber !== null">
           <NuxtTime
+            v-if="viewTitle === 'week-same-month'"
             :datetime="startOfWeek(currentDate, { weekStartsOn: 0 })"
-            month="short"
-          />
-          -
-          <NuxtTime
-            :datetime="endOfWeek(currentDate, { weekStartsOn: 0 })"
-            month="short"
+            month="long"
             year="numeric"
           />
-        </span>
-        <NuxtTime
-          v-else-if="viewTitle === 'day'"
-          :datetime="currentDate"
-          month="long"
-          day="numeric"
-          year="numeric"
-        />
-        <NuxtTime
-          v-else-if="viewTitle === 'agenda-same-month'"
-          :datetime="currentDate"
-          month="long"
-          year="numeric"
-        />
-        <span v-else-if="viewTitle === 'agenda-different-months'">
-          <NuxtTime :datetime="currentDate" month="short" /> -
+          <span v-else-if="viewTitle === 'week-different-months'">
+            <NuxtTime
+              :datetime="startOfWeek(currentDate, { weekStartsOn: 0 })"
+              month="short"
+            />
+            -
+            <NuxtTime
+              :datetime="endOfWeek(currentDate, { weekStartsOn: 0 })"
+              month="short"
+              year="numeric"
+            />
+          </span>
+          <span class="text-muted font-normal ml-1">(Week {{ isoWeekNumber }})</span>
+        </template>
+        <template v-else>
           <NuxtTime
-            :datetime="addDays(currentDate, 30 - 1)"
-            month="short"
+            v-if="viewTitle === 'month'"
+            :datetime="currentDate"
+            month="long"
             year="numeric"
           />
-        </span>
-        <NuxtTime
-          v-else
-          :datetime="currentDate"
-          month="long"
-          year="numeric"
-        />
+          <NuxtTime
+            v-else-if="viewTitle === 'week-same-month'"
+            :datetime="startOfWeek(currentDate, { weekStartsOn: 0 })"
+            month="long"
+            year="numeric"
+          />
+          <span v-else-if="viewTitle === 'week-different-months'">
+            <NuxtTime
+              :datetime="startOfWeek(currentDate, { weekStartsOn: 0 })"
+              month="short"
+            />
+            -
+            <NuxtTime
+              :datetime="endOfWeek(currentDate, { weekStartsOn: 0 })"
+              month="short"
+              year="numeric"
+            />
+          </span>
+          <NuxtTime
+            v-else-if="viewTitle === 'day'"
+            :datetime="currentDate"
+            month="long"
+            day="numeric"
+            year="numeric"
+          />
+          <NuxtTime
+            v-else-if="viewTitle === 'agenda-same-month'"
+            :datetime="currentDate"
+            month="long"
+            year="numeric"
+          />
+          <span v-else-if="viewTitle === 'agenda-different-months'">
+            <NuxtTime :datetime="currentDate" month="short" /> -
+            <NuxtTime
+              :datetime="addDays(currentDate, 30 - 1)"
+              month="short"
+              year="numeric"
+            />
+          </span>
+          <NuxtTime
+            v-else
+            :datetime="currentDate"
+            month="long"
+            year="numeric"
+          />
+        </template>
       </h2>
     </div>
 

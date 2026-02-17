@@ -12,11 +12,13 @@ const props = withDefaults(
     disabled?: boolean;
     minValue?: DateValue;
     maxValue?: DateValue;
+    isDateDisabled?: (date: DateValue) => boolean;
   }>(),
   {
     disabled: false,
     minValue: undefined,
     maxValue: undefined,
+    isDateDisabled: undefined,
   },
 );
 
@@ -46,6 +48,7 @@ function onUpdate(
     :disabled="disabled"
     :min-value="minValue"
     :max-value="maxValue"
+    :is-date-disabled="isDateDisabled"
     @update:model-value="onUpdate"
   />
 </template>

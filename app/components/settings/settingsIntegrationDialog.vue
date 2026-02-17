@@ -22,7 +22,7 @@ const emit = defineEmits<{
   (e: "save", integration: CreateIntegrationInput): void;
   (e: "delete", integrationId: string): void;
   (e: "testConnection", integration: CreateIntegrationInput): void;
-  (e: "selectCalendars", integrationId: string): void;
+  (e: "openSetup", integrationId: string): void;
 }>();
 
 const show = ref(false);
@@ -632,20 +632,17 @@ function handleDelete() {
         </template>
 
         <UButton
-          v-if="
-            integration?.id
-              && currentIntegrationConfig?.capabilities.includes('select_calendars')
-          "
+          v-if="integration?.id && currentIntegrationConfig?.setupDialogComponent"
           color="primary"
           variant="outline"
-          icon="i-lucide-calendar"
+          icon="i-lucide-settings"
           class="w-full"
           @click="
-            emit('selectCalendars', integration.id);
+            emit('openSetup', integration.id);
             emit('close');
           "
         >
-          Select Calendars
+          {{ currentIntegrationConfig.setupDialogLabel ?? 'Configure' }}
         </UButton>
 
         <div class="flex items-center justify-between">

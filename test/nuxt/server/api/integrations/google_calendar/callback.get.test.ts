@@ -143,7 +143,7 @@ describe("GET /api/integrations/google_calendar/callback", () => {
       });
       expect(sendRedirect).toHaveBeenCalledWith(
         event,
-        `/settings?success=google_calendar_added&integrationId=${mockIntegration.id}`,
+        `/settings?openSetup=${mockIntegration.id}`,
       );
     });
   });
@@ -203,7 +203,7 @@ describe("GET /api/integrations/google_calendar/callback", () => {
       });
       expect(sendRedirect).toHaveBeenCalledWith(
         event,
-        `/settings?success=google_calendar_added&integrationId=integration-1`,
+        `/settings?openSetup=integration-1`,
       );
     });
   });

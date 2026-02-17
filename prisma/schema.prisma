@@ -24,8 +24,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  todoColumn TodoColumn?
-  calendarEvents CalendarEventUser[]
+  todoColumn        TodoColumn?
+  calendarEvents    CalendarEventUser[]
+  shiftAssignments  ShiftAssignment[]
 
   @@map("users")
 }
@@ -104,8 +105,57 @@ model Integration {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  shiftRotations ShiftRotation[]
+
   @@unique([name])
   @@map("integrations")
+}
+
+model ShiftRotation {
+  id            String   @id @default(cuid())
+  integrationId String
+  name          String
+  cycleWeeks    Int
+  color         String?
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  integration   Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  slots         ShiftSlot[]
+  assignments   ShiftAssignment[]
+
+  @@map("shift_rotations")
+}
+
+model ShiftSlot {
+  id              String   @id @default(cuid())
+  shiftRotationId String
+  weekIndex       Int
+  dayOfWeek       Int
+  startTime       String
+  endTime         String
+  label           String?
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shiftRotation ShiftRotation @relation(fields: [shiftRotationId], references: [id], onDelete: Cascade)
+
+  @@map("shift_slots")
+}
+
+model ShiftAssignment {
+  id              String    @id @default(cuid())
+  userId          String
+  shiftRotationId String
+  startDate       DateTime
+  endDate         DateTime?
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shiftRotation ShiftRotation @relation(fields: [shiftRotationId], references: [id], onDelete: Cascade)
+
+  @@map("shift_assignments")
 }
 
 model CalendarEvent {

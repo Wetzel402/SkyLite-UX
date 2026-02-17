@@ -15,7 +15,7 @@ permalink: /installation/docker/
 
 ## Tags
 
-- **latest** (not currently implemented) - The default most recent release
+- **latest** - The default most recent release
 - **beta** - Get a preview of the most recent features and bug fixes
 - **YYYY.M.MICRO** - If you need a specific version you can specify the version number.
 
@@ -46,7 +46,7 @@ docker run -d \
   -e NUXT_PUBLIC_TZ=America/Chicago \
   -e NUXT_PUBLIC_LOG_LEVEL=warn \
   -p 3000:3000 \
-  wetzel402/skylite-ux:beta
+  wetzel402/skylite-ux:latest
 ```
 
 ## Docker Compose
@@ -54,7 +54,7 @@ docker run -d \
 ```yaml
 services:
   skylite-ux:
-    image: wetzel402/skylite-ux:beta
+    image: wetzel402/skylite-ux:latest
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://skylite:password@skylite-ux-db:5432/skylite

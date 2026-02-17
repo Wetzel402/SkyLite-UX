@@ -1,3 +1,5 @@
+import type { Component } from "vue";
+
 import consola from "consola";
 
 import type { CalendarEvent } from "~/types/calendar";
@@ -77,12 +79,21 @@ export type IntegrationConfig = {
     isExisting: boolean,
     originalIntegration?: Integration | null,
   ) => Promise<boolean>;
+  setupDialogComponent?: Component;
+  setupDialogLabel?: string;
 };
 
 export type ICalSettings = {
   eventColor?: string;
   user?: string[];
   useUserColors?: boolean;
+};
+
+export type CalendarListItem = {
+  id: string;
+  summary: string;
+  backgroundColor?: string;
+  accessRole?: "read" | "write";
 };
 
 export type CalendarConfig = {

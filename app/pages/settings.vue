@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Component } from "vue";
+
 import { consola } from "consola";
 
 import type {
@@ -9,7 +11,6 @@ import type {
 } from "~/types/database";
 import type { ConnectionTestResult, FontPreference } from "~/types/ui";
 
-import SettingsCalendarSelectDialog from "~/components/settings/settingsCalendarSelectDialog.vue";
 import SettingsIntegrationDialog from "~/components/settings/settingsIntegrationDialog.vue";
 import SettingsUserDialog from "~/components/settings/settingsUserDialog.vue";
 import { useClientPreferences } from "~/composables/useClientPreferences";
@@ -82,12 +83,20 @@ const selectedDefaultView = computed({
   },
 });
 
+const showWeekNumbers = computed({
+  get: () => preferences.value?.showWeekNumbers ?? false,
+  set(value: boolean) {
+    updatePreferences({ showWeekNumbers: value });
+  },
+});
+
 const selectedUser = ref<User | null>(null);
 const isUserDialogOpen = ref(false);
 const selectedIntegration = ref<Integration | null>(null);
 const isIntegrationDialogOpen = ref(false);
-const isCalendarSelectDialogOpen = ref(false);
-const calendarSelectIntegration = ref<Integration | null>(null);
+const setupDialogIntegration = ref<Integration | null>(null);
+const setupDialogComponent = shallowRef<Component | null>(null);
+const isSetupDialogOpen = ref(false);
 
 const connectionTestResult = ref<ConnectionTestResult>(null);
 
@@ -112,21 +121,34 @@ onMounted(async () => {
 watch(
   () => route.query,
   (query) => {
-    if (query.success === "google_calendar_added" && query.integrationId) {
-      nextTick(() => {
-        const allIntegrations = integrations.value as Integration[];
-        const integration = allIntegrations.find(
-          i => i.id === query.integrationId,
-        );
-        if (integration) {
-          calendarSelectIntegration.value = integration;
-          isCalendarSelectDialogOpen.value = true;
-        }
-      });
-    }
+    const integrationId = query.openSetup;
+    if (!integrationId)
+      return;
+    nextTick(() => {
+      const allIntegrations = integrations.value as Integration[];
+      const integration = allIntegrations.find(i => i.id === integrationId);
+      if (!integration)
+        return;
+      const config = integrationRegistry.get(
+        `${integration.type}:${integration.service}`,
+      );
+      if (config?.setupDialogComponent) {
+        setupDialogIntegration.value = integration;
+        setupDialogComponent.value = config.setupDialogComponent;
+        isSetupDialogOpen.value = true;
+      }
+    });
   },
   { immediate: true },
 );
+
+function clearSetupQuery() {
+  const q = { ...route.query };
+  delete q.openSetup;
+  delete q.success;
+  delete q.integrationId;
+  navigateTo({ path: route.path, query: q }, { replace: true });
+}
 
 const filteredIntegrations = computed(() => {
   return (integrations.value as Integration[]).filter(
@@ -218,6 +240,7 @@ function openUserDialog(user: User | null = null) {
 }
 
 async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
+  let createdIntegration: Integration | undefined;
   try {
     connectionTestResult.value = {
       success: false,
@@ -298,7 +321,7 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
           isLoading: true,
         };
 
-        const createdIntegration = await createIntegration({
+        createdIntegration = await createIntegration({
           ...integrationData,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -339,6 +362,13 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
     const { refreshIntegrations } = useIntegrations();
     await refreshIntegrations();
 
+    if (createdIntegration) {
+      await navigateTo({
+        path: route.path,
+        query: { ...route.query, openSetup: createdIntegration.id },
+      });
+    }
+
     setTimeout(() => {
       isIntegrationDialogOpen.value = false;
       selectedIntegration.value = null;
@@ -356,21 +386,26 @@ async function handleIntegrationSave(integrationData: CreateIntegrationInput) {
   }
 }
 
-function handleSelectCalendars(integrationId: string) {
-  const integration = (integrations.value as Integration[]).find(
-    i => i.id === integrationId,
-  );
-  if (integration) {
-    calendarSelectIntegration.value = integration;
-    isCalendarSelectDialogOpen.value = true;
-  }
+function handleOpenSetup(integrationId: string) {
+  navigateTo({
+    path: route.path,
+    query: { ...route.query, openSetup: integrationId },
+  });
+  isIntegrationDialogOpen.value = false;
+}
+
+function handleSetupDialogClose() {
+  clearSetupQuery();
+  isSetupDialogOpen.value = false;
+  setupDialogIntegration.value = null;
+  setupDialogComponent.value = null;
 }
 
 async function handleCalendarsSaved() {
-  if (calendarSelectIntegration.value) {
+  if (setupDialogIntegration.value) {
     await triggerImmediateSync(
-      calendarSelectIntegration.value.type,
-      calendarSelectIntegration.value.id,
+      setupDialogIntegration.value.type,
+      setupDialogIntegration.value.id,
     );
 
     await new Promise(resolve => setTimeout(resolve, 2500));
@@ -378,16 +413,15 @@ async function handleCalendarsSaved() {
     await refreshNuxtData("calendar-events");
   }
 
-  isCalendarSelectDialogOpen.value = false;
-  calendarSelectIntegration.value = null;
+  handleSetupDialogClose();
 }
 
 function handleCalendarsDisabled(calendarIds: string[]) {
-  if (!calendarSelectIntegration.value?.id) {
+  if (!setupDialogIntegration.value?.id) {
     return;
   }
 
-  const integrationId = calendarSelectIntegration.value.id;
+  const integrationId = setupDialogIntegration.value.id;
 
   consola.debug(
     `Settings: Purging events from ${calendarIds.length} disabled calendar(s) in integration ${integrationId}:`,
@@ -957,6 +991,22 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
             <div class="flex items-center justify-between">
               <div>
                 <p class="font-medium text-highlighted">
+                  Show week numbers
+                </p>
+                <p class="text-sm text-muted">
+                  Show ISO week number in the calendar (e.g. for shift rotations)
+                </p>
+              </div>
+              <USwitch
+                v-model="showWeekNumbers"
+                color="primary"
+                size="xl"
+                aria-label="Toggle week numbers"
+              />
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-highlighted">
                   Default view
                 </p>
                 <p class="text-sm text-muted">
@@ -1052,16 +1102,15 @@ function integrationNeedsReauth(integration?: Integration | null): boolean {
       "
       @save="handleIntegrationSave"
       @delete="handleIntegrationDelete"
-      @select-calendars="handleSelectCalendars"
+      @open-setup="handleOpenSetup"
     />
 
-    <SettingsCalendarSelectDialog
-      :integration="calendarSelectIntegration"
-      :is-open="isCalendarSelectDialogOpen"
-      @close="
-        isCalendarSelectDialogOpen = false;
-        calendarSelectIntegration = null;
-      "
+    <component
+      :is="setupDialogComponent"
+      v-if="isSetupDialogOpen && setupDialogIntegration"
+      :integration="setupDialogIntegration"
+      :is-open="isSetupDialogOpen"
+      @close="handleSetupDialogClose"
       @save="handleCalendarsSaved"
       @calendars-disabled="handleCalendarsDisabled"
     />

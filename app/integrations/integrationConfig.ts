@@ -1,3 +1,5 @@
+import { defineAsyncComponent } from "vue";
+
 import type { ShoppingListItem, TodoListItem } from "~/types/database";
 import type {
   GoogleCalendarSettings,
@@ -15,6 +17,7 @@ import {
   createMealieService,
   getMealieFieldsForItem,
 } from "./mealie/mealieShoppingLists";
+import { createShiftsService } from "./shifts/shifts";
 import {
   createTandoorService,
   getTandoorFieldsForItem,
@@ -109,6 +112,52 @@ export const integrationConfigs: IntegrationConfig[] = [
     dialogFields: [],
     syncInterval: 10,
     customSaveHandler: handleGoogleCalendarSave,
+    setupDialogComponent: import.meta.client
+      ? defineAsyncComponent(
+          () => import("~/components/settings/settingsCalendarSelectDialog.vue"),
+        )
+      : undefined,
+    setupDialogLabel: "Select Calendars",
+  },
+  {
+    type: "calendar",
+    service: "shifts",
+    settingsFields: [
+      {
+        key: "user",
+        label: "User",
+        type: "text" as const,
+        placeholder: "Jane Doe",
+        required: false,
+        description:
+          "Select user(s) to link to shift events or choose an event color",
+      },
+      {
+        key: "eventColor",
+        label: "Event Color",
+        type: "color" as const,
+        placeholder: "#06b6d4",
+        required: false,
+      },
+      {
+        key: "useUserColors",
+        label: "Use User Profile Colors",
+        type: "boolean" as const,
+        required: false,
+        description:
+          "Use assigned user profile colors for events instead of a single event color",
+      },
+    ],
+    capabilities: ["get_events"],
+    icon: "https://unpkg.com/lucide-static@latest/icons/calendar-clock.svg",
+    dialogFields: [],
+    syncInterval: 10,
+    setupDialogComponent: import.meta.client
+      ? defineAsyncComponent(
+          () => import("~/components/settings/settingsShiftsConfigDialog.vue"),
+        )
+      : undefined,
+    setupDialogLabel: "Configure Shifts",
   },
   // ================================================
   // Meal integration configs can support the following list-level capabilities:
@@ -260,6 +309,12 @@ const serviceFactoryMap = {
       googleSettings?.clientSecret || "",
     );
   },
+  "calendar:shifts": (
+    _id: string,
+    _apiKey: string,
+    _baseUrl: string,
+    settings?: ICalSettings | GoogleCalendarSettings,
+  ) => createShiftsService(_id, _apiKey, _baseUrl, settings as ICalSettings),
   "shopping:mealie": createMealieService,
   "shopping:tandoor": createTandoorService,
 } as const;

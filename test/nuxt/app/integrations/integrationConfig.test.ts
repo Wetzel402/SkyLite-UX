@@ -98,6 +98,7 @@ describe("integrationConfig", () => {
       const keys = getServiceFactories().map(f => f.key);
       expect(keys).toContain("calendar:iCal");
       expect(keys).toContain("calendar:google");
+      expect(keys).toContain("calendar:shifts");
       expect(keys).toContain("shopping:mealie");
       expect(keys).toContain("shopping:tandoor");
     });
