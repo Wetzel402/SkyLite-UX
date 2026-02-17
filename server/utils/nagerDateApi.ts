@@ -1,3 +1,5 @@
+import { parseLocalDate } from "~/utils/dateParser";
+
 const NAGER_API_BASE = "https://date.nager.at/api/v3";
 const FETCH_TIMEOUT_MS = 5000; // 5 seconds
 
@@ -119,8 +121,7 @@ export async function getNextUpcomingHoliday(
 
   // Filter to upcoming holidays
   let upcomingHolidays = holidays.filter((holiday) => {
-    const holidayDate = new Date(holiday.date);
-    holidayDate.setHours(0, 0, 0, 0);
+    const holidayDate = parseLocalDate(holiday.date);
 
     // Must be today or in the future
     if (holidayDate < today) {
@@ -144,8 +145,7 @@ export async function getNextUpcomingHoliday(
   if (upcomingHolidays.length === 0) {
     holidays = await getPublicHolidays(currentYear + 1, countryCode);
     upcomingHolidays = holidays.filter((holiday) => {
-      const holidayDate = new Date(holiday.date);
-      holidayDate.setHours(0, 0, 0, 0);
+      const holidayDate = parseLocalDate(holiday.date);
 
       // If subdivision specified, filter by counties
       if (subdivisionCode) {
