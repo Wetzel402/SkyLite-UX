@@ -2,7 +2,7 @@
 
 **Goal:** Stop the meal accordion from collapsing after adding/editing/deleting a meal on mobile.
 
-**Architecture:** Extract a `reloadMealPlan()` function that fetches fresh data without toggling the loading spinner, keeping `WeeklyMealGrid` mounted so its accordion preservation logic works.
+**Architecture:** Extract a shared `fetchMealPlan({ showLoading })` function with two thin wrappers: `loadWeekMealPlan()` (with spinner, for initial load/navigation) and `reloadMealPlan()` (no spinner, for CRUD operations). This keeps `WeeklyMealGrid` mounted after CRUD so its accordion preservation logic works.
 
 **Tech Stack:** TypeScript, Vue 3, Nuxt 3, Vitest
 
@@ -15,70 +15,44 @@
 **Files:**
 - Modify: `app/pages/mealPlanner.vue`
 
-**Step 1: Write the failing test**
+**Step 1: Testing note**
 
-Create `tests/unit/pages/mealPlanner.test.ts`:
+No unit test for `mealPlanner.vue` — it's a Nuxt page with heavy framework dependencies
+(composables, auto-imports, Nuxt data) that would require extensive mocking for minimal value.
 
-```typescript
-import { describe, expect, it, vi } from "vitest";
+Key invariant: `reloadMealPlan()` calls `fetchMealPlan({ showLoading: false })`, which never
+sets `loading.value`. This keeps `WeeklyMealGrid` mounted so accordion state is preserved.
 
-/**
- * These tests verify the fix conceptually by testing the reload function
- * does NOT toggle the loading flag, while the initial load DOES.
- */
-describe("mealPlanner reload behavior", () => {
-  it("reloadMealPlan should not set loading to true", () => {
-    // The key invariant: reloadMealPlan updates currentPlan
-    // without ever setting loading = true, which would unmount the grid.
-    //
-    // We verify this by checking that:
-    // 1. loadWeekMealPlan sets loading = true (initial/navigation)
-    // 2. reloadMealPlan does NOT set loading = true (CRUD refresh)
-    //
-    // Since mealPlanner.vue is a page component with complex Nuxt dependencies,
-    // we verify the pattern exists in the source code.
-    expect(true).toBe(true); // Placeholder - real verification is manual + lint
-  });
-});
-```
-
-Note: `mealPlanner.vue` is a Nuxt page with heavy framework dependencies (composables, auto-imports, Nuxt data). A unit test would require extensive mocking for minimal value. The real verification is:
+Verification is via:
 - Visual testing on the APK (accordion stays open after adding a meal)
 - Existing integration tests still pass
 - Lint and type-check pass
 
 **Step 2: Apply the fix to `mealPlanner.vue`**
 
-Add a new `reloadMealPlan()` function after `loadWeekMealPlan()`. This function fetches fresh data without the loading spinner:
+Extract a shared `fetchMealPlan({ showLoading })` function that centralizes the fetch/create
+logic and conditionally toggles `loading.value`. Add two thin wrappers:
 
 ```typescript
-// Reload meal plan data without showing loading spinner.
-// Used after CRUD operations to keep WeeklyMealGrid mounted
-// so its accordion state is preserved.
-async function reloadMealPlan() {
-  try {
-    const plan = await getMealPlanByWeek(currentWeekStart.value);
+// Core fetch logic for meal plan data.
+// When showLoading is true (initial load, week navigation), sets loading.value
+// which triggers v-if="loading" and unmounts/remounts WeeklyMealGrid.
+// When false (CRUD operations), keeps the grid mounted so accordion state is preserved.
+async function fetchMealPlan({ showLoading = false } = {}) {
+  if (showLoading) loading.value = true;
+  try { /* fetch or create plan */ }
+  catch (error) { /* error handling, only set empty plan when showLoading */ }
+  finally { if (showLoading) loading.value = false; }
+}
 
-    if (!plan) {
-      const newPlan = await createMealPlan({
-        weekStart: currentWeekStart.value,
-        order: 0,
-      });
-      currentPlan.value = newPlan;
-    }
-    else {
-      currentPlan.value = plan;
-    }
-  }
-  catch (error) {
-    if (!isOnline.value) {
-      showError("Offline", "Cannot load meal plan while offline. Please check your connection.");
-    }
-    else {
-      showError("Load Failed", "Failed to load meal plan. Please try again.");
-    }
-    consola.error("Failed to reload meal plan:", error);
-  }
+// Initial load / week navigation — shows spinner
+function loadWeekMealPlan() {
+  return fetchMealPlan({ showLoading: true });
+}
+
+// Silent reload after CRUD — no spinner, preserves accordion state on mobile
+function reloadMealPlan() {
+  return fetchMealPlan({ showLoading: false });
 }
 ```
 
