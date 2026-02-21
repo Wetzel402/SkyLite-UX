@@ -600,10 +600,10 @@ function formatEventTime(dateString: string | Date) {
           to="/settings"
           class="text-white bg-black/30 backdrop-blur-sm hover:bg-black/40 rounded-lg p-4 transition-colors cursor-pointer block"
         >
-          <div class="text-6xl font-light">
+          <div class="text-8xl font-light">
             {{ currentTime }}
           </div>
-          <div class="text-2xl mt-2">
+          <div class="text-4xl mt-2">
             {{ currentDate }}
           </div>
         </NuxtLink>
